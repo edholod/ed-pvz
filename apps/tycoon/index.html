@@ -1208,22 +1208,12 @@ const P46_KEY='wbpvz-profile-v146';
 function p46Read(){try{const v=JSON.parse(localStorage.getItem(P46_KEY));if(v&&typeof v==='object')return v}catch(e){}return {createdAt:Date.now(),displayName:'Игрок',username:'',photoUrl:'',source:'local'}}
 let p46=p46Read();
 function p46Save(){localStorage.setItem(P46_KEY,JSON.stringify(p46))}
-function p46Telegram(){
- const u=window.Telegram?.WebApp?.initDataUnsafe?.user;
- if(!u||!window.Telegram?.WebApp?.initData)return false;
- p46.telegramId=String(u.id);
- if(p46.source!=='telegram'){
-  p46.displayName=[u.first_name,u.last_name].filter(Boolean).join(' ')||p46.displayName;
-  p46.username=u.username||'';
-  p46.photoUrl=u.photo_url||'';
- }
- p46.source='telegram';p46Save();return true;
-}
+function p46Telegram(){return false}
 function p46Edit(){
  const name=document.getElementById('p46-name')?.value.trim().slice(0,70);
  const handle=document.getElementById('p46-user')?.value.trim().replace(/^@/,'');
  if(!name)return alert('Введите имя');
- if(handle&&!/^[A-Za-z0-9_]{5,32}$/.test(handle))return alert('Telegram-ник должен содержать 5–32 символа: латинские буквы, цифры или _');
+ if(handle&&!/^[A-Za-z0-9_]{5,32}$/.test(handle))return alert('Ник должен содержать 5–32 символа: латинские буквы, цифры или _');
  p46.displayName=name;p46.username=handle;p46.source='local';p46Save();render();
 }
 function p46Safe(v){return pvzSafe(v)}
@@ -1237,17 +1227,16 @@ function p46Totals(){
  return {opened,turnover:sum('turnover'),earned:sum('earned'),orders,xp,ach};
 }
 function p46Page(){
- p46Telegram();
  const t=p46Totals(),opened=t.opened,bal=s.balance;
- const photo=p46.source==='telegram'&&p46.photoUrl&&/^https:\/\//.test(p46.photoUrl)?`<img class="p46-avatar" src="${p46Safe(p46.photoUrl)}" referrerpolicy="no-referrer" alt="Аватар Telegram" onerror="this.style.display='none'">`:`<div class="p46-placeholder" aria-label="Аватар не доступен">◈</div>`;
- const link=p46.username?`<a href="https://t.me/${encodeURIComponent(p46.username)}" target="_blank" rel="noopener noreferrer">@${p46Safe(p46.username)}</a>`:'Не указан';
+ const photo='<div class="p46-placeholder" aria-label="Аватар">◈</div>';
+ const link='';
  const collected=typeof c45!=='undefined'?Object.values(c45.owned||{}).filter(x=>x>0).length:0;
  const joined=new Date(Number(p46.createdAt)||Date.now()).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
  const branchList=opened.length?opened.map((b,i)=>`<div class="p46-branch"><b>${p46Safe(b.pvzNumber||'ПВЗ №'+(i+1))}</b><div class="p46-note">${p46Safe(b.pvzAddress||'Адрес не указан')}</div>${row('Оборот',money(b.turnover||0))}${row('Рейтинг',(Number(b.rating)||0).toFixed(2)+' ★')}</div>`).join(''):'<small>Пока нет открытых ПВЗ.</small>';
- return box('Мой профиль',`<div class="p46-hero">${photo}<div><div class="p46-name">${p46Safe(p46.displayName||'Игрок')}</div><div>${link}</div><div class="p46-note">${p46.source==='telegram'?'Данные Telegram доступны в Mini App':'Локальный игровой профиль'}</div></div></div><p class="p46-note">Дата регистрации в этом браузере: ${joined}. Если профиль создан до обновления, здесь указана дата первого запуска v1.46.</p>`)
+ return box('Мой профиль',`<div class="p46-hero">${photo}<div><div class="p46-name">${p46Safe(p46.displayName||'Игрок')}</div><div>${link}</div><div class="p46-note">Локальный игровой профиль</div></div></div><p class="p46-note">Дата регистрации в этом браузере: ${joined}. Если профиль создан до обновления, здесь указана дата первого запуска v1.46.</p>`)
  +box('Показатели игрока',`<div class="p46-statgrid">${[['Баланс компании',money(bal)],['Оборот сети',money(t.turnover)],['Открыто ПВЗ',opened.length],['Выдано заказов',t.orders],['Достижения',t.ach],['Карточки коллекции',collected+'/60'],['Опыт (XP)',t.xp],['Ожидают выплаты',money(t.earned)]].map(([k,v])=>`<div class="p46-stat"><small>${k}</small><strong>${v}</strong></div>`).join('')}</div><p><button onclick="tab='Коллекции';render()">Мои коллекции</button> <button onclick="tab='Задания';render()">Мои достижения</button></p>`)
  +box('Мои пункты выдачи',`<div class="p46-list">${branchList}</div>`)
- +box('Настройки профиля',`<div class="p46-form"><label>Отображаемое имя<input id="p46-name" maxlength="70" value="${p46Safe(p46.displayName||'')}"></label><label>Telegram-ник (без @)<input id="p46-user" maxlength="32" value="${p46Safe(p46.username||'')}" placeholder="username"></label><button class="primary" onclick="p46Edit()">Сохранить</button></div><p class="p46-note">Внутри Telegram имя и фото подставляются автоматически, если Telegram передал их приложению. В обычном браузере аватар Telegram получить нельзя. Этот профиль хранится только на данном устройстве: для публичных профилей игроков и синхронизации между устройствами потребуется сервер и проверка входа Telegram. Адреса и финансовые показатели пока не публикуются другим игрокам.</p>`);
+ +box('Настройки профиля',`<div class="p46-form"><label>Отображаемое имя<input id="p46-name" maxlength="70" value="${p46Safe(p46.displayName||'')}"></label><label>Ник (необязательно)<input id="p46-user" maxlength="32" value="${p46Safe(p46.username||'')}" placeholder="username"></label><button class="primary" onclick="p46Edit()">Сохранить</button></div><p class="p46-note">Профиль хранится на этом устройстве. Для синхронизации потребуется аккаунт Эд ПВЗ. Адреса и финансовые показатели пока не публикуются другим игрокам.</p>`);
 }
 p46Save();
 const p46OldRender=render;
@@ -1274,8 +1263,8 @@ render();
 const PRIV47_KEY='wbpvz-privacy-v147';
 const PRIV47_FIELDS=[
  ['name','Имя','Показывать имя в публичном профиле'],
- ['telegram','Telegram','Показывать ссылку на Telegram'],
- ['avatar','Аватар','Показывать фотографию из Telegram'],
+ ['telegram','Telegram','Показывать ник'],
+ ['avatar','Аватар','Показывать аватар'],
  ['joined','Дата регистрации','Показывать дату создания профиля'],
  ['achievements','Достижения','Показывать число достижений'],
  ['collections','Коллекции','Показывать прогресс коллекций'],
@@ -1306,8 +1295,8 @@ function priv47All(v){
 }
 function priv47Settings(){
  const rows=PRIV47_FIELDS.map(([key,title,desc])=>`<div class="privacy47-option"><label for="privacy47-${key}">${title}<small>${desc}</small></label><input type="checkbox" id="privacy47-${key}" ${priv47Show(key)?'checked':''} onchange="priv47Save('${key}',this.checked)" aria-label="Показывать ${title}"></div>`).join('');
- return box('Настройки приватности',`<p>Выбери, какие данные смогут видеть другие игроки, в публичном представлении. <b>По умолчанию открыто всё.</b></p><div class="between"><button onclick="priv47All(false)">Скрыть всё</button><button onclick="priv47All(true)">Показать всё</button></div>${rows}<p class="p46-note">Настройки синхронизируются вместе с прогрессом. В рейтинге учитываются видимость имени и опыта; при скрытом опыте ты не участвуешь в списке. Баланс, адреса, фотография и ссылка Telegram в рейтинг не передаются.</p><button class="primary" onclick="tab='Публичный вид';render()">Посмотреть профиль глазами других</button>`)
- +box('Настройки аккаунта',`<p class="p46-note">Изменение имени и Telegram-ника доступно в разделе «Профиль». Настройки приватности не скрывают информацию от тебя самого внутри игры.</p><button onclick="tab='Профиль';render()">Открыть мой профиль</button>`);
+ return box('Настройки приватности',`<p>Выбери, какие данные смогут видеть другие игроки, в публичном представлении. <b>По умолчанию открыто всё.</b></p><div class="between"><button onclick="priv47All(false)">Скрыть всё</button><button onclick="priv47All(true)">Показать всё</button></div>${rows}<p class="p46-note">Настройки синхронизируются вместе с прогрессом. В рейтинге учитываются видимость имени и опыта; при скрытом опыте ты не участвуешь в списке. Баланс, адреса и личные данные в рейтинг не передаются.</p><button class="primary" onclick="tab='Публичный вид';render()">Посмотреть профиль глазами других</button>`)
+ +box('Настройки аккаунта',`<p class="p46-note">Изменение имени и ника доступно в разделе «Профиль». Настройки приватности не скрывают информацию от тебя самого внутри игры.</p><button onclick="tab='Профиль';render()">Открыть мой профиль</button>`);
 }
 function priv47Preview(){
  const t=p46Totals(),opened=t.opened;
@@ -2563,7 +2552,7 @@ render();
 (function(){
  const ENDPOINT='https://duerixyhzapotoeclggz.supabase.co/functions/v1/game-leaderboard';
  const PUBLIC_KEY='sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV';
- UI149_GROUPS['Паспорт'].push(['Рейтинг игроков','★','Общий рейтинг Telegram']);
+ UI149_GROUPS['Паспорт'].push(['Рейтинг игроков','★','Общий рейтинг игроков']);
  let period='all',status='idle',entries=[],errorText='',requestId=0,myRank=null,rankHidden=false;
  const periods={week:'Неделя',month:'Месяц',all:'Всё время'};
  function initData(){
@@ -2586,7 +2575,7 @@ render();
  }
  async function load(){
   const auth=initData();const id=++requestId;
-  if(!auth){status='error';errorText='Рейтинг доступен при запуске игры из Telegram через кнопку мини-приложения. В обычном браузере Telegram не передаёт данные входа.';show();return}
+  if(!auth){status='error';errorText='Рейтинг игроков станет доступен после подключения аккаунтов Эд ПВЗ.';show();return}
   status='loading';show();
   try{
    const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY,'Authorization':'Bearer '+PUBLIC_KEY},body:JSON.stringify({action:'leaderboard',initData:auth,period,category:'overall'})});
@@ -3040,7 +3029,7 @@ tickHour=function(){
 UI149_GROUPS['ПВЗ'].push(['Счастье клиентов','','Клиенты и обслуживание'],['Расходники','','Запасы и чистота'],['Истории ПВЗ','','Юмор и достижения']);
 UI149_GROUPS['Бизнес']=UI149_GROUPS['Бизнес'].map(x=>x[0]==='Партнёры'?['Партнёры','','Площадки, сервисы и автоматы']:x);
 function switch210(value){const i=Number(value);if(!Number.isInteger(i)||i<0||i>=pvz34.branches.length)return;pvz34Switch(i)}
-function chat210(){const url='https://t.me/edholod';if(window.Telegram?.WebApp?.openTelegramLink)window.Telegram.WebApp.openTelegramLink(url);else window.open(url,'_blank','noopener,noreferrer')}
+function chat210(){alert('Связь с разработчиком будет добавлена в Эд ПВЗ.')}
 const render210Old=render;
 render=function(){
  init210();const r=render210Old.apply(this,arguments);const root=document.getElementById('content'),header=document.querySelector('main > header');if(!root)return r;
@@ -3303,7 +3292,7 @@ render=function(){const previousY=window.scrollY||0;const previousActive=documen
  if(tab==='Настройки')root.insertAdjacentHTML('beforeend',box('Движение интерфейса','<label><input type="checkbox" '+(company212().reducedMotion?'checked':'')+' onchange="toggleMotion212(this.checked)"> Уменьшить анимации</label>'));
  const bell=document.getElementById('notification-bell');if(bell){let tasks=document.getElementById('tasks212');if(!tasks){tasks=document.createElement('button');tasks.id='tasks212';tasks.className='bell';tasks.onclick=()=>ui149Go('Задания');bell.after(tasks)}const count=taskCount212();tasks.setAttribute('aria-label','Задания · '+count+' наград');tasks.innerHTML=icon212('tasks')+(count?'<span class="bell-count">'+count+'</span>':'');if(!document.getElementById('full212')){const full=document.createElement('button');full.id='full212';full.className='bell';full.setAttribute('aria-label','Полноэкранный режим');full.innerHTML=icon212('fullscreen');full.onclick=fullscreen212;tasks.after(full)}}
  const toolbar=document.getElementById('toolbar210');if(toolbar){const label=toolbar.querySelector('label');if(label){label.insertAdjacentHTML('beforeend','<div class="switch212"><button onclick="step212(-1)" '+(pvz34.active===0?'disabled':'')+' aria-label="Предыдущий ПВЗ">←</button><small>ПВЗ '+(pvz34.active+1)+' / '+pvz34.branches.length+' · свайп в верхней панели</small><button onclick="step212(1)" '+(pvz34.active===pvz34.branches.length-1?'disabled':'')+' aria-label="Следующий ПВЗ">→</button></div>')}}
- if(!document.getElementById('info212')){const footer=document.createElement('footer');footer.id='info212';footer.innerHTML='<a href="https://t.me/edholod_wbbot" target="_blank" rel="noopener noreferrer"><b>Всё о WB PVZ by @edholod</b><small>Бесплатные инструкции, обучение, новости и инструменты</small></a>';document.querySelector('main')?.appendChild(footer)}
+ if(!document.getElementById('info212')){const footer=document.createElement('footer');footer.id='info212';footer.innerHTML='<b>Эд ПВЗ</b><small>Инструменты, обучение и игра</small>';document.querySelector('main')?.appendChild(footer)}
  const version=document.getElementById('version210');if(version)version.textContent='WB PVZ TYCOON · v2.12';
  hud179Update();decorate212(document.querySelector('main'));decorate212(document.getElementById('tabs'));
  if(tab!==lastTab212){root.classList.remove('enter212');void root.offsetWidth;root.classList.add('enter212');lastTab212=tab}else{[...root.querySelectorAll('details')].forEach((d,i)=>{if(oldOpen.includes(i+':'+d.querySelector('summary')?.textContent))d.open=true});if(focusId&&fieldValue!==null){const input=document.getElementById(focusId);if(input){input.value=fieldValue;input.focus({preventScroll:true})}}window.scrollTo(0,previousY)}
