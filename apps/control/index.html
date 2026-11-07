@@ -117,7 +117,7 @@ body:has(.network-overview){background:#f8f8fa}
 .unclosed-notice[open]>summary{margin-bottom:10px}
 .vacant-notice>summary>.ui-icon:last-child{color:#987000}
 @media(max-width:420px){.unclosed-notice>summary{padding:12px}.notice-expanded{padding:0 12px 12px}}
-/* Notification panels: explicit hide prevents content overflow in Telegram WebViews. */
+/* Notification panels: explicit hide prevents content overflow in мобильных браузерах. */
 .unclosed-notice{display:block;min-width:0;max-width:100%;overflow:hidden;padding:0}
 .unclosed-notice .notice-toggle{display:flex;width:100%;min-width:0;min-height:64px;align-items:center;gap:10px;padding:13px 15px;text-align:left;background:transparent;border:0;border-radius:0;color:inherit;cursor:pointer;box-shadow:none;white-space:normal}
 .unclosed-notice .notice-toggle>div{flex:1;min-width:0;overflow-wrap:anywhere}
@@ -136,7 +136,7 @@ body:has(.network-overview){background:#f8f8fa}
 .topbar h2{margin-top:5px}
 @media(max-width:420px){.current-date{font-size:12px;max-width:calc(100vw - 100px)}}
 
-/* Calendar picker: custom modal, works in Telegram WebView on iOS and Android. */
+/* Calendar picker: custom modal, works in мобильном браузере on iOS and Android. */
 .date-field{display:grid;gap:7px}.date-field>label{font-size:13px;font-weight:600}
 .date-pick-trigger{width:100%;min-height:48px;display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid #dcd6df;border-radius:12px;background:#fff;color:#28242b;text-align:left;font:inherit}
 .date-pick-trigger .date-pick-label{flex:1}.date-pick-trigger .ui-icon{width:19px;height:19px}
