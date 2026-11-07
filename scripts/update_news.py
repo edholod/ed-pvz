@@ -55,6 +55,7 @@ def fetch(category, query):
     return result
 
 class TelegramParser(HTMLParser):
+    """Extract text, links and photo previews from public Telegram channel pages."""
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.items = []
@@ -62,12 +63,15 @@ class TelegramParser(HTMLParser):
         self.depth = 0
         self.text_depth = 0
         self.text_parts = []
+        self.links = []
+        self.active_link = None
+
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
         classes = a.get("class", "").split()
         if self.message is None:
             if tag == "div" and "tgme_widget_message_wrap" in classes:
-                self.message = {"url": "", "date": "", "text": ""}
+                self.message = {"url": "", "date": "", "text": "", "links": [], "image": ""}
                 self.depth = 1
             return
         if tag == "div":
@@ -78,23 +82,46 @@ class TelegramParser(HTMLParser):
             self.message["url"] = a.get("href", "")
         if tag == "time":
             self.message["date"] = a.get("datetime", "")
+        if not self.message["image"]:
+            if tag == "a" and ("tgme_widget_message_photo_wrap" in classes or "tgme_widget_message_video_thumb" in classes):
+                style = a.get("style", "")
+                match = re.search(r"background-image:\\s*url\\(['\\\"]?([^'\\\")]+)", style)
+                if match and match.group(1).startswith("https://"):
+                    self.message["image"] = match.group(1)
+            if tag == "img" and ("tgme_widget_message_photo" in classes or "tgme_widget_message_video_thumb" in classes):
+                src = a.get("src", "")
+                if src.startswith("https://"):
+                    self.message["image"] = src
+        if self.text_depth and tag == "a":
+            href = a.get("href", "")
+            if href.startswith(("https://", "http://", "tg://")):
+                self.active_link = {"url": href, "text": ""}
         if self.text_depth and tag == "br":
-            self.text_parts.append(" ")
+            self.text_parts.append("\\n")
+
     def handle_data(self, data):
         if self.message is not None and self.text_depth:
             self.text_parts.append(data)
+            if self.active_link is not None:
+                self.active_link["text"] += data
+
     def handle_endtag(self, tag):
         if self.message is None:
             return
+        if tag == "a" and self.active_link is not None:
+            self.active_link["text"] = self.active_link["text"].strip()
+            self.message["links"].append(self.active_link)
+            self.active_link = None
         if tag == "div":
             if self.text_depth == self.depth:
                 self.text_depth = 0
             self.depth -= 1
             if self.depth == 0:
-                self.message["text"] = re.sub(r"\s+", " ", "".join(self.text_parts)).strip()
+                self.message["text"] = re.sub(r"[ \\t]+", " ", "".join(self.text_parts)).strip()
                 self.items.append(self.message)
                 self.message = None
                 self.text_parts = []
+                self.active_link = None
 
 def fetch_telegram(channel, source_name):
     url = "https://t.me/s/" + channel
@@ -122,6 +149,8 @@ def fetch_telegram(channel, source_name):
             "category": "Каналы", "date": msg["date"],
             "channel": channel,
             "content": body,
+            "links": msg["links"],
+            "image": msg["image"],
         })
     if not result:
         raise ValueError("Публичные сообщения не обнаружены")
@@ -223,8 +252,10 @@ def main():
     previous_by_url = {canonical_url(x): x for x in old.get("items", []) if isinstance(x, dict)}
     for item in items:
         previous = previous_by_url.get(canonical_url(item))
-        if previous and not item.get("content") and previous.get("content"):
-            item["content"] = previous["content"]
+        if previous:
+            for field in ("content", "links", "image"):
+                if not item.get(field) and previous.get(field):
+                    item[field] = previous[field]
     unique = deduplicate(items)
     data = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(), "items": unique[:MAX_ITEMS], "errors": errors}
     OUT.parent.mkdir(parents=True, exist_ok=True)
