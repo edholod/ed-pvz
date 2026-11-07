@@ -1,5 +1,5 @@
 'use strict';
-// Standalone Ed PVZ calendar. No Telegram authentication, API calls or account switching.
+// Standalone Ed PVZ calendar. No external authentication, API calls or account switching.
 // Existing KEY and its saved data are intentionally left unchanged.
 function syncStatus(message){
  const status=document.getElementById('sync-status');
