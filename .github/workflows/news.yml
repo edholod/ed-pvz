@@ -1,5 +1,9 @@
 name: Update Wildberries news
 on:
+  push:
+    paths:
+      - '.github/workflows/news.yml'
+      - 'scripts/update_news.py'
   schedule:
     - cron: '17 */3 * * *'
   workflow_dispatch:
