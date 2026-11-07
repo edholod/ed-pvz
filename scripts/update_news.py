@@ -19,6 +19,7 @@ SOURCES = [
     ("API", "Wildberries API обновления"),
     ("ПВЗ", "site:seller.wildberries.ru ПВЗ Wildberries"),
     ("Компания", "site:rwb.ru Wildberries RWB"),
+    ("MAX", "site:max.ru/wb_pvz_news_manager Wildberries ПВЗ"),
 ]
 CHANNELS = [
     ("pvzhelp", "Библиотечка ПВЗ"),
