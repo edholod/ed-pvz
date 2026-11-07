@@ -121,6 +121,7 @@ def fetch_telegram(channel, source_name):
             "title": title, "url": link, "source": source_name,
             "category": "Каналы", "date": msg["date"],
             "channel": channel,
+            "content": body,
         })
     if not result:
         raise ValueError("Публичные сообщения не обнаружены")
@@ -218,6 +219,12 @@ def main():
         old["errors"] = errors or ["Источники временно недоступны"]
         OUT.write_text(json.dumps(old, ensure_ascii=False, indent=2), encoding="utf-8")
         return
+    # Keep previously collected readable text when a newer feed entry has only a headline.
+    previous_by_url = {canonical_url(x): x for x in old.get("items", []) if isinstance(x, dict)}
+    for item in items:
+        previous = previous_by_url.get(canonical_url(item))
+        if previous and not item.get("content") and previous.get("content"):
+            item["content"] = previous["content"]
     unique = deduplicate(items)
     data = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(), "items": unique[:MAX_ITEMS], "errors": errors}
     OUT.parent.mkdir(parents=True, exist_ok=True)
