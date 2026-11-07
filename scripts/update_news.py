@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Aggregate public RSS headlines without authentication or third-party dependencies."""
 import datetime as dt
+import difflib
 import email.utils
 from html.parser import HTMLParser
 import json
@@ -125,6 +126,74 @@ def fetch_telegram(channel, source_name):
         raise ValueError("Публичные сообщения не обнаружены")
     return result
 
+
+# Compare news across channels, RSS queries and publishers, not just identical URLs.
+# Conservative matching: short/generic headlines are not merged by fuzzy similarity.
+STOPWORDS = {"wildberries", "вайлдберриз", "вб", "wb", "rwb", "пвз", "для",
+             "что", "как", "это", "или", "при", "после", "уже", "все", "всех",
+             "новости", "новость", "компания", "компании", "сегодня"}
+def normalized_title(item):
+    text = str(item.get("title") or "").lower().replace("ё", "е")
+    text = re.sub(r"https?://\S+|@\w+|#\w+", " ", text)
+    text = re.sub(r"\s+[—–-]\s+[^—–-]{2,55}$", "", text)
+    return re.sub(r"\s+", " ", re.sub(r"[^а-яa-z0-9]+", " ", text)).strip()
+
+def keywords(title):
+    return {w for w in title.split() if len(w) >= 4 and w not in STOPWORDS}
+
+def canonical_url(item):
+    url = str(item.get("url") or "")
+    parts = urllib.parse.urlsplit(url)
+    host = parts.netloc.lower().removeprefix("www.")
+    path = parts.path.rstrip("/")
+    # Strip tracking parameters; keep meaningful identifiers.
+    query = urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
+    query = [(k, v) for k, v in query if not (k.startswith("utm_") or k in {"fbclid", "yclid", "gclid"})]
+    return urllib.parse.urlunsplit((parts.scheme.lower(), host, path,
+                                   urllib.parse.urlencode(query), ""))
+
+def within_days(a, b, days=7):
+    try:
+        da = dt.datetime.fromisoformat(str(a.get("date", "")).replace("Z", "+00:00"))
+        db = dt.datetime.fromisoformat(str(b.get("date", "")).replace("Z", "+00:00"))
+        if da.tzinfo is None: da = da.replace(tzinfo=dt.timezone.utc)
+        if db.tzinfo is None: db = db.replace(tzinfo=dt.timezone.utc)
+        return abs((da - db).total_seconds()) <= days * 86400
+    except (ValueError, TypeError):
+        return True
+
+def same_news(a, b):
+    if canonical_url(a) == canonical_url(b):
+        return True
+    left, right = normalized_title(a), normalized_title(b)
+    if not left or not right:
+        return False
+    if left == right:
+        return True
+    if not within_days(a, b):
+        return False
+    ka, kb = keywords(left), keywords(right)
+    if len(ka) < 4 or len(kb) < 4:
+        return False
+    common = len(ka & kb)
+    if common < 4:
+        return False
+    overlap = common / min(len(ka), len(kb))
+    similarity = difflib.SequenceMatcher(None, left, right, autojunk=False).ratio()
+    # A near-identical rewrite, or a shorter headline embedded in a longer one.
+    return (overlap >= .85 and similarity >= .78) or (overlap >= .92 and similarity >= .68)
+
+def deduplicate(items):
+    unique = []
+    # Preserve latest article, with a stable preference for a directly linked original.
+    for item in sorted(items, key=lambda x: x.get("date") or "", reverse=True):
+        if not item.get("title") or not item.get("url"):
+            continue
+        if any(same_news(item, previous) for previous in unique):
+            continue
+        unique.append(item)
+    return unique
+
 def main():
     old = {}
     if OUT.exists():
@@ -149,14 +218,7 @@ def main():
         old["errors"] = errors or ["Источники временно недоступны"]
         OUT.write_text(json.dumps(old, ensure_ascii=False, indent=2), encoding="utf-8")
         return
-    seen = set()
-    unique = []
-    for item in sorted(items, key=lambda x: x["date"], reverse=True):
-        key = item["url"] if item.get("channel") else re.sub(r"\W+", "", item["title"].lower())
-        if key in seen:
-            continue
-        seen.add(key)
-        unique.append(item)
+    unique = deduplicate(items)
     data = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(), "items": unique[:MAX_ITEMS], "errors": errors}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
