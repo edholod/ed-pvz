@@ -85,7 +85,7 @@ class TelegramParser(HTMLParser):
         if not self.message["image"]:
             if tag == "a" and ("tgme_widget_message_photo_wrap" in classes or "tgme_widget_message_video_thumb" in classes):
                 style = a.get("style", "")
-                match = re.search(r"background-image:\\s*url\\(['\\\"]?([^'\\\")]+)", style)
+                match = re.search(r"""background-image:\s*url\(['"]?(https://[^'")]+)""", style)
                 if match and match.group(1).startswith("https://"):
                     self.message["image"] = match.group(1)
             if tag == "img" and ("tgme_widget_message_photo" in classes or "tgme_widget_message_video_thumb" in classes):
@@ -97,7 +97,7 @@ class TelegramParser(HTMLParser):
             if href.startswith(("https://", "http://", "tg://")):
                 self.active_link = {"url": href, "text": ""}
         if self.text_depth and tag == "br":
-            self.text_parts.append("\\n")
+            self.text_parts.append("\n")
 
     def handle_data(self, data):
         if self.message is not None and self.text_depth:
