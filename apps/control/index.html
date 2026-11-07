@@ -1,0 +1,159 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><title>PVZ CONTROL by @edholod</title><style>:root{font-family:system-ui,-apple-system,sans-serif;color:#222;background:#fafafa}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;flex-direction:column}main{flex:1;width:100%}header{padding:18px 16px;background:#fff;border-bottom:1px solid #ddd}h1{font-size:20px;margin:0}small{color:#666}main{padding:16px;max-width:850px;margin:auto}button,input,select,textarea{font:inherit}button{touch-action:manipulation;min-height:40px;background:#fff;border:1px solid #ccc;border-radius:10px;padding:10px;cursor:pointer}button.primary{background:#222;color:#fff}nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}nav button.active{background:#222;color:#fff}.card{background:#ffffffd9;border:1px solid #ddd;border-radius:14px;padding:14px;margin:12px 0}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.grow{flex:1}input,select,textarea{padding:10px;border:1px solid #ccc;border-radius:9px;max-width:100%}label{display:block;font-size:13px;margin:9px 0 4px}.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.day{height:52px;min-width:0;padding:3px;display:flex;align-items:center;justify-content:center;font-weight:650;border-radius:8px;border:1px solid #ddd;background:white}.weekday{text-align:center;font-size:12px;padding:7px 0}.muted{color:#666;font-size:13px}.listitem{padding:10px 0;border-bottom:1px solid #eee}.pill{padding:3px 8px;border-radius:20px;background:#eee;font-size:12px}body.wb{background:#fce7f1}body.ozon{background:#e4efff}body.ym{background:#fff4cc}body.settings{background:#fafafa}@media(max-width:420px){nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}nav button{font-size:12px;padding:9px 3px}.row button{font-size:12px;padding:8px}.network-table th:first-child{min-width:90px}.card{padding:10px}.calendar{gap:3px}@media(hover:none){button{min-height:44px}}} @media(max-width:420px){main{padding:10px}.day{height:43px}header{padding:12px}}.network-scroll{overflow:auto;max-width:100%}.network-table{border-collapse:collapse;font-size:11px}.network-table td,.network-table th{border:1px solid #ddd;min-width:24px;text-align:center;padding:6px}.network-table th:first-child{position:sticky;left:0;background:#fff;min-width:130px;text-align:left;z-index:1}[hidden]{display:none!important}.app-footer{margin-top:auto;padding:22px 16px max(22px,env(safe-area-inset-bottom));text-align:center;font-size:13px}.app-footer a{color:#415675;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;font-weight:600}.app-footer svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}@media print{.app-footer,nav,button,header{display:none!important}body{background:#fff!important}.card{break-inside:avoid}} 
+.ui-icon{width:20px;height:20px;flex:none;vertical-align:middle}.topbar{display:flex;justify-content:space-between;align-items:center;margin:4px 0 18px}.topbar h2{margin:2px 0;font-size:26px;letter-spacing:-.7px}.eyebrow{font-size:11px;letter-spacing:.7px;text-transform:uppercase;color:#6b6470}.round-add{width:50px;height:50px;border-radius:16px;background:#242128;color:#fff;display:grid;place-items:center}.round-add .ui-icon{width:25px;height:25px}.main-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.main-nav button{min-width:0;display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center;padding:11px 2px;border-radius:14px;background:#ffffffa6;border-color:#ffffffb0;font-size:11px}.main-nav button.active{background:#27252a;color:#fff;border-color:#27252a}.point-switch{display:flex;gap:8px;margin:16px 0}.point-switch select{flex:1;min-width:0;width:100%;background:#fff;border-radius:13px;padding:13px}.point-switch button{display:grid;place-items:center;width:46px;border-radius:13px}.card{border:1px solid #ffffffc9;border-radius:20px;box-shadow:0 5px 22px #25202b0b;padding:17px;background:#ffffffce}.day{border-radius:10px!important;min-height:48px}.sheet-backdrop{position:fixed;inset:0;background:#15121b80;z-index:100}.sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,560px);max-height:90dvh;overflow:auto;z-index:101;background:#fff;border-radius:24px 24px 0 0;padding:22px 20px max(26px,env(safe-area-inset-bottom));box-shadow:0 -10px 40px #0002}.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.sheet-head h3{margin:0;font-size:22px}.sheet-close{border:0;background:#f2f2f4;border-radius:50%;width:42px;height:42px;display:grid;place-items:center}.form-field{display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:600;margin:0 0 16px}.form-field input,.form-field select,.form-field textarea{width:100%;padding:14px 12px;border-radius:12px;border:1px solid #dedee2;font-weight:400;background:#fff;min-height:49px}.wide{width:100%;padding:14px;font-weight:650;border-radius:13px}.action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.action-tile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;min-height:125px;padding:16px;border-radius:16px;background:#f8f8fa;border-color:#eee}.action-tile .ui-icon{width:24px;height:24px}.action-tile small{font-size:12px}.advanced-fields{margin:10px 0 18px;padding:14px;background:#f8f8fa;border-radius:14px}.advanced-fields summary{cursor:pointer;font-weight:600}.advanced-fields .form-field{margin-top:12px}.checkline{display:flex;align-items:center;gap:8px;margin-top:12px}.shift-list{margin-bottom:16px}.shift-line{display:flex;align-items:center;gap:8px;border-bottom:1px solid #eee;padding:10px 0}.shift-line small{display:block;color:#777}.shift-line button{font-size:12px}.person-dot{width:12px;height:12px;border-radius:50%;flex:none}.sheet-error{color:#b42318;font-size:13px;margin-top:12px}.sheet-error:empty{display:none}@media(max-width:420px){.main-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.main-nav button{font-size:10px}.card{padding:12px}.sheet{padding-left:16px;padding-right:16px}}
+
+/* v0.6: unified neutral surfaces and reliable iPhone keyboard layout */
+:root{color:#27242b;background:#faf8fb}body.wb{background:#fce7f1}body.ozon{background:#e4efff}body.ym{background:#fff4cc}
+header{background:#ffffffd9;border-color:#ffffff99}button{border-color:#ded8e0;color:#302d34}button.primary,.round-add,nav.main-nav button.active{background:#302b34;color:white;border-color:#302b34}
+.card{background:#ffffffdf;border:1px solid #ffffffee;box-shadow:0 4px 20px #332b3a0b}
+.calendar{gap:5px}.day{border:2.5px solid #cfcbd2;border-radius:10px!important;min-height:48px;height:54px;box-shadow:inset 0 0 0 1px #ffffff88;font-size:14px;padding:0;position:relative}
+.day:focus-visible{outline:3px solid #39313d;outline-offset:2px}.weekday{font-weight:600;color:#6d6671}
+.calendar-tools{margin-top:19px;border-top:1px solid #eae4ec;padding-top:16px}.tools-title{font-size:13px;font-weight:700;margin-bottom:10px;color:#5a525e}.tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tools-grid button{background:#faf9fb;border:1px solid #e5e0e7;font-size:12px;min-height:45px}
+.sheet{bottom:0;max-height:calc(100dvh - 12px);overscroll-behavior:contain;scroll-padding-bottom:130px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:max(32px,env(safe-area-inset-bottom));background:#fff}
+.sheet .form-field input,.sheet .form-field textarea,.sheet .form-field select{font-size:16px;scroll-margin:120px}
+.sheet-open{overflow:hidden}.selected-date{background:#f5f2f7;padding:12px;border-radius:12px;font-weight:650;text-align:center}
+@media(max-width:420px){.day{height:47px;min-height:47px}.calendar{gap:4px}.sheet{padding-top:18px}.tools-grid{gap:7px}}
+
+/* v0.7: unified restrained palette, clear calendar cells and staff legend */
+:root{--ink:#292a35;--line:#dcdde4;--surface:#ffffffeb}body{color:var(--ink)}.card{background:var(--surface);border:1px solid #e8e6ed;box-shadow:0 5px 20px #292a3510}.day{border-width:2.5px!important;border-style:solid!important;box-shadow:none;isolation:isolate}.day:active{transform:scale(.96)}.legend-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;overflow-wrap:anywhere}.legend-swatch{display:inline-block;width:16px;height:16px;flex:none;border:2.5px solid;border-radius:5px}.main-nav button.active,.round-add,button.primary{background:#292a35!important;color:white}.sheet{background:#fcfcfe}.action-tile{background:#f6f6f9;border-color:#e9e9ee}.form-field input:focus,.form-field select:focus{outline:2px solid #68729b;outline-offset:1px}@media(max-width:420px){.legend-grid{grid-template-columns:1fr 1fr}.day{height:48px}}
+.person-link{border:0;background:transparent;text-align:left;font-weight:700;text-decoration:underline;text-decoration-color:#b8b5c0;text-underline-offset:4px}.metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}.metric-grid>div{background:#f5f4f8;padding:14px;border-radius:13px;min-width:0}.metric-grid small{display:block;font-size:11px}.metric-grid strong{display:block;font-size:17px;margin-top:5px;overflow-wrap:anywhere}.review-warning{background:#fff0ed;color:#a42621;border-radius:12px;padding:12px;font-size:13px;font-weight:650}body.wb .metric-grid>div{background:#fff0f7}body.ozon .metric-grid>div{background:#eef4ff}body.ym .metric-grid>div{background:#fff8e3}
+ .ledger-box{margin-top:12px;padding:12px;border-radius:12px;background:#f3f4f8;border:1px solid #e0e1e8;display:grid;gap:6px;font-size:13px} .tools-grid button{overflow-wrap:anywhere} /* Calendar: 2.5px continuous outline on every date, colored by assigned staff */
+.calendar .day{border-width:2.5px!important;border-style:solid!important;background-clip:padding-box,border-box;box-shadow:none!important}
+
+/* Footer: application information below all page content; bot link is last. */
+.app-footer{width:100%;margin-top:auto;padding:28px 16px max(28px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;background:transparent}
+.app-meta{width:min(100%,850px);padding:17px 12px 0;border-top:1px solid rgba(70,65,75,.18);color:#575461}
+.app-meta-name{font-size:14px;font-weight:700;letter-spacing:.02em;color:#393641}
+.app-meta-name span{font-weight:500}
+.app-meta-status{margin-top:6px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.app-bot-link{margin-top:2px;padding-bottom:0}
+.app-bot-link a{color:#415675}
+@media print{.app-footer{display:none!important}}
+
+/* Marketplace dashboard: screenshot concept, powered by actual saved PVZ data */
+.market-dashboard{margin:0 0 16px;padding:16px;border:1px solid #e3e0e5;border-radius:22px;background:#ffffffee;box-shadow:0 5px 18px #292a3508}
+.market-hint{font-size:15px;margin:0 0 14px;font-weight:500;color:#333}
+.market-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.market-choice{position:relative;min-height:76px;border:1.5px solid transparent;border-radius:15px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;font-weight:800;font-size:16px;transition:border-color .15s ease,box-shadow .15s ease}
+.market-choice[data-market="wb"]{background:#fbe8f2;color:#c23880;border-color:#f2bbd5}
+.market-choice[data-market="ozon"]{background:#e3eeff;color:#326bc7;border-color:#afcfff}
+.market-choice[data-market="ym"]{background:#fff3cb;color:#8c6800;border-color:#f2d98e}
+.market-choice.selected[data-market="wb"]{border:2px solid #d52d7b}.market-choice.selected[data-market="ozon"]{border:2px solid #3674d6}.market-choice.selected[data-market="ym"]{border:2px solid #aa7e00}
+.market-tick{font-size:16px;line-height:1}.market-choice:focus-visible{outline:3px solid #30323d;outline-offset:3px}
+.market-panel{padding:16px;border-radius:18px;background:#fbe7f1;color:#28262a}.market-panel[data-market="ozon"]{background:#e4efff}.market-panel[data-market="ym"]{background:#fff4cc}
+.market-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 15px}.market-panel-heading>.market-store-icon{width:38px;height:38px;flex:none;color:#c23880}.market-panel[data-market="ozon"] .market-panel-heading>.market-store-icon{color:#326bc7}.market-panel[data-market="ym"] .market-panel-heading>.market-store-icon{color:#a47b00}
+.market-kicker{color:#bf3c7d;font-size:12px}.market-panel[data-market="ozon"] .market-kicker{color:#326bc7}.market-panel[data-market="ym"] .market-kicker{color:#977000}
+.market-panel-heading h3{font-size:23px;letter-spacing:-.5px;margin:4px 0 0;color:#242228}
+.dashboard-point{background:#fff;border-radius:15px;padding:13px 14px;margin-bottom:12px}.dashboard-point label{font-size:11px;color:#747079;margin:0 0 4px}.dashboard-point select{display:block;width:100%;max-width:100%;padding:4px 26px 4px 0;border:0;background:transparent;font-size:18px;font-weight:750;color:#27242b;min-height:36px;outline-offset:4px}
+.dashboard-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dashboard-stat{min-height:113px;background:#fff;border-radius:15px;padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}.dashboard-stat .ui-icon{width:20px;height:20px;color:#c23880}.market-panel[data-market="ozon"] .dashboard-stat .ui-icon{color:#326bc7}.market-panel[data-market="ym"] .dashboard-stat .ui-icon{color:#a47b00}.dashboard-stat strong{font-size:25px;line-height:1.1}.dashboard-stat span{font-size:12px;color:#69656b}
+.empty-dashboard p{color:#69656b}.market-dashboard+.main-nav{margin:0 0 14px}
+@media(max-width:420px){.market-dashboard{padding:12px;border-radius:18px}.market-choices{gap:7px}.market-choice{min-height:67px;font-size:13px;padding:8px 2px}.market-panel{padding:12px}.dashboard-stat{padding:12px;min-height:105px}.dashboard-stat strong{font-size:23px}}
+@media print{.market-choices,.market-dashboard{display:none!important}}
+
+/* Network dashboard: marketplace-coded point cards and consistent summary */
+body:has(.network-overview){background:#f8f8fa}
+.network-overview{background:#fff;border:1px solid #e6e3e8;border-radius:22px;padding:16px;margin:0 0 16px;box-shadow:0 5px 20px #27243509}
+.network-heading,.network-calendar-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.network-heading h3{font-size:23px;margin:4px 0 3px;letter-spacing:-.4px}.network-heading p{font-size:13px;color:#77717b;margin:0}.network-heading>.ui-icon{width:33px;height:33px;color:#77717b}
+.network-kicker{font-size:12px;font-weight:650;color:#a14d80}.network-filters{display:flex;gap:8px;overflow-x:auto;padding:15px 0 17px;scrollbar-width:thin}
+.network-filter{flex:0 0 auto;border-radius:12px;border:1.5px solid #e7e2e8;background:#fff;font-weight:650;font-size:13px;min-height:43px;padding:9px 12px}
+.network-filter.active{background:#f0edf3;border-color:#8e8794}.network-filter.active[data-market="wb"]{background:#fbe7f1;border-color:#ce3981;color:#b12872}.network-filter.active[data-market="ozon"]{background:#e4efff;border-color:#3674d6;color:#2862b8}.network-filter.active[data-market="ym"]{background:#fff4cc;border-color:#bc8d11;color:#846200}
+.network-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:15px}.network-summary>div{background:#f6f4f7;border:1px solid #eae7ed;border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:4px}.network-summary strong{font-size:24px}.network-summary span{font-size:12px;color:#6b6671}
+.network-point-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.network-point-card{border:1px solid #e5b8d2;background:#fbe7f1;border-radius:18px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px;color:#2b2630}
+.network-point-card[data-market="ozon"]{background:#e4efff;border-color:#bad0f2}.network-point-card[data-market="ym"]{background:#fff4cc;border-color:#f1da95}
+.network-point-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.network-point-kicker{font-size:12px;font-weight:650;color:#ba3379}.network-point-card[data-market="ozon"] .network-point-kicker{color:#326bc7}.network-point-card[data-market="ym"] .network-point-kicker{color:#8d6900}
+.network-point-head .market-store-icon{width:33px;height:33px;flex:none;color:#c23880}.network-point-card[data-market="ozon"] .market-store-icon{color:#326bc7}.network-point-card[data-market="ym"] .market-store-icon{color:#a47b00}
+.network-point-card h3{font-size:19px;margin:0;line-height:1.25;overflow-wrap:anywhere}.network-point-stats{display:flex;gap:6px;flex-wrap:wrap}.network-point-stats span{display:inline-flex;align-items:center;gap:5px;border-radius:9px;background:#ffffffb8;padding:7px 9px;font-size:12px}.network-point-stats .ui-icon{width:15px;height:15px}
+.network-open{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:auto;border:1px solid #ffffffc0;background:#fff;color:#3d3340;font-weight:700;border-radius:12px;min-height:44px}.network-open .ui-icon{width:16px;height:16px}
+.network-calendar{background:#fff!important;border-radius:20px!important}.network-calendar-title h3{margin:4px 0 0;font-size:18px}.network-month{display:flex;align-items:center;gap:7px}.network-month b{font-size:13px;text-align:center;min-width:125px}.network-month button{min-width:38px}
+.network-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:2px}.network-table td,.network-table th{border:0;background:#f4f3f6;border-radius:5px;min-width:27px;padding:7px 5px}.network-table td.network-busy{background:#f5d4e6;color:#823b68;font-weight:750}.network-table th:first-child{background:#fff;box-shadow:3px 0 7px #2222220d;min-width:150px}.network-table th:first-child button{font-size:12px;font-weight:700;border:0;text-align:left;min-height:36px;padding:6px;background:#fff}
+.network-empty{padding:24px;text-align:center;color:#77717b;background:#f7f6f8;border-radius:15px;grid-column:1/-1}
+@media(max-width:580px){.network-overview{padding:12px;border-radius:18px}.network-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.network-point-grid{grid-template-columns:1fr}.network-point-card{padding:14px}.network-heading h3{font-size:21px}.network-calendar-title{align-items:flex-start}.network-month{width:100%;justify-content:space-between}}
+@media print{.network-filters,.network-open{display:none!important}}
+
+/* Unified settings experience */
+.settings-page{max-width:900px;margin:0 auto;padding-bottom:20px;color:#28242c}
+.settings-hero{display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,#f9e7f1,#f5f2ff 70%,#eaf2ff);border:1px solid #edd8e6;border-radius:24px;padding:23px 25px;margin-bottom:16px}
+.settings-hero-icon{display:grid;place-items:center;width:62px;height:62px;flex:none;border-radius:19px;background:#fff9;color:#b43d7c;box-shadow:0 3px 12px #b43d7c13}
+.settings-hero-icon svg{width:32px;height:32px}.settings-overline{color:#a63c76;font-size:12px;font-weight:750;letter-spacing:.035em}
+.settings-hero h3{margin:3px 0;font-size:27px;line-height:1.15}.settings-hero p{margin:4px 0 0;color:#706a75;font-size:13px}
+.settings-search{display:flex;align-items:center;gap:10px;padding:0 15px;margin-bottom:16px;background:white;border:1px solid #e5dfe6;border-radius:15px;min-height:54px;box-shadow:0 2px 10px #22222205}
+.settings-search span{color:#8b7b88;display:flex}.settings-search input{border:0;outline:0;box-shadow:none;flex:1;min-width:0;width:100%;padding:12px 0;background:transparent;font-size:15px}
+.settings-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.settings-group{border:1px solid #ebe4eb;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 3px 12px #29202b08}
+.settings-group-head{display:flex;align-items:center;gap:12px;padding:18px 18px 14px;border-bottom:1px solid #f3edf2}
+.settings-group-icon{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:13px;background:#f8eaf2;color:#b33e79}
+.settings-group-icon svg{width:21px;height:21px}.settings-group-head h4{margin:0 0 3px;font-size:16px;line-height:1.25}.settings-group-head p{margin:0;color:#817a83;font-size:12px;line-height:1.4}
+.settings-group-body{padding:15px 18px 18px}.settings-group-body .form-field{margin:0}.settings-group-body input,.settings-group-body select{width:100%;max-width:100%}
+.settings-group-body button,.settings-file{border:1px solid #e8d7e2;border-radius:12px;background:#fcf7fa;color:#763b60;font-weight:650;min-height:42px;padding:9px 12px;text-align:center}
+.settings-group-body button.primary{background:#a93978;color:#fff;border-color:#a93978}.settings-tip{font-size:12px;color:#746e79;line-height:1.5;margin:9px 0 13px}
+.settings-secondary{display:inline-flex;align-items:center;gap:7px}.settings-secondary svg{width:16px;height:16px}
+.settings-actions{display:flex;flex-wrap:wrap;gap:8px}.settings-actions button,.settings-file{font-size:12px;cursor:pointer}
+.settings-point-list{display:grid;gap:9px;margin-bottom:12px}.settings-point-row{display:flex;align-items:center;gap:9px;border:1px solid #f1eaf0;border-radius:13px;padding:9px}
+.settings-point-row strong{font-size:13px;display:block;overflow-wrap:anywhere}.settings-point-row small{display:block;color:#817985;font-size:11px}.settings-point-row button{font-size:12px;min-height:36px}
+.settings-market-dot{width:11px;height:28px;border-radius:7px;flex:none;background:#c43c80}.settings-market-dot.ozon{background:#3776d9}.settings-market-dot.ym{background:#edaf1d}
+.settings-status{display:flex;gap:11px;align-items:flex-start}.settings-status-dot{margin-top:5px;width:10px;height:10px;background:#dfa52b;border-radius:50%;flex:none}.settings-status strong{display:block;font-size:13px}.settings-status small{display:block;color:#7a7480;font-size:12px;line-height:1.5;margin-top:4px}
+.settings-notice{color:#3f805d;background:#eaf7ef;border-radius:12px;padding:12px;font-size:13px}.settings-no-results{text-align:center;padding:30px;color:#817985}.settings-page [hidden]{display:none!important}
+@media(max-width:650px){.settings-groups{grid-template-columns:1fr}.settings-hero{padding:18px 16px;border-radius:19px}.settings-hero-icon{width:50px;height:50px;border-radius:15px}.settings-hero h3{font-size:23px}.settings-group-head{padding:15px}.settings-group-body{padding:14px 15px 17px}}
+@media print{.settings-page{display:none}}
+
+/* Unclosed past shifts: visible alert and accessible direct date navigation */
+.unclosed-notice{background:#fff9f4;border:1.5px solid #eab89b;border-radius:18px;padding:15px;margin:12px 0 16px;color:#543324;box-shadow:0 4px 18px #6c39100a}
+.unclosed-heading{display:flex;align-items:flex-start;gap:11px}.unclosed-heading>.ui-icon{color:#bb6034;width:24px;height:24px;margin-top:2px}.unclosed-heading strong{font-size:16px}.unclosed-heading p{margin:4px 0 10px;font-size:13px;color:#79513d}
+.unclosed-list{display:grid;gap:7px}.unclosed-item{display:flex;align-items:center;gap:11px;width:100%;min-height:49px;background:#fff;border:1px solid #efddcf;border-radius:12px;padding:9px 11px;text-align:left;color:#382e2a}.unclosed-item>.ui-icon{width:17px;height:17px;margin-left:auto;color:#a36d51}.unclosed-date{font-weight:700;white-space:nowrap;font-size:13px}.unclosed-person{font-size:13px;min-width:0;overflow-wrap:anywhere}.unclosed-person small{display:block;color:#826f65;margin-top:2px}.unclosed-help,.unclosed-more{font-size:12px;color:#82604d;margin:10px 0 0}
+@media(max-width:420px){.unclosed-notice{padding:12px}.unclosed-item{gap:8px}.unclosed-date{font-size:12px}}
+@media print{.unclosed-notice{display:none!important}}
+.vacant-notice{background:#fffdf1;border-color:#e4ce80}.vacant-notice .unclosed-heading>.ui-icon{color:#987000}.vacant-notice .unclosed-item{border-color:#e9e0b6}.vacant-notice .unclosed-help{color:#736632}
+/* Compact, accessible notification accordions. Closed by default. */
+.unclosed-notice{padding:0;overflow:hidden}
+.unclosed-notice>summary{list-style:none;cursor:pointer;padding:14px 15px;align-items:center;min-height:66px;user-select:none}
+.unclosed-notice>summary::-webkit-details-marker{display:none}
+.unclosed-notice>summary::marker{content:''}
+.unclosed-notice>summary>div{flex:1;min-width:0}
+.unclosed-notice>summary p{margin-bottom:0}
+.unclosed-notice>summary>.ui-icon:last-child{margin:0 0 0 auto;flex:none;width:18px;height:18px;color:#92664e;transition:transform .18s ease}
+.unclosed-notice[open]>summary>.ui-icon:last-child{transform:rotate(90deg)}
+.unclosed-notice>summary:focus-visible{outline:3px solid #a76e46;outline-offset:-4px;border-radius:16px}
+.notice-expanded{padding:0 15px 15px}
+.unclosed-notice[open]>summary{margin-bottom:10px}
+.vacant-notice>summary>.ui-icon:last-child{color:#987000}
+@media(max-width:420px){.unclosed-notice>summary{padding:12px}.notice-expanded{padding:0 12px 12px}}
+/* Notification panels: explicit hide prevents content overflow in Telegram WebViews. */
+.unclosed-notice{display:block;min-width:0;max-width:100%;overflow:hidden;padding:0}
+.unclosed-notice .notice-toggle{display:flex;width:100%;min-width:0;min-height:64px;align-items:center;gap:10px;padding:13px 15px;text-align:left;background:transparent;border:0;border-radius:0;color:inherit;cursor:pointer;box-shadow:none;white-space:normal}
+.unclosed-notice .notice-toggle>div{flex:1;min-width:0;overflow-wrap:anywhere}
+.unclosed-notice .notice-toggle strong{display:block;line-height:1.35}
+.unclosed-notice .notice-toggle p{margin:4px 0 0;line-height:1.35;overflow-wrap:anywhere}
+.unclosed-notice .notice-toggle>.ui-icon{flex-shrink:0}
+.unclosed-notice .notice-toggle>.ui-icon:last-child{margin-left:auto;transition:transform .2s}
+.unclosed-notice .notice-toggle[aria-expanded="true"]>.ui-icon:last-child{transform:rotate(90deg)}
+.unclosed-notice .notice-expanded[hidden]{display:none!important;visibility:hidden!important}
+.unclosed-notice .notice-expanded{max-width:100%;min-width:0;padding:0 15px 15px}
+.unclosed-notice .unclosed-item{min-width:0;max-width:100%}
+.unclosed-notice .unclosed-person{flex:1;min-width:0}
+@media(max-width:420px){.unclosed-notice .notice-toggle{padding:12px;gap:8px}.unclosed-notice .notice-expanded{padding:0 12px 12px}}
+/* Date shown above the active section; responsive and marketplace-neutral */
+.current-date{display:block;margin-top:7px;color:#6d6370;font-size:13px;line-height:1.4;font-weight:550;text-transform:capitalize;font-variant-numeric:tabular-nums}
+.topbar h2{margin-top:5px}
+@media(max-width:420px){.current-date{font-size:12px;max-width:calc(100vw - 100px)}}
+
+/* Calendar picker: custom modal, works in Telegram WebView on iOS and Android. */
+.date-field{display:grid;gap:7px}.date-field>label{font-size:13px;font-weight:600}
+.date-pick-trigger{width:100%;min-height:48px;display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid #dcd6df;border-radius:12px;background:#fff;color:#28242b;text-align:left;font:inherit}
+.date-pick-trigger .date-pick-label{flex:1}.date-pick-trigger .ui-icon{width:19px;height:19px}
+.date-picker-open{overflow:hidden}#date-picker-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px}
+.date-picker-backdrop{position:absolute;inset:0;background:rgba(21,17,25,.55)}
+.date-picker-panel{position:relative;width:min(100%,370px);max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:#242129;border-radius:20px;padding:18px;box-shadow:0 16px 55px #0003}
+.date-picker-head,.date-picker-month,.date-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.date-picker-head{margin-bottom:16px;font-size:18px}.date-picker-head button,.date-picker-month button{border:0;background:#f3f0f5;border-radius:10px;min-width:38px;min-height:38px;font-size:24px;color:#332c36}
+.date-picker-month{margin-bottom:12px}.date-picker-month strong{text-transform:capitalize}
+.date-picker-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+.date-picker-weekday{font-size:11px;color:#756e7a;padding:9px 0}
+.date-picker-day{border:0;border-radius:10px;background:transparent;aspect-ratio:1;min-width:0;padding:0;color:#242129;font-size:14px}
+.date-picker-day.today{outline:1px solid #a57d9c;outline-offset:-2px}.date-picker-day.selected{background:#ab4085;color:#fff;font-weight:700}
+.date-picker-footer{justify-content:flex-end;margin-top:16px}.date-picker-footer button{border:1px solid #e4dce4;background:#f8f5f8;border-radius:10px;padding:10px 14px;color:#332c36}
+
+
+html{overflow-x:hidden}body{padding-bottom:env(safe-area-inset-bottom)}input,select,textarea{font-size:16px}.row>*{min-width:0}.card,.listitem,.settings-section{overflow-wrap:anywhere}.sync-panel{margin:12px 0;padding:14px;border:1px solid #ddd;border-radius:14px;background:#fff}.sync-panel button{margin:5px 5px 0 0}.sync-panel p{font-size:13px;line-height:1.5}.sync-warning{color:#8a3900}
+.connection-banner{padding:10px 16px;font-size:13px;line-height:1.4;background:#e8f2e9;overflow-wrap:anywhere}.connection-local{background:#fff4cc;color:#654b00}.sheet{overflow-anchor:none}.sheet-head{position:sticky;top:-1px;background:#fcfcfe;z-index:2;padding-bottom:8px}body.sheet-open{overscroll-behavior:none}
+@media(max-width:600px){.sheet{border-radius:16px;padding-top:16px;scroll-padding-top:70px}.sheet-head{top:0;margin-bottom:12px}.sheet-open .sheet-backdrop{touch-action:none}}
+</style></head><body><main id="app"></main><footer class="app-footer"><div class="app-meta" aria-label="Информация о приложении"><div class="app-meta-name">PVZ CONTROL <span>by @edholod</span></div><div class="app-meta-status">v1.4.4 · <span id="sync-status">Проверка подключения…</span></div></div><div class="app-bot-link"><a href="https://t.me/edholod_wbbot" target="_blank" rel="noopener noreferrer" aria-label="Открыть Telegram-бот Всё о WB PVZ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4Z"/></svg>Всё о WB PVZ · @edholod_wbbot</a></div></footer><div id="sheet-root"></div><script async src="https://telegram.org/js/telegram-web-app.js"></script><script src="app.js?v=1.4.4"></script><script src="sync.js?v=1.4.4"></script></body></html>
