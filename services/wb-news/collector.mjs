@@ -40,11 +40,11 @@ export class Collector {
   }
   async finishControl() {
     this.controlUntil = 0;
-    if (this.state === 'blocked') this.state = 'starting';
+    if (this.state === 'blocked' || this.state === 'authentication_required') this.state = 'starting';
     return this.collect();
   }
   async collect() {
-    if (this.running || this.controlUntil > Date.now() || this.state === 'blocked') return;
+    if (this.running || this.controlUntil > Date.now() || this.state === 'blocked' || this.state === 'authentication_required') return;
     this.running = true;
     this.lastAttempt = new Date().toISOString();
     let received = [];

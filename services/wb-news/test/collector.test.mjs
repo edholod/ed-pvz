@@ -13,3 +13,8 @@ test('login expiry preserves cached news and reports reauthentication',async t=>
 test('one section failure preserves existing entries',async t=>{const {collector,config}=await fixture(t);await collector.collect();config.failEmployees=true;await collector.collect();assert.equal(collector.state,'partial');assert.equal(collector.feed.items.length,1);});
 test('human verification blocks subsequent automatic attempts',async t=>{const {collector,config}=await fixture(t);config.blocked=true;await collector.collect();assert.equal(collector.state,'blocked');const before=collector.lastAttempt;await collector.collect();assert.equal(collector.lastAttempt,before);});
 test('manual control pauses scheduled collection',async t=>{const {collector}=await fixture(t);collector.controlUntil=Date.now()+60000;await collector.collect();assert.equal(collector.lastAttempt,null);});
+test('expired login stops scheduled retries until the owner finishes signing in',async t=>{
+  const {collector,config}=await fixture(t);config.login=true;await collector.collect();
+  const before=collector.lastAttempt;await collector.collect();assert.equal(collector.lastAttempt,before);
+  config.login=false;await collector.finishControl();assert.equal(collector.state,'ok');
+});
