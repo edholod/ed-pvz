@@ -1,0 +1,7 @@
+node_modules
+.git
+test
+*.log
+state
+.env
+browser

@@ -1,0 +1,38 @@
+name: Check WB My PVZ connector
+on:
+  push:
+    paths:
+      - 'services/wb-news/**'
+      - 'apps/news/wb-news.js'
+      - 'render-wb-news.yaml'
+      - '.github/workflows/wb-news-checks.yml'
+  pull_request:
+    paths:
+      - 'services/wb-news/**'
+      - 'apps/news/wb-news.js'
+      - 'render-wb-news.yaml'
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+        working-directory: services/wb-news
+      - run: node --check apps/news/wb-news.js
+      - name: Build cloud connector image
+        run: docker build -t ed-pvz-wb-news services/wb-news
+      - name: Verify container startup and HTTP health
+        run: |
+          docker run -d --name wb-news-smoke -e START_PAUSED=true -e ADMIN_TOKEN=ci-synthetic-admin-key-do-not-use-in-production -p 127.0.0.1:3000:3000 ed-pvz-wb-news
+          trap 'docker rm -f wb-news-smoke' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/api/status | python3 -c 'import sys,json; assert json.load(sys.stdin)["state"] == "authentication_required"' 2>/dev/null; then exit 0; fi
+            sleep 2
+          done
+          docker logs wb-news-smoke
+          exit 1

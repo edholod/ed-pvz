@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: ed-pvz-wb-news
+    runtime: docker
+    plan: 0.5c-512mb
+    region: frankfurt
+    dockerfilePath: ./services/wb-news/Dockerfile
+    dockerContext: ./services/wb-news
+    autoDeployTrigger: "off"
+    healthCheckPath: /healthz
+    disk:
+      name: wb-session
+      mountPath: /var/lib/ed-pvz
+      sizeGB: 1
+    envVars:
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: PUBLISH_APPROVED
+        value: "true"
+      - key: POLL_SECONDS
+        value: "900"
+      - key: DATA_DIR
+        value: /var/lib/ed-pvz
