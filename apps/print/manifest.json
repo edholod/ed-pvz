@@ -1,0 +1,98 @@
+[
+  {
+    "title": "QR-код клиентской поддержки",
+    "category": "QR-коды и наклейки",
+    "file": "files/qr-support.pdf",
+    "size": 945252
+  },
+  {
+    "title": "QR-коды пакетов для клиентов",
+    "category": "QR-коды и наклейки",
+    "file": "files/qr-bags.jpg",
+    "size": 174026
+  },
+  {
+    "title": "QR-коды для выбора сейф-пакетов",
+    "category": "Переупаковка и сейф-пакеты",
+    "file": "files/qr-repacking.jpg",
+    "size": 197359
+  },
+  {
+    "title": "Пополните WB Кошелёк",
+    "category": "Памятки для клиентов",
+    "file": "files/wb-wallet.pdf",
+    "size": 1691105
+  },
+  {
+    "title": "Детские раскраски",
+    "category": "Для детей",
+    "file": "files/coloring.pdf",
+    "size": 1207262
+  },
+  {
+    "title": "Ищем лучших курьеров",
+    "category": "Объявления и вакансии",
+    "file": "files/couriers.pdf",
+    "size": 975606
+  },
+  {
+    "title": "Рекомендации по примерке товаров",
+    "category": "Памятки для клиентов",
+    "file": "files/fitting.pdf",
+    "size": 2767627
+  },
+  {
+    "title": "Наклейки в примерочную «Отличный вкус»",
+    "category": "Наклейки для примерочных",
+    "file": "files/great-taste.pdf",
+    "size": 3774468
+  },
+  {
+    "title": "Отправление посылок WB Track",
+    "category": "WB Track",
+    "file": "files/wb-track.pdf",
+    "size": 837893
+  },
+  {
+    "title": "Проверка товара перед получением",
+    "category": "Памятки для клиентов",
+    "file": "files/check-before.pdf",
+    "size": 528964
+  },
+  {
+    "title": "Горячая линия — складская зона",
+    "category": "Обязательные материалы для ПВЗ",
+    "file": "files/hotline.pdf",
+    "size": 299532
+  },
+  {
+    "title": "Оцените товар и ПВЗ",
+    "category": "Наклейки для примерочных",
+    "file": "files/rate-product.pdf",
+    "size": 1819117
+  },
+  {
+    "title": "Не забудьте оценить наш сервис",
+    "category": "Наклейки и объявления",
+    "file": "files/rate-service.pdf",
+    "size": 4905212
+  },
+  {
+    "title": "Флаер для поиска менеджеров",
+    "category": "Объявления и вакансии",
+    "file": "files/manager-hiring.pdf",
+    "size": 970459
+  },
+  {
+    "title": "Флаер «Новый пункт выдачи»",
+    "category": "Реклама и продвижение ПВЗ",
+    "file": "files/new-pvz.pdf",
+    "size": 2713220
+  },
+  {
+    "title": "Флаер «Чаевые»",
+    "category": "Памятки для клиентов",
+    "file": "files/tips.pdf",
+    "size": 7570018
+  }
+]
