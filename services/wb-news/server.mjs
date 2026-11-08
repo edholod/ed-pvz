@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {Collector} from './collector.mjs';
 import {encodeSession} from './session.mjs';
+import {manualInput} from './manual-input.mjs';
 
 const COOKIE = 'ed_wb_admin';
 const SESSION_MS = 8 * 3600000;
@@ -20,6 +21,8 @@ export function createServer({collector, adminToken, publish = false, secure = t
   const sessions = new Map();
   const sockets = new Set();
   const attempts = new Map();
+  let takingScreenshot = false;
+  let enteringText = false;
   const authorized = req => {
     const token = cookie(req), until = sessions.get(token);
     if (!until || until <= Date.now()) { sessions.delete(token); return false; }
@@ -80,9 +83,27 @@ export function createServer({collector, adminToken, publish = false, secure = t
         upstream.on('error', () => { if (!res.headersSent) send(502, {error: 'desktop_unavailable'}); else res.destroy(); });
         req.pipe(upstream); return;
       }
-      if (pathname === '/admin/status' || (pathname.startsWith('/admin/') && req.method === 'POST')) {
+      if (pathname === '/admin/status' || pathname === '/admin/screen' || (pathname.startsWith('/admin/') && req.method === 'POST')) {
         if (!authorized(req)) return send(401, {error: 'authentication_required'});
         if (req.method === 'GET' && pathname === '/admin/status') return send(200, collector.status());
+        if (req.method === 'GET' && pathname === '/admin/screen') {
+          if(collector.controlUntil<=Date.now() || !collector.page)return send(409,{error:'control_closed'});
+          if(takingScreenshot)return send(429,{error:'screen_busy'});
+          takingScreenshot=true;
+          try{const bytes=await collector.page.screenshot({type:'jpeg',quality:35,timeout:20000});res.writeHead(200,{'Content-Type':'image/jpeg'});res.end(bytes)}
+          finally{takingScreenshot=false}
+          return;
+        }
+        if (req.method === 'POST' && pathname === '/admin/input') {
+          if(collector.controlUntil<=Date.now() || !collector.page || collector.running)return send(409,{error:'control_closed'});
+          if(enteringText)return send(409,{error:'input_busy'});
+          let body='';for await(const chunk of req){body+=chunk;if(body.length>4096)return send(413,{error:'request_too_large'})}
+          let action;try{action=JSON.parse(body)}catch{return send(400,{error:'invalid_action'})}
+          enteringText=true;
+          try{await manualInput(collector.page,action);return send(200,{ok:true})}
+          catch{return send(400,{error:'input_failed'})}
+          finally{enteringText=false}
+        }
         if (req.method === 'POST' && pathname === '/admin/export-session') {
           if (collector.running || collector.controlUntil > Date.now()) return send(409, {error: 'finish_login_first'});
           if (!['ok','partial'].includes(collector.state) || !collector.context) return send(409, {error: 'sign_in_to_wb_first'});
@@ -105,7 +126,7 @@ export function createServer({collector, adminToken, publish = false, secure = t
           return send(200, {ok: true});
         }
       }
-      const assets = {'/': ['index.html', 'text/html'], '/admin': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript']};
+      const assets = {'/': ['index.html', 'text/html'], '/admin': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/admin/browser': ['browser.html','text/html'], '/browser.js': ['browser.js','text/javascript']};
       if (req.method === 'GET' && assets[pathname]) {
         const [name, type] = assets[pathname]; return send(200, await readFile(new URL(name, root), 'utf8'), type);
       }

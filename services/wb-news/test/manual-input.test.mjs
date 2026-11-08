@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {manualInput} from '../manual-input.mjs';
+function fixture(){const calls=[];const page={url:()=> 'https://my-pvz.wb.ru/login',viewportSize:()=>({width:960,height:640}),mouse:{click:async(x,y)=>calls.push(['click',x,y])},keyboard:{press:async key=>calls.push(['key',key]),type:async(text,options)=>calls.push(['text',text,options])}};return {page,calls}}
+test('manual text sends all characters in one request after clearing selected field',async()=>{const {page,calls}=fixture();await manualInput(page,{type:'text',text:'ed12',replace:true});assert.deepEqual(calls.slice(0,2),[['key','ControlOrMeta+A'],['key','Backspace']]);assert.equal(calls[2][1],'ed12')});
+test('manual controls only accept bounded page coordinates and a short key whitelist',async()=>{const {page,calls}=fixture();await manualInput(page,{type:'click',x:300,y:200});await manualInput(page,{type:'key',key:'Enter'});assert.equal(calls.length,2);await assert.rejects(()=>manualInput(page,{type:'click',x:-1,y:20}));await assert.rejects(()=>manualInput(page,{type:'key',key:'Control+L'}));await assert.rejects(()=>manualInput(page,{type:'text',text:'a\nb'}))});
+test('manual input never sends text to an unexpected origin',async()=>{const {page,calls}=fixture();page.url=()=> 'https://example.com';await assert.rejects(()=>manualInput(page,{type:'text',text:'ed12'}));assert.equal(calls.length,0)});

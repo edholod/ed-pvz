@@ -44,3 +44,13 @@ test('health is not presented as WB authentication success',async t=>{
   assert.equal((await (await fetch(url+'/api/status')).json()).state,'authentication_required');
 });
 test('weak admin configuration fails closed',()=>assert.throws(()=>createServer({collector:{},adminToken:'short'})));
+test('manual screenshot and input are inaccessible before authentication',async t=>{
+  const {url}=await fixture(t);assert.equal((await fetch(url+'/admin/screen')).status,401);
+  assert.equal((await fetch(url+'/admin/input',{method:'POST',headers:{origin:url,'content-type':'application/json'},body:JSON.stringify({type:'text',text:'ed12'})})).status,401);
+});
+test('manual input remains blocked outside an explicitly opened control session',async t=>{
+  const {url}=await fixture(t);const response=await fetch(url+'/admin/login',{method:'POST',headers:{origin:url},body:new URLSearchParams({token})});
+  const cookie=response.headers.get('set-cookie').split(';')[0];
+  assert.equal((await fetch(url+'/admin/screen',{headers:{cookie}})).status,409);
+  assert.equal((await fetch(url+'/admin/input',{method:'POST',headers:{origin:url,cookie,'content-type':'application/json'},body:JSON.stringify({type:'text',text:'ed12'})})).status,409);
+});
