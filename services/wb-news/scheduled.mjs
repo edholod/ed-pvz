@@ -37,5 +37,5 @@ export async function scheduled({secret=process.env.WB_SESSION, chromium, output
 }
 if(process.argv[1]===fileURLToPath(import.meta.url)){
   const state=await scheduled();console.log('WB collection state:',state);
-  if(['unavailable','blocked','invalid_session','authentication_required'].includes(state))process.exitCode=2;
+  if(['unavailable','access_denied','blocked','invalid_session','authentication_required'].includes(state))process.exitCode=2;
 }

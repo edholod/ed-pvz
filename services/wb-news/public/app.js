@@ -1,6 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
-const labels = {starting:'Запуск',ok:'Сбор работает',partial:'Один раздел временно недоступен',unavailable:'Источник временно недоступен',authentication_required:'Нужно войти в WB',manual_login:'Ожидается завершение входа',blocked:'WB ограничил доступ. Автоматический сбор остановлен',browser_failed:'Браузер не запущен — проверьте состояние сервера'};
+const labels = {starting:'Запуск',ok:'Сбор работает',partial:'Один раздел временно недоступен',access_denied:'WB сообщает «Раздел недоступен». Проверьте выбранную организацию и её доступ к новостям.',unavailable:'Источник временно недоступен',authentication_required:'Нужно войти в WB',manual_login:'Ожидается завершение входа',blocked:'WB ограничил доступ. Автоматический сбор остановлен',browser_failed:'Браузер не запущен — проверьте состояние сервера'};
 async function request(url, data) {
   const response = await fetch(url, data === undefined ? {} : {method:'POST',body:new URLSearchParams(data)});
   const result = await response.json();

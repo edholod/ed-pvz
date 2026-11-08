@@ -63,6 +63,10 @@ export class Collector {
           // Detect rendered safeguards; never evade them or retry around a block.
           const block = await this.page.getByText(/verify you are human|checking your browser|unusual traffic|automated traffic|подтвердите.{0,30}(человек|робот)/i).count();
           if (block) { this.state = 'blocked'; this.sections[section] = 'blocked'; break; }
+          if (await this.page.getByText(/^Раздел недоступен$/i).count()) {
+            this.sections[section] = 'access_denied';
+            continue;
+          }
           await this.page.locator('h1').first().waitFor({state: 'attached', timeout: 20000});
           const cards = normalizeCards(await this.page.evaluate(extractCards), section);
           if (!cards.length) { this.sections[section] = 'layout_changed'; continue; }
@@ -79,7 +83,7 @@ export class Collector {
         this.feed = next;
       }
       if (this.state !== 'blocked' && this.state !== 'authentication_required') {
-        this.state = successes === 2 ? 'ok' : successes ? 'partial' : 'unavailable';
+        this.state = successes === 2 ? 'ok' : successes ? 'partial' : Object.values(this.sections).includes('access_denied') ? 'access_denied' : 'unavailable';
       }
       if (successes === 2) this.state = 'ok';
     } finally { this.running = false; }
