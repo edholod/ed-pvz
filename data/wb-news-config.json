@@ -1,5 +1,6 @@
 {
-  "enabled": false,
+  "enabled": true,
+  "mode": "github-actions",
   "endpoint": "",
-  "pollMinutes": 15
+  "pollMinutes": 30
 }

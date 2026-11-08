@@ -1,0 +1,11 @@
+{
+  "updated": null,
+  "items": [],
+  "source": "my-pvz",
+  "status": {
+    "state": "missing_session",
+    "sessionRevision": null,
+    "checked": "2026-11-08T14:24:15.533Z",
+    "intervalMinutes": 30
+  }
+}

@@ -24,3 +24,7 @@ test('expired login still shows cache with a clear reauthentication message',asy
 test('server outage returns no fake news and does not throw into the public feed',async()=>{
   const load=create(async()=>{throw Error('offline')});assert.equal((await load()).items.length,0);
 });
+test('GitHub Actions mode loads generated news without an external server',async()=>{
+  let calls=0;const load=create(async(url)=>{if(++calls===1)return ok({enabled:true,mode:'github-actions'});assert.match(url,/raw\.githubusercontent\.com\/edholod\/ed-pvz\/main\/data\/wb-news\.json/);return ok({items:[],status:{state:'missing_session',intervalMinutes:30}})});
+  assert.match((await load()).message,/требуется добавить/);assert.equal(calls,2);
+});

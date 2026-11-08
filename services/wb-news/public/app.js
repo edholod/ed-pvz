@@ -19,5 +19,11 @@ function act(fn) {return async event => {event?.preventDefault();$('message').te
 $('login').onsubmit = act(async()=>{await request('/admin/login',{token:$('token').value});$('token').value=''});
 $('begin').onclick = act(()=>request('/admin/begin',{}));
 $('finish').onclick = act(()=>request('/admin/finish',{}));
+$('export').onclick = act(async()=>{
+  const response=await fetch('/admin/export-session',{method:'POST'});
+  if(!response.ok)throw Error('Сначала завершите вход в WB и дождитесь успешного получения новостей.');
+  const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='WB_SESSION.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
 $('logout').onclick = act(()=>request('/admin/logout',{}));
 refresh();setInterval(refresh,10000);

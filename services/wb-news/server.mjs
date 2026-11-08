@@ -3,6 +3,7 @@ import {randomBytes, timingSafeEqual} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {Collector} from './collector.mjs';
+import {encodeSession} from './session.mjs';
 
 const COOKIE = 'ed_wb_admin';
 const SESSION_MS = 8 * 3600000;
@@ -82,6 +83,13 @@ export function createServer({collector, adminToken, publish = false, secure = t
       if (pathname === '/admin/status' || (pathname.startsWith('/admin/') && req.method === 'POST')) {
         if (!authorized(req)) return send(401, {error: 'authentication_required'});
         if (req.method === 'GET' && pathname === '/admin/status') return send(200, collector.status());
+        if (req.method === 'POST' && pathname === '/admin/export-session') {
+          if (collector.running || collector.controlUntil > Date.now()) return send(409, {error: 'finish_login_first'});
+          if (!['ok','partial'].includes(collector.state) || !collector.context) return send(409, {error: 'sign_in_to_wb_first'});
+          const encoded = encodeSession(await collector.context.storageState());
+          res.setHeader('Content-Disposition', 'attachment; filename="WB_SESSION.txt"');
+          return send(200, encoded, 'text/plain');
+        }
         if (req.method === 'POST' && pathname === '/admin/begin') {
           const ok = await collector.beginControl();
           return send(ok ? 200 : 409, {ok, error: ok ? undefined : 'collection_in_progress'});
