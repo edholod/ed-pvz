@@ -33,8 +33,15 @@ export class Collector {
   async beginControl() {
     if (this.running) return false;
     this.controlUntil = Date.now() + 15 * 60000;
-    // Navigation only. The user enters and submits every WB credential manually.
-    await this.page.goto(WB_ORIGIN + '/news/owners', {waitUntil: 'domcontentloaded', timeout: 45000});
+    // Keep the selected organisation and any in-progress sign-in intact.
+    // A slow WB document must not turn an otherwise opened control lease into HTTP 500.
+    if (new URL(this.page.url()).origin !== WB_ORIGIN) {
+      try {
+        await this.page.goto(WB_ORIGIN + '/news/owners', {waitUntil: 'domcontentloaded', timeout: 45000});
+      } catch (error) {
+        if (error.name !== 'TimeoutError') { this.controlUntil = 0; throw error; }
+      }
+    }
     this.state = 'manual_login';
     return true;
   }

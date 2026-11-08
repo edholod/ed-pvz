@@ -20,3 +20,15 @@ test('expired login stops scheduled retries until the owner finishes signing in'
 });
 
 test("WB permission denial is distinguished from network failure and preserves cache",async t=>{const {collector,config}=await fixture(t);await collector.collect();config.denied=true;await collector.collect();assert.equal(collector.state,"access_denied");assert.equal(collector.sections.owners,"access_denied");assert.equal(collector.sections.employees,"access_denied");assert.equal(collector.feed.items.length,1);});
+
+test('opening manual control preserves the existing WB page and organisation',async t=>{
+  const {collector}=await fixture(t);await collector.collect();
+  collector.page.goto=async()=>{throw Error('must not navigate')};
+  assert.equal(await collector.beginControl(),true);assert.equal(collector.state,'manual_login');assert.equal(collector.status().controlOpen,true);
+});
+test('slow first WB navigation leaves manual control available instead of HTTP 500',async t=>{
+  const {collector}=await fixture(t);
+  collector.page.goto=async()=>{const error=Error('timeout');error.name='TimeoutError';throw error};
+  collector.page.url=()=> 'about:blank';
+  assert.equal(await collector.beginControl(),true);assert.equal(collector.status().controlOpen,true);
+});
