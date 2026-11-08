@@ -1,0 +1,68 @@
+[
+  {
+    "original": "Manual_to_add_pickup_point.pdf",
+    "repo_path": "apps/cameras/manuals/manual-01.pdf",
+    "bytes": 487312,
+    "pages": 4
+  },
+  {
+    "original": "Инструкция мастераккаунт Ivideon.pdf",
+    "repo_path": "apps/cameras/manuals/manual-02.pdf",
+    "bytes": 430180,
+    "pages": 4
+  },
+  {
+    "original": "Инструкция_мастераккаунт_Мегафон.pdf",
+    "repo_path": "apps/cameras/manuals/manual-03.pdf",
+    "bytes": 408454,
+    "pages": 3
+  },
+  {
+    "original": "Инструкция_мастераккаунт_Билайн.pdf",
+    "repo_path": "apps/cameras/manuals/manual-04.pdf",
+    "bytes": 403023,
+    "pages": 3
+  },
+  {
+    "original": "Инструкция_по_открытия_тарифа_Запись_экрана_монитора_CloudStrix.pdf",
+    "repo_path": "apps/cameras/manuals/manual-05.pdf",
+    "bytes": 222144,
+    "pages": 1
+  },
+  {
+    "original": "Инструкция_по_настройке_даты_и_времени_CloudStrix.pdf",
+    "repo_path": "apps/cameras/manuals/manual-06.pdf",
+    "bytes": 754408,
+    "pages": 4
+  },
+  {
+    "original": "Инструкция_по_интеграции_камер_Wildberries_в_CloudStrix.pdf",
+    "repo_path": "apps/cameras/manuals/manual-07.pdf",
+    "bytes": 998208,
+    "pages": 5
+  },
+  {
+    "original": "Внесение_данных_в_WB-Point_для_CloudStrix.pdf",
+    "repo_path": "apps/cameras/manuals/manual-08.pdf",
+    "bytes": 187260,
+    "pages": 1
+  },
+  {
+    "original": "wb-integr.pdf",
+    "repo_path": "apps/cameras/manuals/manual-09.pdf",
+    "bytes": 100002,
+    "pages": 3
+  },
+  {
+    "original": "Инструкция_по_интеграции_камер_Wildberries_в_Control_GTNT.pdf",
+    "repo_path": "apps/cameras/manuals/manual-10.pdf",
+    "bytes": 608326,
+    "pages": 4
+  },
+  {
+    "original": "Линия.docx",
+    "repo_path": "apps/cameras/manuals/manual-11.docx",
+    "bytes": 469285,
+    "pages": null
+  }
+]
