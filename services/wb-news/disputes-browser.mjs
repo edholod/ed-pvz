@@ -102,6 +102,19 @@ export function extractPointGroups(root){
 async function collectPoint(page,point,section){
  await closeDrawers(page);
  const group=page.locator('#root').getByText('ID '+point,{exact:true});
+ // A previous complete scan can leave earlier point rows unmounted at the bottom.
+ if(!await group.count()){
+  const scroller=page.locator('#root').getByTestId('virtuoso-scroller').last();
+  if(await scroller.count()){
+   await scroller.evaluate(e=>{e.scrollTop=0});
+   for(let window=0;window<150;window++){
+    await sleep(180);if(await group.count())break;
+    const atBottom=await scroller.evaluate(e=>e.scrollTop+e.clientHeight>=e.scrollHeight-3);
+    if(atBottom)break;
+    await scroller.evaluate(e=>{e.scrollTop+=Math.max(120,e.clientHeight*.75)});
+   }
+  }
+ }
  if(!await group.count())throw new WBReadError('point_group_missing');
  await group.first().click();
  const dialog=page.getByRole('dialog').last();await dialog.waitFor({state:'visible',timeout:12000});
