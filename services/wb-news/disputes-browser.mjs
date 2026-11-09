@@ -47,7 +47,7 @@ async function scanVirtual(page,root,extract,{maxWindows=150}={}){
  for(let window=0;window<maxWindows;window++){
   await sleep(180);
   const rows=await root.evaluate(extract);
-  rows.forEach((row,index)=>found.set(row.position??JSON.stringify([row.barcode,row.number,row.groupLabel,row.text,index]),row));
+  rows.forEach((row,index)=>found.set(row.position??(row.point&&!row.number?'point:'+row.point:JSON.stringify([row.barcode,row.number,row.groupLabel,row.text,index])),row));
   if(!has)return {rows:[...found.values()],complete:true};
   const metrics=await scroller.evaluate(e=>({top:e.scrollTop,height:e.clientHeight,total:e.scrollHeight}));
   const bottom=metrics.top+metrics.height>=metrics.total-3;
@@ -258,14 +258,15 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      await sleep(400);await pageReady(page,section.heading);
     }
     await page.waitForFunction(()=>/Товаров\s*\d|Нет товаров/.test(document.querySelector('#root')?.innerText||''),null,{timeout:20000});
-    const groups=await page.locator('#root').evaluate(extractPointGroups);
-    let sectionComplete=true;
+    const groupScan=await scanVirtual(page,page.locator('#root'),extractPointGroups);
+    const groups=groupScan.rows;
+    let sectionComplete=groupScan.complete;
     for(const point of org.points){
      const group=groups.find(x=>x.point===point.wb_point_id);
      const scope={organization:org.research_id,point:point.wb_point_id,category:section.category,state:section.state,key:section.key};
      let result={rows:[],complete:true};
      if(group?.count>0)result=await collectPoint(page,point.wb_point_id,section);
-     const complete=result.complete&&(!group||result.rows.length===group.count);
+     const complete=groupScan.complete&&result.complete&&(!group||result.rows.length===group.count);
      const rows=observationRows(result.rows,scope);
      const saved=await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,rows,complete,
        status:complete?'ok':'partial',expected_count:group?.count||0,finished_at:stamp()});
