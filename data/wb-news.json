@@ -1,6 +1,30 @@
 {
-  "updated": "2026-11-09T02:36:10.978Z",
+  "updated": "2026-11-09T10:15:42.012Z",
   "items": [
+    {
+      "id": "wb-pvz-a16e8e38c5dd3b37d8b25a94",
+      "title": "Вебинар «Реферальная программа WB Банка»",
+      "content": "Сегодня, 9 ноября, в 13:00 мск состоится вебинар для менеджеров ПВЗ Wildberries.\n\nПрисоединяйтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».\n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nПожалуйста, подготовьте для встречи вопросы на тему вебинара.\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-09T09:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-a16e8e38c5dd3b37d8b25a94",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/54b61b7a-d9e3-11f1-8389-1a5075433be3.webp",
+      "origin": "my-pvz"
+    },
     {
       "id": "wb-pvz-0f206aa433dd1c513f9a2a70",
       "title": "Расписание онлайн-встреч с 9 по 13 ноября",
@@ -44,6 +68,82 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/43924664-d9c3-11f1-84f8-96842a4013b4.webp",
+      "origin": "my-pvz"
+    },
+    {
+      "id": "wb-pvz-9c6314d4d18ea75e3d1d88be",
+      "title": "Вебинар «WB Ресейл»",
+      "content": "Сегодня, 9 ноября, в 11:00 мск состоится вебинар для менеджеров ПВЗ Wildberries.\n\nПрисоединяйтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».\n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nПожалуйста, подготовьте для встречи вопросы на тему вебинара и посмотрите курс: \n\n🟣по WB Ресейл: https://lnk.wb.ru/PafC3 \n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-06T13:09:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-9c6314d4d18ea75e3d1d88be",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        },
+        {
+          "text": "https://lnk.wb.ru/PafC3",
+          "url": "https://lnk.wb.ru/PafC3"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/43a394b6-d9e3-11f1-a296-ea13ba5f1709.webp",
+      "origin": "my-pvz"
+    },
+    {
+      "id": "wb-pvz-8d72422c1c623a1783ac5b8d",
+      "title": "Расписание онлайн-встреч с 9 по 13 ноября",
+      "content": "Подготовили расписание вебинаров на эту неделю, чтобы вам было удобнее спланировать время для стримов.\n\n• Понедельник, 9 ноября\n11:00 мск — вебинар «WB Ресейл»\n13:00 мск — вебинар «Реферальная программа WB Банка»\n\n• Вторник, 10 ноября\n11:00 мск — вебинар «DBS товары»\n\n• Четверг, 12 ноября\n11:00 мск — вебинар «Курьерские заказы»\n\n• Пятница, 13 ноября\n11:00 мск — вебинар «Зависшие ШК»\n\nПодключайтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».\n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-06T13:08:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-8d72422c1c623a1783ac5b8d",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/343cc896-d9e3-11f1-8194-522d1d91ecb3.webp",
+      "origin": "my-pvz"
+    },
+    {
+      "id": "wb-pvz-bd557cb6b9cffb8c4d5769d8",
+      "title": "Расписание онлайн-встреч с 9 по 13 ноября",
+      "content": "Подготовили расписание вебинаров на эту неделю, чтобы вам было удобнее спланировать время для стримов.\n\n• Пятница, 13 ноября\n14:00 мск — вебинар «Островок безопасности»\n\nПодключайтесь по ссылке: https://stream.wb.ru/room/vebinar_wb_pvz\n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут». \n\nЕсли не получается зайти по ссылке, введите код встречи: vebinar_wb_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-06T13:03:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/owners#ed-news-bd557cb6b9cffb8c4d5769d8",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "owners"
+      ],
+      "links": [
+        {
+          "text": "https://stream.wb.ru/room/vebinar_wb_pvz",
+          "url": "https://stream.wb.ru/room/vebinar_wb_pvz"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        }
+      ],
+      "image": "",
       "origin": "my-pvz"
     },
     {
@@ -191,7 +291,7 @@
       "title": "С Днём народного единства!",
       "content": "Спасибо за ваше внимание и ежедневную заботу о людях. За каждым заказом — чьи-то планы, увлечения или подарок близкому человеку. Благодаря вам эти маленькие истории получают продолжение.\n\nЖелаем вам тёплых встреч и приятных разговоров. Пусть даже в насыщенные дни остаётся время для себя и близких.\n\nКоманда WB ПВЗ 🟣",
       "date": "2026-11-04T07:00:00.000Z",
-      "url": "https://my-pvz.wb.ru/news/employees#ed-news-619841afa6aa25b6055729cb",
+      "url": "https://my-pvz.wb.ru/news/owners#ed-news-619841afa6aa25b6055729cb",
       "source": "WB Мой ПВЗ",
       "category": "Мой ПВЗ",
       "audience": [
@@ -199,7 +299,7 @@
         "employees"
       ],
       "links": [],
-      "image": "https://pvz-infra.wb.ru/static/29/1/123/5e20cc2b-d78c-11f1-8194-522d1d91ecb3.webp",
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/459028bb-d78c-11f1-a296-ea13ba5f1709.webp",
       "origin": "my-pvz"
     }
   ],
@@ -207,7 +307,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-09T02:36:10.992Z",
+    "checked": "2026-11-09T10:15:42.029Z",
     "intervalMinutes": 30
   }
 }
