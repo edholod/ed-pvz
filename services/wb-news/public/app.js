@@ -13,6 +13,8 @@ async function refresh() {
     $('login').hidden = true; $('controls').hidden = false;
     $('state').textContent = (labels[data.state] || data.state) + '\nНовостей: ' + data.count + '\nПоследний сбор: ' + (data.updated ? new Date(data.updated).toLocaleString('ru-RU') : 'ещё не выполнен');
     $('desktop').hidden = !data.controlOpen;
+    const report = $('dispute-report');
+    if(report){const check=data.disputeInspection||{};report.textContent='Проверка удержаний и тикетов: '+(check.state||'не запускалась')+'\n'+(check.lastAttempt?new Date(check.lastAttempt).toLocaleString('ru-RU'):'')+'\n'+(check.sections||[]).map(x=>x.category+' ('+x.key+'): '+x.state).join('\n');}
   } catch { $('login').hidden = false; $('controls').hidden = true; }
 }
 function act(fn) {return async event => {event?.preventDefault();$('message').textContent='';try{await fn();await refresh()}catch(error){$('message').textContent=error.message}}}
@@ -27,3 +29,5 @@ $('export').onclick = act(async()=>{
 });
 $('logout').onclick = act(()=>request('/admin/logout',{}));
 refresh();setInterval(refresh,10000);
+
+if($('inspect-disputes')) $('inspect-disputes').onclick=act(()=>request('/admin/inspect-disputes',{}));
