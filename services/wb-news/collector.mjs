@@ -1,6 +1,8 @@
-import {saveInspection,syncConfigured,sessionEnvelope} from './disputes-supabase.mjs';
+import {syncConfigured,sessionEnvelope,ingest,saveScope} from './disputes-supabase.mjs';
 import {encryptSession,decryptSession} from './session.mjs';
-import {inspectWBDisputePages} from './disputes-inspector.mjs';
+import {syncWBDisputes} from './disputes-browser.mjs';
+import {randomUUID} from 'node:crypto';
+import {hasWBCookies} from './disputes-model.mjs';
 import {extractCards, normalizeCards, mergeNews, SECTIONS, WB_ORIGIN} from './news.mjs';
 import {readFeed, saveFeed} from './storage.mjs';
 
@@ -17,6 +19,7 @@ export class Collector {
     this.sections = {};
     this.disputeInspection = {state:'not_checked',lastAttempt:null,sections:[]};
     this.disputeRunning = false;
+    this.workerId=randomUUID();
   }
   async start({paused = false} = {}) {
     this.feed = await readFeed(this.directory);
@@ -33,13 +36,17 @@ export class Collector {
         await this.context.addCookies(state.cookies);
         await this.context.addInitScript(({origins})=>{
           const matching=origins.find(x=>x.origin===location.origin);
-          if(matching)for(const item of matching.localStorage||[])try{localStorage.setItem(item.name,item.value)}catch{}
+          if(matching&&!sessionStorage.getItem('__edpvz_wb_restored')){
+            for(const item of matching.localStorage||[])try{localStorage.setItem(item.name,item.value)}catch{}
+            sessionStorage.setItem('__edpvz_wb_restored','1');
+          }
         },{origins:state.origins});
         this.sessionRestored=true;
       }
     }catch(e){this.sessionRestored=false;console.error('encrypted_session_restore_failed',String(e.message||'error').slice(0,70))}
     this.timer = setInterval(() => this.collect(), this.intervalMs);
-    this.disputeTimer = setInterval(() => this.inspectDisputes(), 3 * 60 * 60 * 1000);
+    // Poll the persistent due time/request queue; an active run is leased across restarts.
+    this.disputeTimer = setInterval(() => this.inspectDisputes().catch(()=>{}), 60000);
     this.disputeTimer.unref?.();
     if (paused) this.state = 'authentication_required';
     else await this.collect();
@@ -71,13 +78,14 @@ export class Collector {
     this.controlUntil = 0;
     // A successful manual login leaves state=manual_login. News access is not proof of WB authentication.
     this.state = 'starting';
+    await this.backupSession().catch(()=>{});
     await this.collect();
-    await this.inspectDisputes();
+    await this.inspectDisputes({force:true});
   }
   async backupSession(){
     if(!this.context||!process.env.EDPVZ_INGEST_TOKEN)return;
     const state=await this.context.storageState();
-    if(!state.cookies.some(c=>/wb\\.ru$|wildberries\\.ru$/.test(c.domain.replace(/^\\./,''))))return;
+    if(!hasWBCookies(state)&&!state.origins?.some(x=>/^https:\/\/([\w-]+\.)*(wb|wildberries)\.ru$/.test(x.origin)&&x.localStorage?.length))return;
     await sessionEnvelope('POST',encryptSession(state,process.env.EDPVZ_INGEST_TOKEN));
   }
   async collect() {
@@ -126,25 +134,34 @@ export class Collector {
       if (successes>0) try{await this.backupSession()}catch(e){console.error('encrypted_session_backup_failed',String(e.message||'error').slice(0,70))}
     } finally { this.running = false; }
   }
-  async inspectDisputes() {
-    if (this.running || this.disputeRunning || this.controlUntil>Date.now() || !this.page) return;
-    if (!['ok','partial'].includes(this.state)) {
-      const lastAttempt=new Date().toISOString();
-      const state=this.state==='authentication_required'?'authentication_required':this.state==='blocked'?'blocked':'unavailable';
-      this.disputeInspection={lastAttempt,state,sections:[{key:'brak',state},{key:'podmena',state},{key:'hanging',state},{key:'violations',state},{key:'tickets',state}]};
-      try {this.disputeInspection.database=await saveInspection(process.env.EDPVZ_OWNER_ID,this.disputeInspection)}
-      catch(e){this.disputeInspection.database={ok:false,reason:String(e.message||'sync_failed').slice(0,90)}}
-      return;
-    }
+  async inspectDisputes({force=false}={}) {
+    if(this.running||this.disputeRunning||this.controlUntil>Date.now()||!this.page||!syncConfigured())return;
     this.disputeRunning=true;
-    const lastAttempt=new Date().toISOString();
-    try {
-      const sections=await inspectWBDisputePages(this.page);
-      this.disputeInspection={lastAttempt,sections,state:sections.some(x=>x.state==='blocked')?'blocked':sections.some(x=>x.state==='authentication_required')?'authentication_required':'inspection_only'};
-      try {this.disputeInspection.database=await saveInspection(process.env.EDPVZ_OWNER_ID,this.disputeInspection)}
-      catch(e){this.disputeInspection.database={ok:false,reason:String(e.message||'sync_failed').slice(0,90)}}
-    } catch {this.disputeInspection={lastAttempt,sections:[],state:'unavailable'};}
-    finally {this.disputeRunning=false;}
+    let claim;
+    try{
+      claim=await ingest({kind:'claim',worker:this.workerId,force});
+      if(!claim.claimed){
+        if(this.disputeInspection.state==='not_checked')this.disputeInspection={state:claim.state,lastAttempt:null,sections:[]};
+        return;
+      }
+      const lease={worker:this.workerId,run_id:claim.run_id};
+      this.disputeInspection={state:'running',lastAttempt:new Date().toISOString(),sections:[],rows:0,tickets:0};
+      const config=await ingest();
+      if(!config.registry?.length)throw Error('registry_not_configured');
+      await this.backupSession().catch(()=>{});
+      const result=await syncWBDisputes(this.page,{
+        registry:config.registry,tickets:config.tickets||[],
+        saveScope:batch=>saveScope(batch,lease),
+        onProgress:report=>{this.disputeInspection={...report,lastAttempt:report.started_at}}
+      });
+      this.disputeInspection={...result,lastAttempt:result.started_at};
+      await ingest({kind:'finish',...lease,state:result.state,report:result});
+      if(['ok','partial'].includes(result.state))await this.backupSession().catch(()=>{});
+    }catch(e){
+      const state=e.code||'unavailable';
+      this.disputeInspection={...this.disputeInspection,state,error:state};
+      if(claim?.claimed)await ingest({kind:'finish',worker:this.workerId,run_id:claim.run_id,state,report:this.disputeInspection,error:state}).catch(()=>{});
+    }finally{this.disputeRunning=false;}
   }
   async close() {
     clearInterval(this.timer);
@@ -152,3 +169,4 @@ export class Collector {
     await this.context?.close();
   }
 }
+

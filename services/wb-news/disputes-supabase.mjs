@@ -1,26 +1,18 @@
-// Private Supabase transport. Never expose SUPABASE_SERVICE_ROLE_KEY in GitHub Pages.
-// No WB rows are published unless an explicit WB event ID and a verified point ID exist.
-const endpoint=process.env.SUPABASE_URL;
-export const syncConfigured=()=>Boolean(endpoint&&process.env.EDPVZ_INGEST_TOKEN);
-export async function saveInspection(ownerId,inspection){
- const token=process.env.EDPVZ_INGEST_TOKEN;
- if(!endpoint||!token)return {ok:false,reason:'credentials_not_configured'};
- if(!Array.isArray(inspection.sections))return {ok:false,reason:'invalid_inspection'};
- const response=await fetch(new URL('/functions/v1/edpvz-disputes-ingest',endpoint),{
- method:'POST',headers:{'Content-Type':'application/json','x-edpvz-ingest-token':token},
- body:JSON.stringify({sections:inspection.sections.map(({key,state})=>({key,state}))}),
- signal:AbortSignal.timeout(20000)});
- if(!response.ok)throw new Error('ingest_'+response.status);
- return await response.json();
+// Private authenticated transport. Financial data never enters public feeds.
+export const syncConfigured=()=>Boolean(process.env.SUPABASE_URL&&process.env.EDPVZ_INGEST_TOKEN);
+export async function ingest(body){
+ if(!syncConfigured())throw Error('credentials_not_configured');
+ const response=await fetch(new URL('/functions/v1/edpvz-disputes-ingest',process.env.SUPABASE_URL),{
+  method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json','x-edpvz-ingest-token':process.env.EDPVZ_INGEST_TOKEN},
+  ...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(45000)});
+ if(!response.ok)throw Error('ingest_'+response.status);return response.json();
+}
+export const sessionEnvelope=(method,envelope)=>ingest(method==='GET'?undefined:{kind:'encrypted_session',envelope});
+export const saveInspection=(_owner,inspection)=>ingest({sections:(inspection.sections||[]).map(({key,state})=>({key,state}))});
+export async function saveScope(batch,{worker,run_id}){
+ const {rows=[],tickets=[],...rest}=batch;
+ for(let offset=0;offset<rows.length;offset+=100)await ingest({...rest,kind:'scope',worker,run_id,complete:false,status:'running',rows:rows.slice(offset,offset+100)});
+ for(const ticket of tickets)await ingest({...rest,kind:'scope',worker,run_id,complete:false,status:'running',tickets:[ticket]});
+ return ingest({...rest,kind:'scope',worker,run_id,rows:[],tickets:[]});
 }
 
-export async function sessionEnvelope(method,envelope){
- const token=process.env.EDPVZ_INGEST_TOKEN;
- if(!endpoint||!token)return {ok:false,reason:'credentials_not_configured'};
- const response=await fetch(new URL('/functions/v1/edpvz-disputes-ingest',endpoint),{
-  method,headers:{'Content-Type':'application/json','x-edpvz-ingest-token':token},
-  ...(method==='POST'?{body:JSON.stringify({kind:'encrypted_session',envelope})}:{}),
-  signal:AbortSignal.timeout(15000)});
- if(!response.ok)throw Error('session_storage_'+response.status);
- return response.json();
-}

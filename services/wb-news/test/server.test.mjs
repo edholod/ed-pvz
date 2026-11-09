@@ -43,6 +43,13 @@ test('health is not presented as WB authentication success',async t=>{
   const {url}=await fixture(t);assert.equal((await fetch(url+'/healthz')).status,200);
   assert.equal((await (await fetch(url+'/api/status')).json()).state,'authentication_required');
 });
+test('public status and news never expose private dispute reports',async t=>{
+ const {url,collector}=await fixture(t,true);
+ collector.status=()=>({state:'ok',count:1,disputeInspection:{private:'financial details'}});
+ collector.feed.items=[{id:'test',title:'news'}];
+ assert.equal((await (await fetch(url+'/api/status')).json()).disputeInspection,undefined);
+ assert.equal((await (await fetch(url+'/api/news')).json()).status.disputeInspection,undefined);
+});
 test('weak admin configuration fails closed',()=>assert.throws(()=>createServer({collector:{},adminToken:'short'})));
 test('manual screenshot and input are inaccessible before authentication',async t=>{
   const {url}=await fixture(t);assert.equal((await fetch(url+'/admin/screen')).status,401);
@@ -54,3 +61,4 @@ test('manual input remains blocked outside an explicitly opened control session'
   assert.equal((await fetch(url+'/admin/screen',{headers:{cookie}})).status,409);
   assert.equal((await fetch(url+'/admin/input',{method:'POST',headers:{origin:url,cookie,'content-type':'application/json'},body:JSON.stringify({type:'text',text:'ed12'})})).status,409);
 });
+

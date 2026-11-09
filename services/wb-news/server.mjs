@@ -52,10 +52,10 @@ export function createServer({collector, adminToken, publish = false, secure = t
         res.setHeader('Access-Control-Allow-Methods', 'GET'); return send(204, '');
       }
       if (req.method === 'GET' && pathname === '/healthz') return send(200, {ok: true});
-      if (req.method === 'GET' && pathname === '/api/status') return send(200, {...collector.status(), publicationEnabled: publish});
+      if (req.method === 'GET' && pathname === '/api/status') {const {disputeInspection, ...publicStatus}=collector.status();return send(200, {...publicStatus, publicationEnabled: publish});}
       if (req.method === 'GET' && pathname === '/api/news') {
         if (!publish) return send(403, {error: 'publication_disabled'});
-        return send(collector.feed.items.length ? 200 : 503, {...collector.feed, status: collector.status(), source: 'my-pvz'});
+        return send(collector.feed.items.length ? 200 : 503, {...collector.feed, status: (()=>{const {disputeInspection,...publicStatus}=collector.status();return publicStatus})(), source: 'my-pvz'});
       }
       if (req.method === 'POST' && !originOK(req)) return send(403, {error: 'origin_rejected'});
       if (req.method === 'POST' && pathname === '/admin/login') {
@@ -88,8 +88,8 @@ export function createServer({collector, adminToken, publish = false, secure = t
         if (req.method === 'GET' && pathname === '/admin/status') return send(200, collector.status());
         if (req.method === 'POST' && pathname === '/admin/inspect-disputes') {
           if (collector.running || collector.disputeRunning || collector.controlUntil > Date.now()) return send(409, {error:'browser_busy'});
-          await collector.inspectDisputes();
-          return send(200, {disputeInspection:collector.disputeInspection});
+          collector.inspectDisputes({force:true}).catch(()=>{});
+          return send(202, {ok:true,state:'queued'});
         }
         if (req.method === 'GET' && pathname === '/admin/screen') {
           if(collector.controlUntil<=Date.now() || !collector.page)return send(409,{error:'control_closed'});
@@ -100,7 +100,7 @@ export function createServer({collector, adminToken, publish = false, secure = t
           return;
         }
         if (req.method === 'POST' && pathname === '/admin/input') {
-          if(collector.controlUntil<=Date.now() || !collector.page || collector.running)return send(409,{error:'control_closed'});
+          if(collector.controlUntil<=Date.now() || !collector.page || collector.running || collector.disputeRunning)return send(409,{error:'control_closed'});
           if(enteringText)return send(409,{error:'input_busy'});
           let body='';for await(const chunk of req){body+=chunk;if(body.length>4096)return send(413,{error:'request_too_large'})}
           let action;try{action=JSON.parse(body)}catch{return send(400,{error:'invalid_action'})}
@@ -180,3 +180,4 @@ async function main() {
   });
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) main().catch(() => {console.error('startup_failed'); process.exit(1);});
+
