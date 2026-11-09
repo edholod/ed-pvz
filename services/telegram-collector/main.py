@@ -158,3 +158,24 @@ async def start():
                 state['error']=type(e).__name__+': '+str(e)[:100]
             await asyncio.sleep(300)
     asyncio.create_task(loop())
+
+@app.get('/avito/status')
+async def avito_status():
+    """Server-only credential check; never exposes OAuth secrets or tokens."""
+    configured=bool(os.getenv('AVITO_CLIENT_ID') and os.getenv('AVITO_CLIENT_SECRET'))
+    if not configured:
+        return {'connected':False,'items':[],'reason':'avito_credentials_not_configured'}
+    try:
+        async with httpx.AsyncClient(timeout=18) as h:
+            response=await h.post('https://api.avito.ru/token/',data={
+                'grant_type':'client_credentials',
+                'client_id':os.getenv('AVITO_CLIENT_ID'),
+                'client_secret':os.getenv('AVITO_CLIENT_SECRET')})
+        if response.status_code!=200:
+            return {'connected':False,'items':[],'reason':'avito_oauth_failed','upstream_status':response.status_code}
+        token=response.json().get('access_token')
+        if not token:
+            return {'connected':False,'items':[],'reason':'avito_token_missing'}
+        return {'connected':True,'items':[],'reason':'avito_oauth_ok_vacancy_search_not_verified'}
+    except Exception as exc:
+        return {'connected':False,'items':[],'reason':'avito_oauth_unreachable','error_type':type(exc).__name__}
