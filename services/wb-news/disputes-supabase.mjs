@@ -13,3 +13,14 @@ export async function saveInspection(ownerId,inspection){
  if(!response.ok)throw new Error('ingest_'+response.status);
  return await response.json();
 }
+
+export async function sessionEnvelope(method,envelope){
+ const token=process.env.EDPVZ_INGEST_TOKEN;
+ if(!endpoint||!token)return {ok:false,reason:'credentials_not_configured'};
+ const response=await fetch(new URL('/functions/v1/edpvz-disputes-ingest',endpoint),{
+  method,headers:{'Content-Type':'application/json','x-edpvz-ingest-token':token},
+  ...(method==='POST'?{body:JSON.stringify({kind:'encrypted_session',envelope})}:{}),
+  signal:AbortSignal.timeout(15000)});
+ if(!response.ok)throw Error('session_storage_'+response.status);
+ return response.json();
+}
