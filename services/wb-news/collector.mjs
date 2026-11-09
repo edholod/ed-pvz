@@ -1,3 +1,4 @@
+import {saveInspection,syncConfigured} from './disputes-supabase.mjs';
 import {inspectWBDisputePages} from './disputes-inspector.mjs';
 import {extractCards, normalizeCards, mergeNews, SECTIONS, WB_ORIGIN} from './news.mjs';
 import {readFeed, saveFeed} from './storage.mjs';
@@ -34,7 +35,8 @@ export class Collector {
     return {state: this.state, updated: this.feed.updated, count: this.feed.items.length,
       lastAttempt: this.lastAttempt, sections: this.sections,
       controlOpen: this.controlUntil > Date.now(), intervalMinutes: this.intervalMs / 60000,
-      disputeInspection:this.disputeInspection};
+      disputeInspection:this.disputeInspection,
+      disputeSyncConfigured:syncConfigured()};
   }
   async beginControl() {
     if (this.running || this.disputeRunning) return false;
@@ -109,6 +111,8 @@ export class Collector {
     try {
       const sections=await inspectWBDisputePages(this.page);
       this.disputeInspection={lastAttempt,sections,state:sections.some(x=>x.state==='blocked')?'blocked':sections.some(x=>x.state==='authentication_required')?'authentication_required':'inspection_only'};
+      try {this.disputeInspection.database=await saveInspection(process.env.EDPVZ_OWNER_ID,this.disputeInspection)}
+      catch(e){this.disputeInspection.database={ok:false,reason:String(e.message||'sync_failed').slice(0,90)}}
     } catch {this.disputeInspection={lastAttempt,sections:[],state:'unavailable'};}
     finally {this.disputeRunning=false;}
   }
