@@ -71,7 +71,6 @@ export class Collector {
     this.controlUntil = 0;
     // A successful manual login leaves state=manual_login. News access is not proof of WB authentication.
     this.state = 'starting';
-    try{await this.backupSession()}catch(e){console.error('encrypted_session_backup_failed',String(e.message||'error').slice(0,70))}
     await this.collect();
     await this.inspectDisputes();
   }
