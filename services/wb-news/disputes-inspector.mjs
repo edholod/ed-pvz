@@ -39,6 +39,8 @@ export async function inspectWBDisputePages(page,{onPage=()=>{}}={}){
       item.headings=snapshot.headings;
       item.imageCount=snapshot.imageCount;
       item.structure=snapshot.structure;
+      item.cardsDetected=snapshot.structure.rows;
+      item.extractorState='not_mapped';
       // Never store raw DOM or text: may contain personal or financial information.
     }catch(e){item.state=e?.name==='TimeoutError'?'timeout':'unavailable'}
     results.push(item);onPage(item);
