@@ -2,7 +2,7 @@
 // No WB rows are published unless an explicit WB event ID and a verified point ID exist.
 const endpoint=process.env.SUPABASE_URL;
 const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
-export const syncConfigured=()=>Boolean(endpoint&&key);
+export const syncConfigured=()=>Boolean(endpoint&&process.env.EDPVZ_INGEST_TOKEN);
 async function api(table,rows,conflict){
  if(!syncConfigured())return {ok:false,reason:'credentials_not_configured'};
  if(!rows.length)return {ok:true,count:0};
@@ -15,19 +15,15 @@ async function api(table,rows,conflict){
  return {ok:true,count:rows.length};
 }
 export async function saveInspection(ownerId,inspection){
- if(!syncConfigured())return {ok:false,reason:'credentials_not_configured'};
- if(!/^[0-9a-f-]{36}$/i.test(ownerId||''))return {ok:false,reason:'owner_not_configured'};
- const scopes={brak:'wb:all:brak',podmena:'wb:all:podmena',podmena_withheld:'wb:all:podmena',
- podmena_paid:'wb:all:podmena',hanging:'wb:all:zavisshie',violations:'wb:all:shtraf',tickets:'wb:all:tickets'};
- const states=new Map();
- for(const s of inspection.sections||[]){
-  const scope=scopes[s.key];if(!scope)continue;
-  // Visibility is not ingestion success. Never mark last_success until records are verified.
-  const state=s.state==='page_visible'?'mapping_required':s.state;
-  states.set(scope,{owner_id:ownerId,scope,state,last_attempt:inspection.lastAttempt,last_error:state==='mapping_required'?'Страница доступна, структура карточек ещё не сопоставлена':state,updated_at:new Date().toISOString()});
- }
- if(!states.size)return {ok:true,count:0};
- return api('edpvz_dispute_sync_scopes',[...states.values()],'owner_id,scope');
+ const token=process.env.EDPVZ_INGEST_TOKEN;
+ if(!endpoint||!token)return {ok:false,reason:'credentials_not_configured'};
+ if(!Array.isArray(inspection.sections))return {ok:false,reason:'invalid_inspection'};
+ const response=await fetch(new URL('/functions/v1/edpvz-disputes-ingest',endpoint),{
+ method:'POST',headers:{'Content-Type':'application/json','x-edpvz-ingest-token':token},
+ body:JSON.stringify({sections:inspection.sections.map(({key,state})=>({key,state}))}),
+ signal:AbortSignal.timeout(20000)});
+ if(!response.ok)throw new Error('ingest_'+response.status);
+ return await response.json();
 }
 export async function saveVerifiedObservations(ownerId,rows,pointOrganizations){
  if(!syncConfigured())return {ok:false,reason:'credentials_not_configured'};
