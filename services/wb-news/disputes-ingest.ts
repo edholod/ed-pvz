@@ -48,7 +48,7 @@ Deno.serve(async req=>{
    return error?json({error:'database_write_failed'},500):json({ok:true,stored:true});
   }
   if(body.sections&&!body.kind)return json({ok:true,updated:0,compatibility:'inspection_only'});
-  if(!['claim','scope','finish'].includes(body.kind)||!/^[-\w]{10,100}$/.test(body.worker||''))return json({error:'invalid_payload'},400);
+  if(!['claim','scope','finish','heartbeat'].includes(body.kind)||!/^[-\w]{10,100}$/.test(body.worker||''))return json({error:'invalid_payload'},400);
   if(body.kind==='scope'){
    if(!Array.isArray(body.rows||[])||!Array.isArray(body.tickets||[])||(body.rows||[]).length>150||(body.tickets||[]).length>1)return json({error:'invalid_batch'},400);
    for(const row of body.rows||[]){
@@ -63,3 +63,4 @@ Deno.serve(async req=>{
   return json(await rpc(body));
  }catch{return json({error:'sync_request_failed'},500)}
 });
+

@@ -137,7 +137,7 @@ export class Collector {
   async inspectDisputes({force=false}={}) {
     if(this.running||this.disputeRunning||this.controlUntil>Date.now()||!this.page||!syncConfigured())return;
     this.disputeRunning=true;
-    let claim;
+    let claim,heartbeat;
     try{
       claim=await ingest({kind:'claim',worker:this.workerId,force});
       if(!claim.claimed){
@@ -146,6 +146,13 @@ export class Collector {
       }
       const lease={worker:this.workerId,run_id:claim.run_id};
       this.disputeInspection={state:'running',lastAttempt:new Date().toISOString(),sections:[],rows:0,tickets:0};
+      let heartbeatBusy=false;
+      heartbeat=setInterval(async()=>{
+        if(heartbeatBusy)return;heartbeatBusy=true;
+        try{await ingest({kind:'heartbeat',...lease,report:this.disputeInspection})}
+        catch{console.error('disputes_heartbeat_failed')}
+        finally{heartbeatBusy=false}
+      },30000);heartbeat.unref?.();
       const config=await ingest();
       if(!config.registry?.length)throw Error('registry_not_configured');
       await this.backupSession().catch(()=>{});
@@ -163,7 +170,7 @@ export class Collector {
       if(claim?.claimed)await ingest({kind:'finish',worker:this.workerId,run_id:claim.run_id,state,report:this.disputeInspection,error:state}).catch(()=>{});
       // Do not keep a heavy WB login application running while waiting for the owner.
       if(state==='authentication_required'&&this.controlUntil<=Date.now())await this.page.goto('about:blank',{waitUntil:'domcontentloaded',timeout:10000}).catch(()=>{});
-    }finally{this.disputeRunning=false;}
+    }finally{clearInterval(heartbeat);this.disputeRunning=false;}
   }
   async close() {
     clearInterval(this.timer);
@@ -171,4 +178,5 @@ export class Collector {
     await this.context?.close();
   }
 }
+
 
