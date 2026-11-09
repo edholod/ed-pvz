@@ -164,7 +164,7 @@ async def avito_status():
     """Server-only credential check; never exposes OAuth secrets or tokens."""
     configured=bool(os.getenv('AVITO_CLIENT_ID') and os.getenv('AVITO_CLIENT_SECRET'))
     if not configured:
-        return {'connected':False,'items':[],'reason':'avito_credentials_not_configured'}
+        return {'connected':False,'items':[],'reason':'avito_credentials_not_configured','integration_version':2}
     try:
         async with httpx.AsyncClient(timeout=18) as h:
             response=await h.post('https://api.avito.ru/token/',data={
