@@ -29,7 +29,8 @@ export class Collector {
     this.disputeTimer = setInterval(() => this.inspectDisputes(), 3 * 60 * 60 * 1000);
     this.disputeTimer.unref?.();
     if (paused) this.state = 'authentication_required';
-    else {await this.collect(); if(['ok','partial'].includes(this.state)) await this.inspectDisputes();}
+    else await this.collect();
+    await this.inspectDisputes();
   }
   status() {
     return {state: this.state, updated: this.feed.updated, count: this.feed.items.length,
@@ -57,7 +58,7 @@ export class Collector {
     this.controlUntil = 0;
     if (this.state === 'blocked' || this.state === 'authentication_required') this.state = 'starting';
     await this.collect();
-    if(['ok','partial'].includes(this.state)) await this.inspectDisputes();
+    await this.inspectDisputes();
   }
   async collect() {
     if (this.running || this.disputeRunning || this.controlUntil > Date.now() || this.state === 'blocked' || this.state === 'authentication_required') return;
@@ -105,7 +106,15 @@ export class Collector {
     } finally { this.running = false; }
   }
   async inspectDisputes() {
-    if (this.running || this.disputeRunning || this.controlUntil>Date.now() || !this.page || !['ok','partial'].includes(this.state)) return;
+    if (this.running || this.disputeRunning || this.controlUntil>Date.now() || !this.page) return;
+    if (!['ok','partial'].includes(this.state)) {
+      const lastAttempt=new Date().toISOString();
+      const state=this.state==='authentication_required'?'authentication_required':this.state==='blocked'?'blocked':'unavailable';
+      this.disputeInspection={lastAttempt,state,sections:[{key:'brak',state},{key:'podmena',state},{key:'hanging',state},{key:'violations',state},{key:'tickets',state}]};
+      try {this.disputeInspection.database=await saveInspection(process.env.EDPVZ_OWNER_ID,this.disputeInspection)}
+      catch(e){this.disputeInspection.database={ok:false,reason:String(e.message||'sync_failed').slice(0,90)}}
+      return;
+    }
     this.disputeRunning=true;
     const lastAttempt=new Date().toISOString();
     try {
