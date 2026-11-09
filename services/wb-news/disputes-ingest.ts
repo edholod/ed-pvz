@@ -12,7 +12,7 @@ Deno.serve(async req=>{
  try{
   const token=req.headers.get('x-edpvz-ingest-token')||'';
   let machine=false;
-  if(/^[0-9a-f]{64}$/.test(token)){
+  if(token.length>=32&&token.length<=1024){
    const {data:credential,error}=await db.from('edpvz_dispute_ingest_credentials').select('token_hash').eq('owner_id',owner).single();
    machine=!error&&credential&&await sha(token)===credential.token_hash;
   }

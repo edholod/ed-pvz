@@ -10,6 +10,6 @@ Observations preserve separate ticket/card identities even for repeated barcodes
 
 Source files: disputes-browser.mjs (browser), disputes-model.mjs (normalization), disputes-supabase.mjs (private transport), disputes-ingest.ts (Edge function), disputes-schema.sql (additive schema and server-only RPC), apps/disputes/sync-ui.js (owner UI).
 
-Database migrations were applied separately as edpvz_disputes_browser_sync and edpvz_disputes_sync_due_time. Do not blindly rerun the complete schema file against an already migrated database. Deploy the Edge entrypoint with its own credential/JWT validation, then deploy the existing Render service. Its auto-deploy is disabled.
+Database migrations were applied separately as edpvz_disputes_browser_sync edpvz_disputes_sync_due_time and edpvz_disputes_worker_privileges. Do not blindly rerun the complete schema file against an already migrated database. Deploy the Edge entrypoint with its own credential/JWT validation, then deploy the existing Render service. Its auto-deploy is disabled.
 
 Validation: npm ci; node --test test/*.test.mjs. DOM extraction tests use synthetic markup; a successful authenticated full run remains necessary to confirm current WB layout and all registered scopes. Database transactional checks cover replay, duplicate barcodes, reply baseline and append, archival and cross-owner access.

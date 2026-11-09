@@ -1,4 +1,7 @@
 -- Additive synchronization support; preserves all manual cards and existing imports.
+grant select on public.edpvz_dispute_organizations, public.edpvz_dispute_points, public.edpvz_dispute_ingest_credentials to service_role;
+grant select, insert, update on public.edpvz_dispute_observations, public.edpvz_dispute_tickets, public.edpvz_dispute_ticket_messages, public.edpvz_dispute_sync_runs, public.edpvz_dispute_sync_scopes, public.edpvz_wb_encrypted_sessions to service_role;
+grant usage, select on sequence public.edpvz_dispute_sync_runs_id_seq to service_role;
 alter table public.edpvz_dispute_observations add column if not exists identity_kind text not null default 'native';
 alter table public.edpvz_dispute_observations add column if not exists wb_state text;
 alter table public.edpvz_dispute_observations add column if not exists last_seen_at timestamptz;
