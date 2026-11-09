@@ -28,7 +28,7 @@ export class Collector {
     this.disputeTimer = setInterval(() => this.inspectDisputes(), 3 * 60 * 60 * 1000);
     this.disputeTimer.unref?.();
     if (paused) this.state = 'authentication_required';
-    else await this.collect();
+    else {await this.collect(); if(['ok','partial'].includes(this.state)) await this.inspectDisputes();}
   }
   status() {
     return {state: this.state, updated: this.feed.updated, count: this.feed.items.length,
@@ -54,7 +54,8 @@ export class Collector {
   async finishControl() {
     this.controlUntil = 0;
     if (this.state === 'blocked' || this.state === 'authentication_required') this.state = 'starting';
-    return this.collect();
+    await this.collect();
+    if(['ok','partial'].includes(this.state)) await this.inspectDisputes();
   }
   async collect() {
     if (this.running || this.disputeRunning || this.controlUntil > Date.now() || this.state === 'blocked' || this.state === 'authentication_required') return;
