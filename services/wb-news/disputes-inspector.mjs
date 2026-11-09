@@ -28,12 +28,17 @@ export async function inspectWBDisputePages(page,{onPage=()=>{}}={}){
         url:location.href,
         headings:[...document.querySelectorAll('h1,h2')].map(e=>(e.textContent||'').trim()).filter(Boolean).slice(0,15),
         bodyText:(document.body?.innerText||'').slice(0,15000),
-        imageCount:document.images.length
+        imageCount:document.images.length,
+        // Structural metadata only; no names, amounts, messages, cookies or HTML.
+        structure:{tables:document.querySelectorAll('table').length,rows:document.querySelectorAll('table tbody tr').length,
+          links:document.querySelectorAll('a[href]').length,buttons:document.querySelectorAll('button').length,
+          dataTestIds:[...new Set([...document.querySelectorAll('[data-testid]')].map(e=>e.getAttribute('data-testid')).filter(Boolean))].slice(0,30)}
       }));
       item.state=classifyWBPage(snapshot);
       item.currentUrl=snapshot.url;
       item.headings=snapshot.headings;
       item.imageCount=snapshot.imageCount;
+      item.structure=snapshot.structure;
       // Never store raw DOM or text: may contain personal or financial information.
     }catch(e){item.state=e?.name==='TimeoutError'?'timeout':'unavailable'}
     results.push(item);onPage(item);
