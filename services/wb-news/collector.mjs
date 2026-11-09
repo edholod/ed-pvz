@@ -26,6 +26,7 @@ export class Collector {
     this.page = this.context.pages()[0] || await this.context.newPage();
     this.timer = setInterval(() => this.collect(), this.intervalMs);
     this.disputeTimer = setInterval(() => this.inspectDisputes(), 3 * 60 * 60 * 1000);
+    this.disputeTimer.unref?.();
     if (paused) this.state = 'authentication_required';
     else await this.collect();
   }
@@ -101,7 +102,7 @@ export class Collector {
     } finally { this.running = false; }
   }
   async inspectDisputes() {
-    if (this.running || this.disputeRunning || this.controlUntil>Date.now() || !this.page || this.state==='blocked' || this.state==='authentication_required') return;
+    if (this.running || this.disputeRunning || this.controlUntil>Date.now() || !this.page || !['ok','partial'].includes(this.state)) return;
     this.disputeRunning=true;
     const lastAttempt=new Date().toISOString();
     try {
