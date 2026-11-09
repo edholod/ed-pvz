@@ -41,3 +41,21 @@ export async function inspectWBDisputePages(page,{onPage=()=>{}}={}){
   }
   return results;
 }
+
+// Only extract rows with a stable, explicit WB identifier. Never infer an ID from a
+// barcode, list index or a rendered label: those can be duplicated across PVZ.
+export function normalizeDisputeRows(rows,section,pointId){
+  if(!pointId || !/^\d{4,12}$/.test(String(pointId))) return [];
+  const seen=new Set();
+  return rows.flatMap(row=>{
+    const id=String(row.eventId||'').trim();
+    if(!id || id.length>128 || seen.has(id))return [];
+    seen.add(id);
+    const amount=row.amount===null||row.amount===undefined?null:Number(row.amount);
+    return [{source_namespace:'wb:'+section.key,source_event_id:id,category:section.category,
+      wb_point_id:String(pointId),barcode:String(row.barcode||'').slice(0,128)||null,
+      title:String(row.title||'').slice(0,500)||null,amount:Number.isFinite(amount)?amount:null,
+      observed_at:new Date().toISOString(),provenance:'wb_browser_read_only'}];
+  });
+}
+
