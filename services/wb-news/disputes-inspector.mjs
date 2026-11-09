@@ -3,7 +3,11 @@
 export const WB_DISPUTE_SECTIONS = Object.freeze([
   {key:'brak',category:'Брак',url:'https://my-pvz.wb.ru/defects/to-hold'},
   {key:'podmena',category:'Подмена',url:'https://my-pvz.wb.ru/replace-goods/to-hold'},
-  {key:'podmena_withheld',category:'Подмена',url:'https://my-pvz.wb.ru/replace-goods/withheld'}
+  {key:'podmena_withheld',category:'Подмена',url:'https://my-pvz.wb.ru/replace-goods/withheld'},
+  {key:'podmena_paid',category:'Подмена',url:'https://my-pvz.wb.ru/replace-goods/paid'},
+  {key:'hanging',category:'Зависший',url:'https://my-pvz.wb.ru/hanging-goods/to-hold'},
+  {key:'violations',category:'Штраф',url:'https://my-pvz.wb.ru/violations'},
+  {key:'tickets',category:'Тикет',url:'https://my-pvz.wb.ru/tickets'}
 ]);
 export function classifyWBPage({url,bodyText='',headings=[]}){
   const u=new URL(url);
