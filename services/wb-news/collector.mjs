@@ -1,4 +1,5 @@
-import {saveInspection,syncConfigured} from './disputes-supabase.mjs';
+import {saveInspection,syncConfigured,sessionEnvelope} from './disputes-supabase.mjs';
+import {encryptSession,decryptSession} from './session.mjs';
 import {inspectWBDisputePages} from './disputes-inspector.mjs';
 import {extractCards, normalizeCards, mergeNews, SECTIONS, WB_ORIGIN} from './news.mjs';
 import {readFeed, saveFeed} from './storage.mjs';
@@ -25,6 +26,18 @@ export class Collector {
       args: ['--disable-dev-shm-usage', '--renderer-process-limit=2'],
     });
     this.page = this.context.pages()[0] || await this.context.newPage();
+    try {
+      const backup=await sessionEnvelope('GET');
+      if(backup.envelope){
+        const state=decryptSession(backup.envelope,process.env.EDPVZ_INGEST_TOKEN);
+        await this.context.addCookies(state.cookies);
+        await this.context.addInitScript(({origins})=>{
+          const matching=origins.find(x=>x.origin===location.origin);
+          if(matching)for(const item of matching.localStorage||[])try{localStorage.setItem(item.name,item.value)}catch{}
+        },{origins:state.origins});
+        this.sessionRestored=true;
+      }
+    }catch(e){this.sessionRestored=false;console.error('encrypted_session_restore_failed',String(e.message||'error').slice(0,70))}
     this.timer = setInterval(() => this.collect(), this.intervalMs);
     this.disputeTimer = setInterval(() => this.inspectDisputes(), 3 * 60 * 60 * 1000);
     this.disputeTimer.unref?.();
@@ -58,8 +71,15 @@ export class Collector {
     this.controlUntil = 0;
     // A successful manual login leaves state=manual_login. News access is not proof of WB authentication.
     this.state = 'starting';
+    try{await this.backupSession()}catch(e){console.error('encrypted_session_backup_failed',String(e.message||'error').slice(0,70))}
     await this.collect();
     await this.inspectDisputes();
+  }
+  async backupSession(){
+    if(!this.context||!process.env.EDPVZ_INGEST_TOKEN)return;
+    const state=await this.context.storageState();
+    if(!state.cookies.some(c=>/wb\\.ru$|wildberries\\.ru$/.test(c.domain.replace(/^\\./,''))))return;
+    await sessionEnvelope('POST',encryptSession(state,process.env.EDPVZ_INGEST_TOKEN));
   }
   async collect() {
     if (this.running || this.disputeRunning || this.controlUntil > Date.now() || this.state === 'blocked' || this.state === 'authentication_required') return;
@@ -104,6 +124,7 @@ export class Collector {
         this.state = successes === 2 ? 'ok' : successes ? 'partial' : Object.values(this.sections).includes('access_denied') ? 'access_denied' : 'unavailable';
       }
       if (successes === 2) this.state = 'ok';
+      if (successes>0) try{await this.backupSession()}catch(e){console.error('encrypted_session_backup_failed',String(e.message||'error').slice(0,70))}
     } finally { this.running = false; }
   }
   async inspectDisputes() {
