@@ -15,6 +15,8 @@ ADMIN_TOKEN=os.getenv('COLLECTOR_ADMIN_TOKEN','')
 SESSION=os.getenv('TELEGRAM_SESSION','')
 SUPABASE_URL=os.getenv('SUPABASE_URL','').rstrip('/')
 INGEST_TOKEN=os.getenv('COLLECTOR_INGEST_TOKEN','')
+ANON_KEY=os.getenv('SUPABASE_ANON_KEY','')
+DB_HEADERS={'apikey':ANON_KEY,'authorization':'Bearer '+ANON_KEY,'content-type':'application/json'}
 client=None
 phone_hash=None
 last_run=0
@@ -62,7 +64,8 @@ async def sign_in(request:Request):
         return {'password_required':True}
     except (PhoneCodeInvalidError,PhoneCodeExpiredError) as e:
         raise HTTPException(400,str(e))
-    return {'authorized':True,'session':c.session.save(),'warning':'Save this session ONLY as Render secret TELEGRAM_SESSION, never share it in chat.'}
+    await persist_session(c)
+    return {'authorized':True,'session_saved':True}
 
 @app.post('/admin/password')
 async def password(request:Request):
@@ -70,7 +73,8 @@ async def password(request:Request):
     c=await get_client()
     data=await request.json()
     await c.sign_in(password=str(data.get('password','')))
-    return {'authorized':True,'session':c.session.save(),'warning':'Save session in Render TELEGRAM_SESSION secret.'}
+    await persist_session(c)
+    return {'authorized':True,'session_saved':True}
 
 @app.post('/admin/sync')
 async def sync_now(request:Request):
@@ -79,7 +83,27 @@ async def sync_now(request:Request):
 
 @app.get('/admin',response_class=HTMLResponse)
 async def admin_page():
-    return HTMLResponse("""<!doctype html><html lang="ru"><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="utf-8"><title>Ed PVZ — Telegram</title><style>body{font:16px system-ui;max-width:520px;margin:24px auto;padding:18px;background:#faf7fb;color:#29222d}input,button{font:inherit;padding:13px;width:100%;box-sizing:border-box;margin:8px 0;border-radius:10px;border:1px solid #b9a4b8}button{background:#85316f;color:white}pre{white-space:pre-wrap;overflow-wrap:anywhere}p{line-height:1.5}</style><h2>Ed PVZ — Telegram</h2><p>Защищённая авторизация второго аккаунта. Не отправляйте коды, пароль или строку сессии в чат. Все действия выполняются на этом сайте.</p><input id="token" type="password" placeholder="COLLECTOR_ADMIN_TOKEN"><input id="phone" placeholder="+79991234567"><button onclick="send()">Получить код Telegram</button><input id="code" placeholder="Код из Telegram"><button onclick="signin()">Войти по коду</button><input id="pass" type="password" placeholder="Облачный пароль (если нужен)"><button onclick="password()">Подтвердить пароль</button><button onclick="sync()">Проверить сбор сообщений</button><pre id="out"></pre><script>async function call(path,data){try{const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json','x-admin-token':document.getElementById('token').value},body:JSON.stringify(data)});const v=await r.json();document.getElementById('out').textContent=JSON.stringify(v,null,2);if(v.session)document.getElementById('out').textContent='Авторизация успешна. Строка сессии получена, но для безопасности она не выводится на странице. Для постоянного хранения потребуется серверное хранилище.'}catch(e){document.getElementById('out').textContent=String(e)}}function send(){call('/admin/send-code',{phone:document.getElementById('phone').value})}function signin(){call('/admin/sign-in',{code:document.getElementById('code').value})}function password(){call('/admin/password',{password:document.getElementById('pass').value})}function sync(){call('/admin/sync',{})}</script></html>""")
+    return HTMLResponse("""<!doctype html><html lang="ru"><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="utf-8"><title>Ed PVZ — Telegram</title><style>body{font:16px system-ui;max-width:520px;margin:24px auto;padding:18px;background:#faf7fb;color:#29222d}input,button{font:inherit;padding:13px;width:100%;box-sizing:border-box;margin:8px 0;border-radius:10px;border:1px solid #b9a4b8}button{background:#85316f;color:white}pre{white-space:pre-wrap;overflow-wrap:anywhere}p{line-height:1.5}</style><h2>Ed PVZ — Telegram</h2><p>Защищённая авторизация второго аккаунта. Не отправляйте коды, пароль или строку сессии в чат. Все действия выполняются на этом сайте.</p><input id="token" type="password" placeholder="COLLECTOR_ADMIN_TOKEN"><input id="phone" placeholder="+79991234567"><button onclick="send()">Получить код Telegram</button><input id="code" placeholder="Код из Telegram"><button onclick="signin()">Войти по коду</button><input id="pass" type="password" placeholder="Облачный пароль (если нужен)"><button onclick="password()">Подтвердить пароль</button><button onclick="sync()">Проверить сбор сообщений</button><pre id="out"></pre><script>async function call(path,data){try{const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json','x-admin-token':document.getElementById('token').value},body:JSON.stringify(data)});const v=await r.json();document.getElementById('out').textContent=JSON.stringify(v,null,2);if(v.session_saved)document.getElementById('out').textContent='Авторизация успешна. Сессия защищённо сохранена в базе и будет восстановлена после перезапуска.'}catch(e){document.getElementById('out').textContent=String(e)}}function send(){call('/admin/send-code',{phone:document.getElementById('phone').value})}function signin(){call('/admin/sign-in',{code:document.getElementById('code').value})}function password(){call('/admin/password',{password:document.getElementById('pass').value})}function sync(){call('/admin/sync',{})}</script></html>""")
+
+async def rpc(name,payload):
+    async with httpx.AsyncClient(timeout=35) as h:
+        r=await h.post(SUPABASE_URL+'/rest/v1/rpc/'+name,headers=DB_HEADERS,json=payload)
+        r.raise_for_status()
+        return r.json()
+
+async def persist_session(c):
+    if not (SUPABASE_URL and ANON_KEY and INGEST_TOKEN):raise RuntimeError('Database session store not configured')
+    await rpc('edpvz_telegram_ingest',{'p_token':INGEST_TOKEN,'p_items':[],'p_session':c.session.save()})
+
+async def restore_session():
+    global client
+    if not (SUPABASE_URL and ANON_KEY and INGEST_TOKEN):return False
+    saved=await rpc('edpvz_telegram_session',{'p_token':INGEST_TOKEN})
+    if not saved:return False
+    if client is not None:await client.disconnect()
+    client=TelegramClient(StringSession(saved),API_ID,API_HASH,device_model='Ed PVZ Collector',app_version='1.0',auto_reconnect=True)
+    await client.connect()
+    return await client.is_user_authorized()
 
 async def collect():
     global last_run
@@ -106,11 +130,14 @@ async def collect():
             statuses[name]={'ok':False,'error':type(e).__name__}
     items.sort(key=lambda x:x['published_at'] or '',reverse=True)
     state.update({'count':len(items),'channels':statuses,'last_sync':datetime.now(timezone.utc).isoformat(),'error':None})
+    if SUPABASE_URL and INGEST_TOKEN and ANON_KEY:
+        try:
+            saved=await rpc('edpvz_telegram_ingest',{'p_token':INGEST_TOKEN,'p_items':items})
+            state['saved']=saved.get('saved',0)
+        except Exception as e:
+            state['error']='Database save failed: '+type(e).__name__+': '+str(e)[:120]
+            return {'authorized':True,**state}
     last_run=time.time()
-    if SUPABASE_URL and INGEST_TOKEN:
-        async with httpx.AsyncClient(timeout=30) as h:
-            r=await h.post(SUPABASE_URL+'/functions/v1/edpvz-telegram-ingest',headers={'x-collector-token':INGEST_TOKEN},json={'items':items,'status':statuses})
-            if r.status_code!=200:state['error']='Supabase ingest HTTP '+str(r.status_code)
     return {'authorized':True,**state}
 
 @app.on_event('startup')
@@ -118,7 +145,9 @@ async def start():
     async def loop():
         while True:
             try:
-                if SESSION:await collect()
+                if not SESSION and client is None:
+                    await restore_session()
+                await collect()
             except Exception as e:
                 state['error']=type(e).__name__+': '+str(e)[:100]
             await asyncio.sleep(300)
