@@ -56,7 +56,8 @@ export class Collector {
   }
   async finishControl() {
     this.controlUntil = 0;
-    if (this.state === 'blocked' || this.state === 'authentication_required') this.state = 'starting';
+    // A successful manual login leaves state=manual_login. News access is not proof of WB authentication.
+    this.state = 'starting';
     await this.collect();
     await this.inspectDisputes();
   }
@@ -72,7 +73,7 @@ export class Collector {
           await this.page.goto(`${WB_ORIGIN}/news/${section}`, {waitUntil: 'domcontentloaded', timeout: 45000});
           await this.page.locator('h1, input, iframe').first().waitFor({state: 'attached', timeout: 20000}).catch(() => {});
           const current = new URL(this.page.url());
-          if (current.origin !== WB_ORIGIN || current.pathname.includes('login')) {
+          if (current.origin !== WB_ORIGIN || /\/(login|auth|signin)(\/|$)/i.test(current.pathname)) {
             this.sections[section] = 'authentication_required';
             this.state = 'authentication_required';
             break;
