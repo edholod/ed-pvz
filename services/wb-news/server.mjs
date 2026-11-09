@@ -1,5 +1,7 @@
 import http from 'node:http';
-import {randomBytes, timingSafeEqual} from 'node:crypto';
+import {randomBytes, timingSafeEqual, createHash} from 'node:crypto';
+import {readFileSync,writeFileSync,renameSync,mkdirSync} from 'node:fs';
+import {dirname} from 'node:path';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {Collector} from './collector.mjs';
@@ -16,15 +18,28 @@ function equal(a, b) {
 function cookie(req) {
   return (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(COOKIE + '='))?.slice(COOKIE.length + 1);
 }
-export function createServer({collector, adminToken, publish = false, secure = true, allowedOrigin = 'https://edholod.github.io'}) {
+export function createServer({collector, adminToken, sessionStorePath, publish = false, secure = true, allowedOrigin = 'https://edholod.github.io'}) {
   if (!adminToken || adminToken.length < 32) throw new Error('ADMIN_TOKEN must contain at least 32 characters');
   const sessions = new Map();
+  const fingerprint=createHash('sha256').update(adminToken).digest('hex');
+  const sessionKey=value=>createHash('sha256').update(String(value||'')).digest('hex');
+  if(sessionStorePath)try{
+    const saved=JSON.parse(readFileSync(sessionStorePath,'utf8'));
+    if(saved.fingerprint===fingerprint)for(const [id,until] of saved.sessions||[])
+      if(/^[a-f0-9]{64}$/.test(id)&&Number.isFinite(until)&&until>Date.now()&&until<=Date.now()+SESSION_MS)sessions.set(id,until);
+  }catch(error){if(error.code!=='ENOENT')console.error('admin_session_restore_failed')}
+  function persistSessions(){
+    if(!sessionStorePath)return;
+    mkdirSync(dirname(sessionStorePath),{recursive:true,mode:0o700});
+    writeFileSync(sessionStorePath+'.tmp',JSON.stringify({fingerprint,sessions:[...sessions]}),{mode:0o600});
+    renameSync(sessionStorePath+'.tmp',sessionStorePath);
+  }
   const sockets = new Set();
   const attempts = new Map();
   let takingScreenshot = false;
   let enteringText = false;
   const authorized = req => {
-    const token = cookie(req), until = sessions.get(token);
+    const token = sessionKey(cookie(req)), until = sessions.get(token);
     if (!until || until <= Date.now()) { sessions.delete(token); return false; }
     return true;
   };
@@ -70,7 +85,8 @@ export function createServer({collector, adminToken, publish = false, secure = t
         const token = randomBytes(32).toString('hex');
         for (const [id, until] of sessions) if (until <= Date.now()) sessions.delete(id);
         if (sessions.size > 20) sessions.clear();
-        sessions.set(token, Date.now() + SESSION_MS);
+        sessions.set(sessionKey(token), Date.now() + SESSION_MS);
+        persistSessions();
         res.setHeader('Set-Cookie', `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800${secure ? '; Secure' : ''}`);
         return send(200, {ok: true});
       }
@@ -126,7 +142,7 @@ export function createServer({collector, adminToken, publish = false, secure = t
           return send(202, {ok: true});
         }
         if (req.method === 'POST' && pathname === '/admin/logout') {
-          sessions.delete(cookie(req)); closeControl(); collector.controlUntil = 0;
+          sessions.delete(sessionKey(cookie(req))); persistSessions(); closeControl(); collector.controlUntil = 0;
           res.setHeader('Set-Cookie', `${COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure ? '; Secure' : ''}`);
           return send(200, {ok: true});
         }
@@ -172,7 +188,7 @@ async function main() {
   const collector = new Collector(process.env.DATA_DIR || '/var/lib/ed-pvz', {
     intervalMs: Math.max(300, Number(process.env.POLL_SECONDS) || 900) * 1000,
   });
-  const server = createServer({collector, adminToken, publish: process.env.PUBLISH_APPROVED === 'true'});
+  const server = createServer({collector, adminToken, sessionStorePath:(process.env.DATA_DIR||'/var/lib/ed-pvz')+'/admin-sessions.json', publish: process.env.PUBLISH_APPROVED === 'true'});
   server.listen(Number(process.env.PORT) || 3000, '0.0.0.0');
   collector.start({paused: process.env.START_PAUSED === 'true'}).catch(() => { collector.state = 'browser_failed'; console.error('browser_start_failed'); });
   for (const signal of ['SIGTERM','SIGINT']) process.on(signal, async () => {

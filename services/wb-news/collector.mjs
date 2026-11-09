@@ -26,7 +26,7 @@ export class Collector {
     const launch = this.launch || (await import('playwright')).chromium.launchPersistentContext.bind((await import('playwright')).chromium);
     this.context = await launch(this.directory + '/browser', {
       headless: false, viewport: {width: 960, height: 640},
-      args: ['--disable-dev-shm-usage', '--renderer-process-limit=2'],
+      args: ['--disable-dev-shm-usage', '--renderer-process-limit=2', '--disable-gpu', '--disable-software-rasterizer', '--js-flags=--max-old-space-size=96'],
     });
     this.page = this.context.pages()[0] || await this.context.newPage();
     try {
@@ -161,6 +161,8 @@ export class Collector {
       const state=e.code||'unavailable';
       this.disputeInspection={...this.disputeInspection,state,error:state};
       if(claim?.claimed)await ingest({kind:'finish',worker:this.workerId,run_id:claim.run_id,state,report:this.disputeInspection,error:state}).catch(()=>{});
+      // Do not keep a heavy WB login application running while waiting for the owner.
+      if(state==='authentication_required'&&this.controlUntil<=Date.now())await this.page.goto('about:blank',{waitUntil:'domcontentloaded',timeout:10000}).catch(()=>{});
     }finally{this.disputeRunning=false;}
   }
   async close() {

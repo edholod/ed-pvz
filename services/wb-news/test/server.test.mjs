@@ -1,7 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from '../server.mjs';
+import {mkdtemp,readFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 const token='test-only-'.repeat(6);
+test('admin session survives process recreation, logout persists and token rotation revokes it',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'edpvz-admin-'));t.after(()=>rm(dir,{recursive:true,force:true}));
+ const sessionStorePath=join(dir,'sessions.json'),collector={controlUntil:0,status:()=>({state:'starting'})};
+ let server,url;
+ async function start(key=token){server=createServer({collector,adminToken:key,sessionStorePath,secure:false});await new Promise(r=>server.listen(0,'127.0.0.1',r));url='http://127.0.0.1:'+server.address().port}
+ async function close(){server.closeAllConnections();await new Promise(r=>server.close(r))}
+ async function login(){const r=await fetch(url+'/admin/login',{method:'POST',headers:{origin:url},body:new URLSearchParams({token})});assert.equal(r.status,200);return r.headers.get('set-cookie').split(';')[0]}
+ await start();const cookie=await login();const raw=cookie.split('=')[1];assert.ok(!(await readFile(sessionStorePath,'utf8')).includes(raw));await close();
+ await start();assert.equal((await fetch(url+'/admin/status',{headers:{cookie}})).status,200);
+ await fetch(url+'/admin/logout',{method:'POST',headers:{origin:url,cookie}});await close();await start();assert.equal((await fetch(url+'/admin/status',{headers:{cookie}})).status,401);
+ const second=await login();await close();await start(token+'rotated');assert.equal((await fetch(url+'/admin/status',{headers:{cookie:second}})).status,401);await close();
+});
 async function fixture(t,publish=false){
   const collector={feed:{updated:null,items:[]},controlUntil:0,status(){return {state:'authentication_required',count:this.feed.items.length}},async beginControl(){this.controlUntil=Date.now()+60000;return true},async finishControl(){this.controlUntil=0}};
   const server=createServer({collector,adminToken:token,publish,secure:false});
