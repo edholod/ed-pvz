@@ -1,3 +1,4 @@
+import {inspectWBDisputePages} from './disputes-inspector.mjs';
 import {extractCards, normalizeCards, mergeNews, SECTIONS, WB_ORIGIN} from './news.mjs';
 import {readFeed, saveFeed} from './storage.mjs';
 
@@ -12,6 +13,8 @@ export class Collector {
     this.running = false;
     this.lastAttempt = null;
     this.sections = {};
+    this.disputeInspection = {state:'not_checked',lastAttempt:null,sections:[]};
+    this.disputeRunning = false;
   }
   async start({paused = false} = {}) {
     this.feed = await readFeed(this.directory);
@@ -22,16 +25,18 @@ export class Collector {
     });
     this.page = this.context.pages()[0] || await this.context.newPage();
     this.timer = setInterval(() => this.collect(), this.intervalMs);
+    this.disputeTimer = setInterval(() => this.inspectDisputes(), 3 * 60 * 60 * 1000);
     if (paused) this.state = 'authentication_required';
     else await this.collect();
   }
   status() {
     return {state: this.state, updated: this.feed.updated, count: this.feed.items.length,
       lastAttempt: this.lastAttempt, sections: this.sections,
-      controlOpen: this.controlUntil > Date.now(), intervalMinutes: this.intervalMs / 60000};
+      controlOpen: this.controlUntil > Date.now(), intervalMinutes: this.intervalMs / 60000,
+      disputeInspection:this.disputeInspection};
   }
   async beginControl() {
-    if (this.running) return false;
+    if (this.running || this.disputeRunning) return false;
     this.controlUntil = Date.now() + 15 * 60000;
     // Keep the selected organisation and any in-progress sign-in intact.
     // A slow WB document must not turn an otherwise opened control lease into HTTP 500.
@@ -51,7 +56,7 @@ export class Collector {
     return this.collect();
   }
   async collect() {
-    if (this.running || this.controlUntil > Date.now() || this.state === 'blocked' || this.state === 'authentication_required') return;
+    if (this.running || this.disputeRunning || this.controlUntil > Date.now() || this.state === 'blocked' || this.state === 'authentication_required') return;
     this.running = true;
     this.lastAttempt = new Date().toISOString();
     let received = [];
@@ -95,8 +100,19 @@ export class Collector {
       if (successes === 2) this.state = 'ok';
     } finally { this.running = false; }
   }
+  async inspectDisputes() {
+    if (this.running || this.disputeRunning || this.controlUntil>Date.now() || !this.page || this.state==='blocked' || this.state==='authentication_required') return;
+    this.disputeRunning=true;
+    const lastAttempt=new Date().toISOString();
+    try {
+      const sections=await inspectWBDisputePages(this.page);
+      this.disputeInspection={lastAttempt,sections,state:sections.some(x=>x.state==='blocked')?'blocked':sections.some(x=>x.state==='authentication_required')?'authentication_required':'inspection_only'};
+    } catch {this.disputeInspection={lastAttempt,sections:[],state:'unavailable'};}
+    finally {this.disputeRunning=false;}
+  }
   async close() {
     clearInterval(this.timer);
+    clearInterval(this.disputeTimer);
     await this.context?.close();
   }
 }
