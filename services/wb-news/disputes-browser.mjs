@@ -319,6 +319,16 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     for(const point of org.points){
      const group=groups.find(x=>x.point===point.wb_point_id);
      const scope={organization:org.research_id,point:point.wb_point_id,category:section.category,state:section.state,key:section.key};
+     // Missing group is not proof of zero goods: WB may not have mounted it,
+     // or the organization switch may have failed. Never archive existing rows.
+     if(!group){
+      await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,
+       rows:[],complete:false,status:'point_group_missing',expected_count:null,finished_at:stamp()});
+      sectionComplete=false;
+      report.sections.push({key:org.research_id+':'+point.wb_point_id+':'+section.key+':'+section.state,state:'point_group_missing'});
+      onProgress(report);
+      continue;
+     }
      let result={rows:[],complete:true};
      if(group?.count>0)result=await collectPoint(page,point.wb_point_id,section);
      const complete=groupScan.complete&&result.complete&&(!group||result.rows.length===group.count);
