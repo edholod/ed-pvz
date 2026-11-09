@@ -86,6 +86,11 @@ export function createServer({collector, adminToken, publish = false, secure = t
       if (pathname === '/admin/status' || pathname === '/admin/screen' || (pathname.startsWith('/admin/') && req.method === 'POST')) {
         if (!authorized(req)) return send(401, {error: 'authentication_required'});
         if (req.method === 'GET' && pathname === '/admin/status') return send(200, collector.status());
+        if (req.method === 'POST' && pathname === '/admin/inspect-disputes') {
+          if (collector.running || collector.disputeRunning || collector.controlUntil > Date.now()) return send(409, {error:'browser_busy'});
+          await collector.inspectDisputes();
+          return send(200, {disputeInspection:collector.disputeInspection});
+        }
         if (req.method === 'GET' && pathname === '/admin/screen') {
           if(collector.controlUntil<=Date.now() || !collector.page)return send(409,{error:'control_closed'});
           if(takingScreenshot)return send(429,{error:'screen_busy'});
