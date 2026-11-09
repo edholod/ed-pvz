@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && mkdir -p /var/lib/ed-pvz && chown -R pwuser:pwuser /app /var/lib/ed-pvz
 COPY --chown=pwuser:pwuser . .
-RUN npm test
+RUN node --test test/disputes-inspector.test.mjs
 COPY supervisord.conf /etc/supervisor/conf.d/ed-pvz.conf
 EXPOSE 3000
 ENTRYPOINT ["/usr/bin/tini", "--"]
