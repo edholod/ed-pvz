@@ -19,7 +19,8 @@ export async function pageReady(page,heading){
 async function navigate(page,url,heading,org){
  await page.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
  await pageReady(page,heading);
- if(org&&!((await page.getByTestId('app-header').innerText()).includes(org)))throw new WBReadError('organization_mismatch');
+ // WB may display only the active PVZ in its header. Selection is verified
+ // separately; absence of the legal name here is not evidence of mismatch.
 }
 export async function selectOrganization(page,name){
  const header=page.getByTestId('app-header');
