@@ -23,39 +23,55 @@ async function navigate(page,url,heading,org){
  // separately; absence of the legal name here is not evidence of mismatch.
 }
 export async function selectOrganization(page,name){
- const header=page.getByTestId('app-header');
- if(!await header.count())throw new WBReadError('organization_header_missing');
  const normalize=value=>String(value||'').replace(/[«»"“”]/g,'').replace(/\\s+/g,' ').trim().toLocaleLowerCase('ru');
  const expected=normalize(name);
- const headerText=normalize(await header.innerText());
- if(headerText.includes(expected))return;
- // Some WB layouts show the selected PVZ, not the legal entity, in the header.
- // Open the selector rather than treating missing legal-name text as proof of a mismatch.
- const triggers=header.locator('[aria-expanded], [role="combobox"], button');
- let opened=false;
- for(let i=0;i<Math.min(await triggers.count(),12);i++){
-  const candidate=triggers.nth(i);
-  try{
-   await candidate.click({timeout:2500});
-   const options=page.locator('[role="option"],[role="menuitem"],label,[role="dialog"]');
-   const visible=await options.allTextContents();
-   if(visible.some(x=>normalize(x).includes(expected))||await page.getByText(name,{exact:true}).count()){opened=true;break}
-  }catch{}
+ const header=page.getByTestId('app-header');
+ if(!await header.count())throw new WBReadError('organization_header_missing');
+ if(normalize(await header.innerText()).includes(expected))return;
+ // WB can show only a PVZ name in the header. Inspect the real organization
+ // switcher, including its portal, without assuming that it lives in the header.
+ const triggers=page.locator('[data-testid*="organization"],[data-testid*="company"],[aria-label*="организац" i],[aria-label*="компани" i],[role="combobox"]');
+ const headerButtons=header.locator('button,[aria-expanded]');
+ const candidates=[triggers,headerButtons];
+ let seen=false;
+ for(const collection of candidates){
+  const count=Math.min(await collection.count(),18);
+  for(let i=0;i<count;i++){
+   try{
+    await collection.nth(i).click({timeout:1800});
+    await sleep(250);
+    const matches=page.getByText(name,{exact:true});
+    if(await matches.count()){
+     seen=true;
+     const option=matches.last();
+     await option.click({timeout:3500});
+     await sleep(750);
+     if(normalize(await header.innerText()).includes(expected))return;
+     const selected=page.locator('[aria-selected="true"],[data-state="checked"],[role="radio"][aria-checked="true"]');
+     if((await selected.allTextContents()).some(x=>normalize(x).includes(expected)))return;
+     // A click alone is not evidence of a successful switch.
+     throw new WBReadError('organization_selection_unverified');
+    }
+   }catch(e){
+    if(e instanceof WBReadError)throw e;
+   }
+  }
  }
- if(!opened)throw new WBReadError('organization_selector_not_found');
- const labels=page.locator('label').filter({hasText:name});
- const exact=page.getByText(name,{exact:true});
- if(await labels.count())await labels.last().click();
- else if(await exact.count())await exact.last().click();
- else throw new WBReadError('organization_option_missing');
- await sleep(600);
- // Do not silently accept the previous organisation: a mismatched selection
- // would associate financial records with the wrong legal entity.
- const after=normalize(await header.innerText());
- if(after.includes(expected))return;
- const optionStillSelected=await page.locator('[aria-selected="true"],[data-state="checked"],input:checked').allTextContents();
- if(optionStillSelected.some(x=>normalize(x).includes(expected)))return;
- throw new WBReadError('organization_selection_unverified');
+ // The full organization picker is sometimes a separate /pickpoints route.
+ // Only use it when the current header offers no selectable legal entity.
+ await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
+ await sleep(800);
+ const match=page.getByText(name,{exact:true});
+ if(await match.count()){
+  await match.last().click({timeout:4000});
+  await sleep(750);
+  const newHeader=page.getByTestId('app-header');
+  if(await newHeader.count()&&normalize(await newHeader.innerText()).includes(expected))return;
+  const checked=page.locator('[aria-selected="true"],[data-state="checked"],input:checked');
+  if((await checked.allTextContents()).some(x=>normalize(x).includes(expected)))return;
+  throw new WBReadError('organization_selection_unverified');
+ }
+ throw new WBReadError(seen?'organization_selection_unverified':'organization_option_missing');
 }
 
 async function closeDrawers(page){
