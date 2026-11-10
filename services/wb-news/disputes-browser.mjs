@@ -43,20 +43,21 @@ async function closeTopDrawer(page){
  return true;
 }
 async function closeDrawers(page){for(let i=0;i<4;i++)if(!await closeTopDrawer(page))break}
-export async function scanVirtual(page,root,extract,{maxWindows=150}={}){
- const found=new Map();let bottomPasses=0,lastSize=0,stalledPasses=0,lastMetrics=null;
+export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietMs=1500,wait=sleep,now=Date.now}={}){
+ const found=new Map();let bottomPasses=0,lastSize=0,stalledPasses=0,lastMetrics=null,quietSince=null;
  const scroller=root.getByTestId('virtuoso-scroller').filter({visible:true}).last();
  const has=await scroller.count();
  if(has)await scroller.evaluate(e=>{e.scrollTop=0});
  for(let window=0;window<maxWindows;window++){
-  await sleep(180);
+  await wait(180);
   const rows=await root.evaluate(extract);
   rows.forEach((row,index)=>found.set(row.position??(row.point&&!row.number?'point:'+row.point:JSON.stringify([row.barcode,row.number,row.groupLabel,row.text,index])),row));
   if(!has)return {rows:[...found.values()],complete:true};
   const metrics=await scroller.evaluate(e=>({top:e.scrollTop,height:e.clientHeight,total:e.scrollHeight}));
   const bottom=metrics.top+metrics.height>=metrics.total-3;
   if(bottom&&found.size===lastSize)bottomPasses++;else bottomPasses=0;
-  if(bottomPasses>=3)return {rows:[...found.values()],complete:true};
+  if(!bottom||found.size!==lastSize)quietSince=null;else if(quietSince===null)quietSince=now();
+  if(bottomPasses>=3&&quietSince!==null&&now()-quietSince>=bottomQuietMs)return {rows:[...found.values()],complete:true};
   const signature=JSON.stringify(metrics);
   stalledPasses=!bottom&&signature===lastMetrics&&found.size===lastSize?stalledPasses+1:0;
   if(stalledPasses>=4)return {rows:[...found.values()],complete:false,reason:'stalled_scroller'};
@@ -79,7 +80,7 @@ export function extractGoods(root){
   const lines=chosen.innerText.split('\n').map(x=>x.trim()).filter(Boolean),img=chosen.querySelector('img');
   const title=img?.alt&&img.alt!=='product image'?img.alt:lines[lines.findIndex(x=>/^ШК/.test(x))+1];
   const amount=lines.findLast(x=>/^-?[\d\s.,\u00a0]+\s*₽$/.test(x));
-  const ticket=chosen.innerText.match(/№\s*(\d{3,})/);
+  let ticket=chosen.innerText.match(/№\s*(\d{3,})/);
   // WB can put the appeal deadline in a sibling footer outside the price block.
   // Stay inside this virtual row and never borrow a neighbouring product's date.
   const boundary=chosen.closest('[data-index],[data-item-index]');
@@ -87,9 +88,10 @@ export function extractGoods(root){
   for(let node=chosen,depth=0;node&&depth<9;node=node.parentElement,depth++){
    const text=node.innerText||'';
    if((text.match(/ШК\s*\d{4,40}/g)||[]).length!==1)break;
+   if(!ticket&&/В тикет/.test(text)){const refs=[...node.querySelectorAll('button,a')].map(el=>(el.innerText||'').trim().match(/^№\s*(\d{3,})$/)).filter(Boolean);if(refs.length===1)ticket=refs[0]}
    const dates=text.split('\n').map(x=>x.trim()).filter(x=>/^(?:(?:Оспорить|Срок (?:обращения|оспаривания))\s+)?до\s+\d{2}\.\d{2}\.\d{4}(?:,?\s+\d{2}:\d{2})?$/i.test(x));
    const unique=[...new Set(dates.map(x=>x.replace(/^.*?до\s+/i,'до ')))];
-   if(unique.length===1){dateLabel=unique[0];break}
+   if(unique.length===1&&!dateLabel)dateLabel=unique[0];
    if(unique.length>1||node===boundary||node===root)break;
   }
   const start=lines.indexOf(title),end=lines.findIndex(x=>/^(В тикет|Оспорить)$/.test(x));
@@ -119,6 +121,20 @@ export function extractPointGroups(root){
 }
 export function extractHangingGroupLabels(root){
  return [...new Set([...root.querySelectorAll('*')].map(el=>(el.innerText||el.textContent||'').replace(/\s+/gu,' ').trim()).filter(text=>/^Товары из ПВЗ$|^№\s*\d+$/.test(text)))];
+}
+export function extractHangingGroups(root){
+ const labels=[...new Set([...root.querySelectorAll('*')].map(el=>(el.innerText||el.textContent||'').replace(/\s+/gu,' ').trim()).filter(text=>/^Товары из ПВЗ$|^№\s*\d+$/.test(text)))];
+ return labels.map(label=>({label,position:'group:'+label}));
+}
+export async function revealVirtualText(root,text,{wait=sleep,maxWindows=150}={}){
+ const target=root.getByText(text,{exact:true}).first();if(await target.count())return target;
+ const scroller=root.getByTestId('virtuoso-scroller').filter({visible:true}).last();if(!await scroller.count())return null;
+ await scroller.evaluate(e=>{e.scrollTop=0});
+ for(let n=0;n<maxWindows;n++){
+  await wait(180);if(await target.count())return target;
+  const bottom=await scroller.evaluate(e=>e.scrollTop+e.clientHeight>=e.scrollHeight-3);if(bottom)return null;
+  await scroller.evaluate(e=>{e.scrollTop+=Math.max(120,e.clientHeight*.75)});
+ }return null;
 }
 export function readGoodsScopeProof(root){
  const text=root.innerText||root.textContent||'';
@@ -169,14 +185,18 @@ async function collectPoint(page,point,section){
  await group.first().click({timeout:5000});
  const dialog=page.getByRole('dialog').last();await dialog.waitFor({state:'visible',timeout:12000});
  await waitGoodsDrawer(page,{groups:section.key==='hanging'});
- let goods=await scanVirtual(page,dialog,extractGoods);
- if(section.key==='hanging'&&!goods.rows.length){
-  const groups=await dialog.evaluate(extractHangingGroupLabels);
+ const direct=await dialog.evaluate(extractGoods);
+ let goods={rows:direct,complete:false};
+ if(section.key==='hanging'&&!direct.length){
+  const groupsScan=await scanVirtual(page,dialog,extractHangingGroups);
+  const groups=groupsScan.rows.map(row=>row.label);
   if(!groups.length)throw new WBReadError('hanging_groups_not_found');
   const outerCount=await page.getByRole('dialog').count();
-  const items=[];let complete=true;
+  const items=[];let complete=groupsScan.complete;
   for(const label of groups){
-   await page.getByRole('dialog').first().getByText(label,{exact:true}).click({timeout:5000});
+   const target=await revealVirtualText(page.getByRole('dialog').last(),label);
+   if(!target)throw new WBReadError('hanging_group_not_mounted');
+   await target.click({timeout:5000});
    await page.waitForFunction(n=>document.querySelectorAll('[role="dialog"]').length>n,outerCount,{timeout:10000});
    const inner=page.getByRole('dialog').last();await waitGoodsDrawer(page);
    const reasonsComplete=await expandVisibleReasons(inner);
@@ -190,7 +210,7 @@ async function collectPoint(page,point,section){
    }
   }
   goods={rows:items,complete};
- }
+ }else goods=await scanVirtual(page,dialog,extractGoods);
  await closeDrawers(page);return goods;
 }
 export function extractTicketRows(root){

@@ -109,3 +109,20 @@ test('calendar selection resolves the requested month rather than the same day i
  const {calendarDayIndex}=await import('../disputes-browser.mjs');const{document}=parseHTML('<main><section><h3>Октябрь 2026</h3><button id="oct">1</button></section><section><h3>Ноябрь 2026</h3><button id="nov">1</button></section></main>');
  for(const e of document.querySelectorAll('*'))e.getClientRects=()=>[{}];const root=document.querySelector('main'),index=calendarDayIndex(root,{day:1,month:9,year:2026});assert.equal(root.querySelectorAll('button,[role="button"],[role="gridcell"],td,span')[index].id,'oct');
 });
+test('virtual pagination waits for delayed next-page rows instead of completing at the first bottom',async()=>{
+ let clock=0,reads=0;const scroller={count:async()=>1,evaluate:async fn=>fn.toString().includes('top:')?{top:0,height:100,total:100}:undefined};
+ const root={getByTestId:()=>({filter:()=>({last:()=>scroller})}),evaluate:async()=>{reads++;return reads<6?[{label:'№ 1',position:'group:1'}]:[{label:'№ 1',position:'group:1'},{label:'№ 2',position:'group:2'}]}};
+ const result=await scanVirtual({},root,()=>[],{wait:async ms=>{clock+=ms},now:()=>clock});assert.equal(result.complete,true);assert.equal(result.rows.length,2);assert.ok(reads>12);
+});
+test('hanging group extraction preserves stable labels for virtual group pagination',async()=>{
+ const {extractHangingGroups}=await import('../disputes-browser.mjs');const{document}=parseHTML('<main><div>Товары из ПВЗ</div><button><span>№ 123</span></button><div>№ 456</div></main>');
+ assert.deepEqual(extractHangingGroups(document.querySelector('main')).map(x=>x.position),['group:Товары из ПВЗ','group:№ 123','group:№ 456']);
+});
+test('opening an earlier hanging group scrolls back to remount its virtual row',async()=>{
+ const {revealVirtualText}=await import('../disputes-browser.mjs');let top=900;
+ const target={count:async()=>top===120?1:0},scroller={count:async()=>1,evaluate:async fn=>{const e={scrollTop:top,clientHeight:100,scrollHeight:1000};const out=fn(e);top=e.scrollTop;return out}};
+ const root={getByText:()=>({first:()=>target}),getByTestId:()=>({filter:()=>({last:()=>scroller})})};
+ assert.equal(await revealVirtualText(root,'№ 123',{wait:async()=>{}}),target);assert.equal(top,120);
+});
+
+test('a linked ticket in the product footer is retained without confusing its box number',()=>{const{document}=parseHTML('<main><h2>№ 999999</h2><div data-index="1"><article><img src="https://basket-1.wbbasket.ru/a.webp"><button>ШК 12345678</button><div>100 ₽</div><div>до 20.11.2026</div></article><footer><button>В тикет</button><button>№ 777777</button></footer></div></main>');const[row]=extractGoods(document.querySelector('main'));assert.equal(row.ticketNumber,'777777');assert.equal(row.dateLabel,'до 20.11.2026')});

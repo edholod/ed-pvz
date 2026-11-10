@@ -40,3 +40,7 @@ export function monthGroups(rows,getNote){
  const groups=new Map();for(const row of rows){const key=monthKey(getNote(row.id));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)}
  return [...groups].sort(([a],[b])=>a==='undated'?1:b==='undated'?-1:b.localeCompare(a)).map(([key,items])=>({key,label:monthLabel(key),rows:items.sort((a,b)=>String(getNote(a.id).withholding_date||'').localeCompare(String(getNote(b.id).withholding_date||'')))}));
 }
+
+export function attachSourceTickets(rows,tickets){return rows.map(row=>{const number=String(row.raw?.ticket_number||'');if(!number)return row;const matches=tickets.filter(t=>t.ticket_number===number&&t.organization_research_id===row.organization_research_id&&String(t.wb_point_id)===String(row.wb_point_id));return {...row,wb_ticket:{number,...(matches.length===1?{status:matches[0].status,checked_at:matches[0].last_checked_at}:{status:null,checked_at:null})}}})}
+export function pointCoverage(point,scopes){const required=['hanging','brak','podmena'];return required.filter(category=>scopes.some(s=>s.scope===`wb:${point.organization_research_id}:${point.wb_point_id}:${category}:to-hold`&&s.state==='ok'&&Date.parse(s.last_success)>=Date.parse('2026-11-10T11:50:36Z'))).length}
+export function sourceMatches(row,filter){const exists=Boolean(row.wb_ticket?.number||row.raw?.ticket_number);return !filter||(filter==='with'&&exists)||(filter==='without'&&!exists)||(filter==='working'&&row.wb_ticket?.status==='В работе')}
