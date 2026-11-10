@@ -137,6 +137,9 @@ async def collect():
             statuses[name]={'ok':True,'posts':count}
         except Exception as e:
             statuses[name]={'ok':False,'error':type(e).__name__}
+    # Every source is isolated: a missing/private forum cannot interrupt other groups.
+    # Telethon iter_messages on a forum supergroup returns messages from its topics
+    # as part of the channel history; topic links are preserved when available.
     items.sort(key=lambda x:x['published_at'] or '',reverse=True)
     state.update({'count':len(items),'channels':statuses,'last_sync':datetime.now(timezone.utc).isoformat(),'error':None})
     if SUPABASE_URL and INGEST_TOKEN and ANON_KEY:
