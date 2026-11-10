@@ -22,6 +22,8 @@ jobs:
         with:
           node-version: '22'
       - name: Copy only product images
+        id: copy
+        continue-on-error: true
         run: node services/wb-news/scripts/sync-dispute-photos.mjs
       - name: Store photos without business records
         run: |
@@ -34,3 +36,5 @@ jobs:
             git pull --rebase origin main
             git push origin HEAD:main
           fi
+      - if: steps.copy.outcome == 'failure'
+        run: exit 1

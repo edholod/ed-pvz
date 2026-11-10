@@ -1,5 +1,10 @@
 name: Wake private WB synchronization
 on:
+  push:
+    paths:
+      - '.github/workflows/wb-disputes-wake.yml'
+      - 'services/wb-news/collector.mjs'
+      - 'services/wb-news/disputes-browser.mjs'
   schedule:
     - cron: '17 */3 * * *'
   workflow_dispatch:

@@ -27,3 +27,10 @@ export function visibleObservations(rows){
  const upgraded=new Set(current.filter(row=>row.source_event_id?.startsWith('observed:v2:')).map(family));
  return current.filter(row=>row.source_event_id?.startsWith('observed:v2:')||!upgraded.has(family(row)));
 }
+
+export function mapNotes(rows,notes){
+ const result=new Map(notes.map(note=>[note.observation_id,note]));
+ const family=row=>JSON.stringify([row.organization_research_id,row.wb_point_id,row.category,row.barcode,row.raw?.group||'',row.raw?.occurrence||1]);
+ for(const row of rows){if(result.has(row.id))continue;const matches=notes.filter(note=>note.source&&family(note.source)===family(row));if(matches.length===1)result.set(row.id,{...matches[0],canonical_id:matches[0].observation_id})}
+ return result;
+}
