@@ -9,7 +9,7 @@ from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, P
 import httpx
 
 app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
-CHANNELS=['pvz_zamena','mskpodmena','marketplacepvz','whitelistpvz','zamena_vPVZ','OZONpvzArh','rabotapvz','pvz889']
+CHANNELS=['pvz_zamena','mskpodmena','marketplacepvz','whitelistpvz','zamena_vPVZ','OZONpvzArh','rabotapvz','pvz889','OnlinePvz','rabotapvzoff','pvzrabota','pvzzamena','Rabota_Zamena_PVZ','spbpvz','rabota_v_pvz','tochka_pvz','wildberries_ozone_help']
 API_ID=int(os.getenv('TELEGRAM_API_ID','0'))
 API_HASH=os.getenv('TELEGRAM_API_HASH','')
 ADMIN_TOKEN=os.getenv('COLLECTOR_ADMIN_TOKEN','')
@@ -120,7 +120,7 @@ async def collect():
         try:
             entity=await c.get_entity(name)
             count=0
-            async for msg in c.iter_messages(entity,limit=60):
+            async for msg in c.iter_messages(entity,limit=350):
                 text=(msg.message or '').strip()
                 if len(text)<12:continue
                 if not re.search(r'пвз|пункт выдачи|смен|замен|подмен|работ|сотрудник|ваканси|wb|ozon|вб|озон',text,re.I):continue
@@ -129,7 +129,10 @@ async def collect():
                 if isinstance(sender,User) and not sender.bot:
                     display=' '.join(filter(None,[sender.first_name,sender.last_name])).strip()
                     author={'author_id':sender.id,'author_username':sender.username,'author_name':display or sender.username or 'Пользователь Telegram','author_url':('https://t.me/'+sender.username if sender.username else 'tg://user?id='+str(sender.id))}
-                items.append({'id':f'tg:{name}:{msg.id}','source':name,'url':f'https://t.me/{name}/{msg.id}','text':text[:2400],'published_at':msg.date.isoformat() if msg.date else None,'marketplaces':(['wb'] if re.search(r'wb|вб|wildberries|вайлдбер',text,re.I) else [])+(['ozon'] if re.search(r'ozon|озон',text,re.I) else []),'kind':'resume' if re.search(r'ищу работу|ищу смен|выйду на замен|ищу подработ',text,re.I) else 'vacancy',**author})
+                topic_id=getattr(getattr(msg,'reply_to',None),'reply_to_top_id',None) or getattr(getattr(msg,'reply_to',None),'reply_to_msg_id',None)
+                # Forum messages have unique message IDs; preserve the topic in the deep link.
+                link=f'https://t.me/{name}/{msg.id}' + (f'?thread={topic_id}' if topic_id else '')
+                items.append({'id':f'tg:{name}:{msg.id}','source':name,'url':link,'text':text[:2400],'published_at':msg.date.isoformat() if msg.date else None,'marketplaces':(['wb'] if re.search(r'wb|вб|wildberries|вайлдбер',text,re.I) else [])+(['ozon'] if re.search(r'ozon|озон',text,re.I) else []),'kind':'resume' if re.search(r'ищу работу|ищу смен|выйду на замен|ищу подработ',text,re.I) else 'vacancy',**author})
                 count+=1
             statuses[name]={'ok':True,'posts':count}
         except Exception as e:
