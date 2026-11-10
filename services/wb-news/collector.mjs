@@ -25,10 +25,18 @@ export class Collector {
     this.feed = await readFeed(this.directory);
     const launch = this.launch || (await import('playwright')).chromium.launchPersistentContext.bind((await import('playwright')).chromium);
     this.context = await launch(this.directory + '/browser', {
-      headless: false, viewport: {width: 1280, height: 800},
-      args: ['--disable-dev-shm-usage', '--renderer-process-limit=2', '--disable-gpu', '--disable-software-rasterizer', '--js-flags=--max-old-space-size=96'],
+      headless: process.env.WB_BROWSER_HEADFUL!=='true', viewport: {width: 1280, height: 800},
+      args: ['--disable-dev-shm-usage', '--renderer-process-limit=1', '--disable-gpu', '--disable-software-rasterizer', '--js-flags=--max-old-space-size=96', '--disk-cache-size=16777216'],
     });
-    this.page = this.context.pages()[0] || await this.context.newPage();
+    const pages=this.context.pages();
+    this.page = pages.find(page=>page.url().startsWith(WB_ORIGIN))||pages[0]||await this.context.newPage();
+    for(const page of pages)if(page!==this.page)await page.close();
+    await this.context.route('**/*',async route=>{
+      const kind=route.request().resourceType();
+      if(!this.disputeRunning||this.controlUntil>Date.now()||!['image','media','font'].includes(kind))return route.continue();
+      if(kind==='image')return route.fulfill({status:200,contentType:'image/svg+xml',headers:{'Cache-Control':'no-store'},body:'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>'});
+      return route.abort();
+    });
     try {
       const backup=await sessionEnvelope('GET');
       if(backup.envelope){

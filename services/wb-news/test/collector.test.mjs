@@ -5,6 +5,17 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {Collector} from '../collector.mjs';
 const card={title:'Тест',content:'Текст новости',dateText:'8 ноября 2026 г. в 10:00',links:[]};
+test('automatic collection avoids heavy images but manual login retains images and script requests',async t=>{
+ const keys=['SUPABASE_URL','EDPVZ_INGEST_TOKEN','WB_BROWSER_HEADFUL'];const before=Object.fromEntries(keys.map(key=>[key,process.env[key]]));keys.forEach(key=>delete process.env[key]);
+ let policy,options;const page={url:()=> 'about:blank'};const context={pages:()=>[page],route:async(_pattern,fn)=>policy=fn,close:async()=>{}};
+ const collector=new Collector('/unused',{launch:async(_dir,opts)=>{options=opts;return context}});
+ t.after(async()=>{await collector.close();for(const key of keys)if(before[key]===undefined)delete process.env[key];else process.env[key]=before[key]});
+ await collector.start({paused:true});assert.equal(options.headless,true);
+ collector.disputeRunning=true;let result;
+ const request=kind=>({request:()=>({resourceType:()=>kind}),continue:async()=>result='continued',abort:async()=>result='aborted',fulfill:async data=>{assert.equal(data.contentType,'image/svg+xml');assert.ok(data.body.length<100);result='placeholder'}});
+ await policy(request('image'));assert.equal(result,'placeholder');await policy(request('script'));assert.equal(result,'continued');await policy(request('media'));assert.equal(result,'aborted');
+ collector.controlUntil=Date.now()+60000;await policy(request('image'));assert.equal(result,'continued');await policy(request('font'));assert.equal(result,'continued');
+});
 test('expired or blank WB page never overwrites the encrypted authenticated session',async()=>{
  const prior=process.env.EDPVZ_INGEST_TOKEN;process.env.EDPVZ_INGEST_TOKEN='synthetic-test-only-ingest-token';
  try{
