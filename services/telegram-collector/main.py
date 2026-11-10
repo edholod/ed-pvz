@@ -4,7 +4,8 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from telethon import TelegramClient
 from telethon.sessions import StringSession
-from telethon.tl.types import User
+from telethon.tl.types import User, Channel
+from telethon.tl.functions.channels import GetForumTopicsRequest
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError
 import httpx
 
@@ -120,7 +121,37 @@ async def collect():
         try:
             entity=await c.get_entity(name)
             count=0
-            async for msg in c.iter_messages(entity,limit=350):
+            topics=[]
+            if isinstance(entity,Channel) and getattr(entity,'forum',False):
+                try:
+                    offset_date=None
+                    offset_id=0
+                    offset_topic=0
+                    for _ in range(10):
+                        page=await c(GetForumTopicsRequest(channel=entity,offset_date=offset_date,offset_id=offset_id,offset_topic=offset_topic,limit=100,q=''))
+                        batch=list(getattr(page,'topics',[]) or [])
+                        if not batch:break
+                        topics.extend(t.id for t in batch if getattr(t,'id',None))
+                        if len(batch)<100:break
+                        tail=batch[-1]
+                        offset_topic=tail.id
+                        offset_id=getattr(tail,'top_message',0)
+                        offset_date=getattr(tail,'date',None)
+                except Exception as topic_error:
+                    statuses[name]={'ok':False,'error':'ForumTopics:'+type(topic_error).__name__}
+            seen=set()
+            async def history():
+                async for message in c.iter_messages(entity,limit=350):
+                    yield message
+                for topic in topics:
+                    try:
+                        async for message in c.iter_messages(entity,reply_to=topic,limit=100):
+                            yield message
+                    except Exception:
+                        continue
+            async for msg in history():
+                if msg.id in seen:continue
+                seen.add(msg.id)
                 text=(msg.message or '').strip()
                 if len(text)<12:continue
                 if not re.search(r'пвз|пункт выдачи|смен|замен|подмен|работ|сотрудник|ваканси|wb|ozon|вб|озон',text,re.I):continue
@@ -134,7 +165,7 @@ async def collect():
                 link=f'https://t.me/{name}/{msg.id}' + (f'?thread={topic_id}' if topic_id else '')
                 items.append({'id':f'tg:{name}:{msg.id}','source':name,'url':link,'text':text[:2400],'published_at':msg.date.isoformat() if msg.date else None,'marketplaces':(['wb'] if re.search(r'wb|вб|wildberries|вайлдбер',text,re.I) else [])+(['ozon'] if re.search(r'ozon|озон',text,re.I) else []),'kind':'resume' if re.search(r'ищу работу|ищу смен|выйду на замен|ищу подработ',text,re.I) else 'vacancy',**author})
                 count+=1
-            statuses[name]={'ok':True,'posts':count}
+            statuses[name]={'ok':True,'posts':count,'topics':len(topics)}
         except Exception as e:
             statuses[name]={'ok':False,'error':type(e).__name__}
     # Every source is isolated: a missing/private forum cannot interrupt other groups.
