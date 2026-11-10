@@ -52,6 +52,7 @@ begin
  if p->>'kind'='claim' then
   if c.lease_until>now() then return jsonb_build_object('claimed',false,'state','running'); end if;
   if not coalesce((p->>'force')::boolean,false) and c.next_due_at>now()
+   and not exists(select 1 from public.edpvz_dispute_sync_runs where id=c.active_run and owner_id=own and status='running')
    and coalesce(c.requested_at,'epoch')<=coalesce(c.handled_request_at,'epoch') then
    return jsonb_build_object('claimed',false,'state',coalesce(c.last_state,'waiting'),'next_due_at',c.next_due_at);
   end if;
@@ -65,7 +66,7 @@ begin
   end if;
   insert into public.edpvz_dispute_sync_runs(owner_id,status) values(own,'running') returning id into run;
   update public.edpvz_dispute_sync_control set lease_owner=p->>'worker',lease_until=now()+interval '3 minutes',
-   active_run=run,handled_request_at=requested_at,last_state='running',last_report=jsonb_build_object('state','running','rows',0,'tickets',0,'sections','[]'::jsonb,'started_at',now()),updated_at=now() where owner_id=own;
+   active_run=run,next_due_at=null,handled_request_at=requested_at,last_state='running',last_report=jsonb_build_object('state','running','rows',0,'tickets',0,'sections','[]'::jsonb,'started_at',now()),updated_at=now() where owner_id=own;
   return jsonb_build_object('claimed',true,'run_id',run);
  end if;
  if c.lease_owner is distinct from p->>'worker' or c.active_run is distinct from (p->>'run_id')::bigint or c.lease_until<now() then
