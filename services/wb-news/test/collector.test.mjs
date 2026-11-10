@@ -10,7 +10,7 @@ test('automatic collection avoids heavy images but manual login retains images a
  let policy,options;const page={url:()=> 'about:blank'};const context={pages:()=>[page],route:async(_pattern,fn)=>policy=fn,close:async()=>{}};
  const collector=new Collector('/unused',{launch:async(_dir,opts)=>{options=opts;return context}});
  t.after(async()=>{await collector.close();for(const key of keys)if(before[key]===undefined)delete process.env[key];else process.env[key]=before[key]});
- await collector.start({paused:true});assert.equal(options.headless,true);
+ await collector.start({paused:true});assert.equal(options.headless,true);assert.equal(options.timezoneId,'Europe/Moscow');assert.equal(options.locale,'ru-RU');
  collector.disputeRunning=true;let result;
  const request=kind=>({request:()=>({resourceType:()=>kind}),continue:async()=>result='continued',abort:async()=>result='aborted',fulfill:async data=>{assert.equal(data.contentType,'image/svg+xml');assert.ok(data.body.length<100);result='placeholder'}});
  await policy(request('image'));assert.equal(result,'placeholder');await policy(request('script'));assert.equal(result,'continued');await policy(request('media'));assert.equal(result,'aborted');
