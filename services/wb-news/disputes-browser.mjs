@@ -1,3 +1,4 @@
+import {selectOrganization} from './disputes-organizations.mjs';
 import {observationRows,normalizeMessages,ticketNeedsDetail} from './disputes-model.mjs';
 const ORIGIN='https://my-pvz.wb.ru';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -22,57 +23,7 @@ async function navigate(page,url,heading,org){
  // WB may display only the active PVZ in its header. Selection is verified
  // separately; absence of the legal name here is not evidence of mismatch.
 }
-export async function selectOrganization(page,name){
- const normalize=value=>String(value||'').replace(/[«»"“”]/g,'').replace(/\\s+/g,' ').trim().toLocaleLowerCase('ru');
- const expected=normalize(name);
- const header=page.getByTestId('app-header');
- if(!await header.count())throw new WBReadError('organization_header_missing');
- if(normalize(await header.innerText()).includes(expected))return;
- // WB can show only a PVZ name in the header. Inspect the real organization
- // switcher, including its portal, without assuming that it lives in the header.
- const triggers=page.locator('[data-testid*="organization"],[data-testid*="company"],[aria-label*="организац" i],[aria-label*="компани" i],[role="combobox"]');
- const headerButtons=header.locator('button,[aria-expanded]');
- const candidates=[triggers,headerButtons];
- let seen=false;
- for(const collection of candidates){
-  const count=Math.min(await collection.count(),18);
-  for(let i=0;i<count;i++){
-   try{
-    await collection.nth(i).click({timeout:1800});
-    await sleep(250);
-    const matches=page.getByText(name,{exact:true});
-    if(await matches.count()){
-     seen=true;
-     const option=matches.last();
-     await option.click({timeout:3500});
-     await sleep(750);
-     if(normalize(await header.innerText()).includes(expected))return;
-     const selected=page.locator('[aria-selected="true"],[data-state="checked"],[role="radio"][aria-checked="true"]');
-     if((await selected.allTextContents()).some(x=>normalize(x).includes(expected)))return;
-     // A click alone is not evidence of a successful switch.
-     throw new WBReadError('organization_selection_unverified');
-    }
-   }catch(e){
-    if(e instanceof WBReadError)throw e;
-   }
-  }
- }
- // The full organization picker is sometimes a separate /pickpoints route.
- // Only use it when the current header offers no selectable legal entity.
- await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
- await sleep(800);
- const match=page.getByText(name,{exact:true});
- if(await match.count()){
-  await match.last().click({timeout:4000});
-  await sleep(750);
-  const newHeader=page.getByTestId('app-header');
-  if(await newHeader.count()&&normalize(await newHeader.innerText()).includes(expected))return;
-  const checked=page.locator('[aria-selected="true"],[data-state="checked"],input:checked');
-  if((await checked.allTextContents()).some(x=>normalize(x).includes(expected)))return;
-  throw new WBReadError('organization_selection_unverified');
- }
- throw new WBReadError(seen?'organization_selection_unverified':'organization_option_missing');
-}
+export {selectOrganization} from './disputes-organizations.mjs';
 
 async function closeDrawers(page){
  for(let i=0;i<4;i++){
@@ -290,8 +241,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
   if(/Отправить код/.test(visible)||/\/(login|auth|signin)(\/|$)/.test(new URL(page.url()).pathname))throw new WBReadError('authentication_required');
   if(/verify you are human|checking your browser|unusual traffic/i.test(visible))throw new WBReadError('blocked');
   if(/Выберите организацию/.test(visible)){
-   await page.locator('[aria-expanded]').first().click();
-   await page.getByText(registry[0].name_exact,{exact:true}).last().click();
+   await selectOrganization(page,registry[0].name_exact,{pointIds:registry[0].points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))});
    await page.getByTestId('app-header').waitFor({state:'visible',timeout:30000});
   }
  }
@@ -303,8 +253,8 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
   if(Date.now()-started>budgetMs){report.sections.push({key:'budget',state:'partial'});break}
   try{
    if(!await page.getByTestId('app-header').count())await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
-   await selectOrganization(page,org.name_exact);
-  }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state});onProgress(report);if(['blocked','authentication_required'].includes(state))break;continue}
+   await selectOrganization(page,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))});
+  }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,...(e.diagnostic?{diagnostic:e.diagnostic}:{})});onProgress(report);if(['blocked','authentication_required'].includes(state))break;continue}
   for(const section of sections.filter(x=>categories.includes(x.key))){
    try{
     await navigate(page,ORIGIN+section.path,section.heading,org.name_exact);

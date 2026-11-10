@@ -84,6 +84,11 @@ export class Collector {
   }
   async backupSession(){
     if(!this.context||!process.env.EDPVZ_INGEST_TOKEN)return;
+    if(this.page){
+      const url=new URL(this.page.url());
+      if(url.origin!=='https://my-pvz.wb.ru'||/\/(login|auth|signin)(\/|$)/i.test(url.pathname))return;
+      if(typeof this.page.getByTestId==='function'&&!await this.page.getByTestId('app-header').count()&&!/Выберите организацию/.test(await this.page.locator('body').innerText()))return;
+    }
     const state=await this.context.storageState();
     if(!hasWBCookies(state)&&!state.origins?.some(x=>/^https:\/\/([\w-]+\.)*(wb|wildberries)\.ru$/.test(x.origin)&&x.localStorage?.length))return;
     await sessionEnvelope('POST',encryptSession(state,process.env.EDPVZ_INGEST_TOKEN));
@@ -166,7 +171,7 @@ export class Collector {
       if(['ok','partial'].includes(result.state))await this.backupSession().catch(()=>{});
     }catch(e){
       const state=e.code||'unavailable';
-      this.disputeInspection={...this.disputeInspection,state,error:state};
+      this.disputeInspection={...this.disputeInspection,state,error:state,...(e.diagnostic?{diagnostic:e.diagnostic}:{})};
       if(claim?.claimed)await ingest({kind:'finish',worker:this.workerId,run_id:claim.run_id,state,report:this.disputeInspection,error:state}).catch(()=>{});
       // Do not keep a heavy WB login application running while waiting for the owner.
       if(state==='authentication_required'&&this.controlUntil<=Date.now())await this.page.goto('about:blank',{waitUntil:'domcontentloaded',timeout:10000}).catch(()=>{});
@@ -178,5 +183,4 @@ export class Collector {
     await this.context?.close();
   }
 }
-
 

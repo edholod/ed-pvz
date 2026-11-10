@@ -5,6 +5,14 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {Collector} from '../collector.mjs';
 const card={title:'Тест',content:'Текст новости',dateText:'8 ноября 2026 г. в 10:00',links:[]};
+test('expired or blank WB page never overwrites the encrypted authenticated session',async()=>{
+ const prior=process.env.EDPVZ_INGEST_TOKEN;process.env.EDPVZ_INGEST_TOKEN='synthetic-test-only-ingest-token';
+ try{
+  const collector=new Collector('/unused');collector.context={storageState:async()=>{throw Error('must not read expired session')}};
+  for(const url of ['about:blank','https://my-pvz.wb.ru/login','https://my-pvz.wb.ru/auth']){collector.page={url:()=>url};await collector.backupSession()}
+  collector.page={url:()=> 'https://my-pvz.wb.ru/pickpoints',getByTestId:()=>({count:async()=>0}),locator:()=>({innerText:async()=> 'Отправить код'})};await collector.backupSession();
+ }finally{if(prior===undefined)delete process.env.EDPVZ_INGEST_TOKEN;else process.env.EDPVZ_INGEST_TOKEN=prior}
+});
 async function fixture(t){const directory=await mkdtemp(path.join(tmpdir(),'ed-collector-'));t.after(()=>rm(directory,{recursive:true,force:true}));let url='';const config={login:false,blocked:false,failEmployees:false,denied:false};
   const page={async goto(value){url=config.login?'https://my-pvz.wb.ru/login':value;if(config.failEmployees&&value.endsWith('employees'))throw Error('offline')},url:()=>url,locator:()=>({first:()=>({waitFor:async()=>{}})}),getByText:pattern=>({count:async()=>pattern.source.includes("Раздел")?(config.denied?1:0):(config.blocked?1:0)}),evaluate:async()=>[card]};
   const collector=new Collector(directory);collector.page=page;return {collector,config};}
@@ -32,3 +40,4 @@ test('slow first WB navigation leaves manual control available instead of HTTP 5
   collector.page.url=()=> 'about:blank';
   assert.equal(await collector.beginControl(),true);assert.equal(collector.status().controlOpen,true);
 });
+

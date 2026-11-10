@@ -1,7 +1,7 @@
 (function(){'use strict';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=id=>document.getElementById(id),date=s=>s?new Date(s).toLocaleString('ru-RU'):'ещё не проверено';
-const labels={ok:'Обновлено',partial:'Обновлено частично',running:'Идёт обновление',authentication_required:'Нужен вход в WB',blocked:'WB остановил автоматический доступ',waiting:'Ожидает проверки',unavailable:'Источник временно недоступен',layout_changed:'Страница WB изменилась',role_restricted:'Недоступно для этой роли',detail_unavailable:'Не удалось прочитать переписку'};
+const labels={organization_option_missing:'Не найден выбор организации в WB',organization_selection_unverified:'WB не подтвердил выбор организации',organization_header_missing:'Не удалось открыть кабинет организации',interrupted:'Проверка прервана — будет повторена',ok:'Обновлено',partial:'Обновлено частично',running:'Идёт обновление',authentication_required:'Нужен вход в WB',blocked:'WB остановил автоматический доступ',waiting:'Ожидает проверки',unavailable:'Источник временно недоступен',layout_changed:'Страница WB изменилась',role_restricted:'Недоступно для этой роли',detail_unavailable:'Не удалось прочитать переписку'};
 window.EdPVZDisputesSync={create({rest,account,onRows}){
  let observations=[],tickets=[],busy=false,timer=null,registry=[],points=[];
  async function all(path){const rows=[];for(let offset=0;offset<100000;offset+=1000){const batch=await rest(path+(path.includes('?')?'&':'?')+'limit=1000&offset='+offset);rows.push(...batch);if(batch.length<1000)return rows}throw Error('Список слишком велик для одного просмотра')}
@@ -49,6 +49,9 @@ window.EdPVZDisputesSync={create({rest,account,onRows}){
    const r=control?.last_report||{};
    $('wb-sync-description').textContent='Проверка каждые 3 часа. '+(control?.last_state==='authentication_required'?'Нужно завершить вход на сервере WB. ':'')+'Товарных карточек в последнем обходе: '+(r.rows||0)+', тикетов: '+(r.tickets||0)+'. Следующая проверка: '+(control?.next_due_at?date(control.next_due_at):'после подключения WB')+'.';
    $('sync-scopes').innerHTML='<details><summary>Проверки по ПВЗ: '+scopes.filter(x=>x.state==='ok').length+' успешных из '+scopes.length+'</summary>'+scopes.map(s=>'<p>'+esc(s.scope)+' — '+esc(labels[s.state]||s.state)+(s.last_success?' · '+esc(date(s.last_success)):'')+'</p>').join('')+'</details>';
+   const organizationErrors=(r.sections||[]).filter(section=>section.state!=='ok'&&section.state!=='running');
+   if(organizationErrors.length)$('sync-scopes').innerHTML+='<details open><summary>Участки, которые не удалось обновить: '+organizationErrors.length+'</summary>'+organizationErrors.map(section=>'<p>'+esc(registry.find(org=>org.research_id===section.key)?.name_exact||section.key)+' — '+esc(labels[section.state]||'Не удалось прочитать раздел WB')+'</p>').join('')+'</details>';
+   if(control?.last_state==='authentication_required')$('wb-sync-description').textContent='WB завершил вход. Загрузка остановлена до повторного входа на странице «Подключение WB». Полученные ранее карточки сохранены.';
    publish();
   }catch(e){$('sync-scopes').textContent='Не удалось обновить данные: '+e.message}
   finally{busy=false}
