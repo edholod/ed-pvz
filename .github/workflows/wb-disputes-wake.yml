@@ -11,7 +11,20 @@ concurrency:
 jobs:
   wake:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 120
     steps:
-      - name: Wake existing server without exposing private data
-        run: curl --fail --silent --show-error --retry 3 --retry-delay 10 --max-time 120 https://ed-pvz-wb-login.onrender.com/healthz
+      - name: Keep the existing worker awake for its bounded collection window
+        shell: bash
+        run: |
+          set -euo pipefail
+          deadline=$((SECONDS + 6600))
+          reached=0
+          while (( SECONDS < deadline )); do
+            if curl --fail --silent --show-error --retry 2 --retry-delay 10 --max-time 120 https://ed-pvz-wb-login.onrender.com/healthz >/dev/null; then
+              reached=1
+            else
+              echo "Worker temporarily unavailable; retrying on the next heartbeat."
+            fi
+            sleep 240
+          done
+          test "$reached" -eq 1

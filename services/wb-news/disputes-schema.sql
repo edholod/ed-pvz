@@ -52,7 +52,6 @@ begin
  if p->>'kind'='claim' then
   if c.lease_until>now() then return jsonb_build_object('claimed',false,'state','running'); end if;
   if not coalesce((p->>'force')::boolean,false) and c.next_due_at>now()
-   and not exists(select 1 from public.edpvz_dispute_sync_runs where id=c.active_run and owner_id=own and status='running')
    and coalesce(c.requested_at,'epoch')<=coalesce(c.handled_request_at,'epoch') then
    return jsonb_build_object('claimed',false,'state',coalesce(c.last_state,'waiting'),'next_due_at',c.next_due_at);
   end if;
@@ -65,26 +64,21 @@ begin
     where id=c.active_run and status='running';
   end if;
   insert into public.edpvz_dispute_sync_runs(owner_id,status) values(own,'running') returning id into run;
-  update public.edpvz_dispute_sync_control set lease_owner=p->>'worker',lease_until=now()+interval '3 minutes',
-   active_run=run,next_due_at=null,handled_request_at=requested_at,last_state='running',last_report=jsonb_build_object('state','running','rows',0,'tickets',0,'sections','[]'::jsonb,'started_at',now()),updated_at=now() where owner_id=own;
+  update public.edpvz_dispute_sync_control set lease_owner=p->>'worker',lease_until=now()+interval '110 minutes',
+   active_run=run,handled_request_at=requested_at,last_state='running',updated_at=now() where owner_id=own;
   return jsonb_build_object('claimed',true,'run_id',run);
  end if;
  if c.lease_owner is distinct from p->>'worker' or c.active_run is distinct from (p->>'run_id')::bigint or c.lease_until<now() then
   raise exception 'lease_not_owned';
  end if;
  run=c.active_run;
- if p->>'kind'='heartbeat' then
-  update public.edpvz_dispute_sync_control set lease_until=now()+interval '3 minutes',last_report=coalesce(p->'report',last_report),updated_at=now() where owner_id=own;
-  update public.edpvz_dispute_sync_runs set report=coalesce(p->'report',report) where id=run;
-  return jsonb_build_object('ok',true,'run_id',run);
- end if;
  if p->>'kind'='finish' then
   update public.edpvz_dispute_sync_runs set status=p->>'state',finished_at=now(),report=coalesce(p->'report','{}'),
    checked_points=coalesce((p->'report'->>'checked_points')::integer,0),
    error=nullif(p->>'error','') where id=run;
   update public.edpvz_dispute_sync_control set lease_owner=null,lease_until=null,
    last_state=p->>'state',last_report=coalesce(p->'report','{}'),updated_at=now(),
-   next_due_at=case when p->>'state' in ('ok','partial') then (select started_at+interval '3 hours' from public.edpvz_dispute_sync_runs where id=run) else now()+interval '15 minutes' end
+   next_due_at=case when p->>'state' in ('ok','partial') then date_bin(interval '3 hours',now()-interval '17 minutes',timestamptz '2000-01-01 00:00:00+00')+interval '3 hours 17 minutes' else now()+interval '15 minutes' end
    where owner_id=own;
   return jsonb_build_object('ok',true,'run_id',run);
  end if;
@@ -150,11 +144,10 @@ begin
   values(own,sc,case when complete then 'ok' else coalesce(p->>'status','partial') end,now(),case when complete then now() else null end,
    case when complete then null else coalesce(p->>'status','partial') end,now())
   on conflict(scope) do update set state=excluded.state,last_attempt=now(),last_success=coalesce(excluded.last_success,edpvz_dispute_sync_scopes.last_success),last_error=excluded.last_error,updated_at=now();
- update public.edpvz_dispute_sync_control set lease_until=now()+interval '3 minutes',updated_at=now() where owner_id=own;
+ update public.edpvz_dispute_sync_control set lease_until=now()+interval '110 minutes',updated_at=now() where owner_id=own;
  update public.edpvz_dispute_sync_runs set new_cases=coalesce(new_cases,0)+n_new,updated_cases=coalesce(updated_cases,0)+n_updated where id=run;
  return jsonb_build_object('ok',true,'rows',n,'complete',complete);
 end
 $function$;
 revoke all on function public.edpvz_dispute_sync_commit(jsonb) from public,anon,authenticated;
 grant execute on function public.edpvz_dispute_sync_commit(jsonb) to service_role;
-
