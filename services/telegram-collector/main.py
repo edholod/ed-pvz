@@ -41,7 +41,7 @@ async def get_client():
     if not API_ID or not API_HASH: raise RuntimeError('Telegram API credentials missing in Render')
     if client is None:
         client=TelegramClient(StringSession(SESSION),API_ID,API_HASH,device_model='Ed PVZ Collector',app_version='1.0',auto_reconnect=True)
-        await client.connect()
+        await asyncio.wait_for(client.connect(),timeout=25)
     return client
 
 @app.get('/health')
@@ -111,8 +111,8 @@ async def restore_session():
     if not saved:return False
     if client is not None:await client.disconnect()
     client=TelegramClient(StringSession(saved),API_ID,API_HASH,device_model='Ed PVZ Collector',app_version='1.0',auto_reconnect=True)
-    await client.connect()
-    return await client.is_user_authorized()
+    await asyncio.wait_for(client.connect(),timeout=25)
+    return await asyncio.wait_for(client.is_user_authorized(),timeout=15)
 
 async def collect():
     global last_run
@@ -129,7 +129,8 @@ async def collect():
     statuses={}
     for name in CHANNELS:
         try:
-            entity=await c.get_entity(name)
+            logger.info('Telegram checking source %s',name)
+            entity=await asyncio.wait_for(c.get_entity(name),timeout=20)
             count=0
             topics=[]
             if isinstance(entity,Channel) and getattr(entity,'forum',False):
@@ -217,15 +218,16 @@ async def start():
     async def loop():
         while True:
             try:
+                logger.info('Telegram collector cycle starting; api_configured=%s stored_session_configured=%s',bool(API_ID and API_HASH),bool(SESSION))
                 if client is None:
                     if not SESSION:
-                        restored=await restore_session()
+                        restored=await asyncio.wait_for(restore_session(),timeout=40)
                         if not restored:
                             state['error']='Stored Telegram session missing or unauthorized'
                             logger.warning('Stored Telegram session missing or unauthorized')
                     else:
                         await get_client()
-                await collect()
+                await asyncio.wait_for(collect(),timeout=240)
             except Exception as e:
                 state['error']=type(e).__name__+': '+str(e)[:100]
                 logger.exception('Telegram collector cycle failed')
