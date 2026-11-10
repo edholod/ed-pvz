@@ -35,6 +35,11 @@ test('goods extraction binds each barcode to its own photo, amount, ticket and d
  const rows=extractGoods(document.querySelector('main'));
  assert.equal(rows.length,2);assert.equal(rows[0].ticketNumber,'20529613');assert.equal(rows[1].amount,'498 ₽');assert.match(rows[0].photo,/first/);assert.equal(rows[0].eventId,null);assert.equal(rows[1].position,'1');
 });
+test('deadline in sibling footer belongs only to its product, not an adjacent row or a comment',()=>{
+ const {document}=parseHTML('<main><div data-index="0"><article><img alt="Товар" src="https://basket-1.wbbasket.ru/a.webp"><button>ШК 12345678</button><div>100 ₽</div></article><footer>Оспорить до 20.11.2026, 12:30</footer></div><div data-index="1"><article><img src="https://basket-1.wbbasket.ru/b.webp"><button>ШК 87654321</button><div>200 ₽</div><p>Сотрудник обещал до 21.11.2026</p></article></div><div>до 30.11.2026</div></main>');
+ const rows=extractGoods(document.querySelector('main'));
+ assert.equal(rows[0].dateLabel,'до 20.11.2026, 12:30');assert.equal(rows[0].amount,'100 ₽');assert.equal(rows[1].dateLabel,'');
+});
 test('point groups retain explicit zero counts and address bindings',()=>{
  const {document}=parseHTML('<main><article><p>ID 0001234</p><p>Адрес один</p><div>Товаров0</div><div>0 ₽</div></article><article><p>ID 0005678</p><p>Адрес два</p><div>Товаров4</div><div>500 ₽</div></article></main>');
  assert.deepEqual(extractPointGroups(document.querySelector('main')).map(x=>[x.point,x.count]),[['0001234',0],['0005678',4]]);

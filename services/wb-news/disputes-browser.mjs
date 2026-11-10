@@ -80,7 +80,18 @@ export function extractGoods(root){
   const title=img?.alt&&img.alt!=='product image'?img.alt:lines[lines.findIndex(x=>/^ШК/.test(x))+1];
   const amount=lines.findLast(x=>/^-?[\d\s.,\u00a0]+\s*₽$/.test(x));
   const ticket=chosen.innerText.match(/№\s*(\d{3,})/);
-  const dateLabel=lines.find(x=>/^до\s+\d{2}\.\d{2}\.\d{2,4}/i.test(x))||'';
+  // WB can put the appeal deadline in a sibling footer outside the price block.
+  // Stay inside this virtual row and never borrow a neighbouring product's date.
+  const boundary=chosen.closest('[data-index],[data-item-index]');
+  let dateLabel='';
+  for(let node=chosen,depth=0;node&&depth<9;node=node.parentElement,depth++){
+   const text=node.innerText||'';
+   if((text.match(/ШК\s*\d{4,40}/g)||[]).length!==1)break;
+   const dates=text.split('\n').map(x=>x.trim()).filter(x=>/^(?:(?:Оспорить|Срок (?:обращения|оспаривания))\s+)?до\s+\d{2}\.\d{2}\.\d{4}(?:,?\s+\d{2}:\d{2})?$/i.test(x));
+   const unique=[...new Set(dates.map(x=>x.replace(/^.*?до\s+/i,'до ')))];
+   if(unique.length===1){dateLabel=unique[0];break}
+   if(unique.length>1||node===boundary||node===root)break;
+  }
   const start=lines.indexOf(title),end=lines.findIndex(x=>/^(В тикет|Оспорить)$/.test(x));
   const reason=lines.slice(start+1,end>=0?end:undefined).filter(x=>x!==amount&&x!==dateLabel).join('\n');
   const wrapper=chosen.closest('[data-index],[data-item-index]');
