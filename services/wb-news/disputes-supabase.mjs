@@ -12,7 +12,11 @@ export const saveInspection=(_owner,inspection)=>ingest({sections:(inspection.se
 export async function saveScope(batch,{worker,run_id}){
  const {rows=[],tickets=[],...rest}=batch;
  for(let offset=0;offset<rows.length;offset+=100)await ingest({...rest,kind:'scope',worker,run_id,complete:false,status:'running',rows:rows.slice(offset,offset+100)});
- for(const ticket of tickets)await ingest({...rest,kind:'scope',worker,run_id,complete:false,status:'running',tickets:[ticket]});
+ let last;
+ for(const ticket of tickets)last=await ingest({...rest,kind:'scope',worker,run_id,complete:false,status:'running',tickets:[ticket]});
+ // The single-ticket write already checkpoints this running scope. Keep the
+ // terminal empty request for completion, partial status and count validation.
+ if(!rows.length&&tickets.length&&rest.complete===false&&rest.status==='running')return last;
  return ingest({...rest,kind:'scope',worker,run_id,rows:[],tickets:[]});
 }
 
