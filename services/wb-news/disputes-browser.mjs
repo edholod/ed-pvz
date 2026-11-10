@@ -293,9 +293,20 @@ async function ticketDetail(page,row){
  await closeDrawers(page).catch(()=>{});
  return {messages,history_complete:all.complete};
 }
-export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},categories=['hanging','tickets','brak','podmena'],budgetMs=100*60000}={}){
+export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},renewPage=async current=>current,categories=['hanging','tickets','brak','podmena'],budgetMs=100*60000}={}){
  const started=Date.now(),report={started_at:stamp(),state:'running',checked_points:0,rows:0,tickets:0,sections:[]};
  const checkedPoints=new Set(),detailQueue=[];
+ const openScope=async(url,heading,org)=>{
+  page=await renewPage(page);
+  await releaseBrowserMemory(page);
+  await page.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
+  // A WB organization can also be scoped to a tab. Verify/select it in the new
+  // renderer before accepting either populated records or an empty list.
+  await selectOrganization(page,org.name_exact,{pointIds:org.points.map(point=>point.wb_point_id),allPointIds:registry.flatMap(item=>item.points.map(point=>point.wb_point_id))});
+  if(new URL(page.url()).pathname!==new URL(url).pathname)await navigate(page,url,heading,org.name_exact);
+  else await pageReady(page,heading);
+ };
+
  report.dialogues_attempted=0;report.dialogues_failed=0;
  if(!await page.getByTestId('app-header').count()){
   await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
@@ -328,7 +339,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
    if(Date.now()-started>budgetMs){report.sections.push({key:'budget:goods',state:'partial'});break}
    report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section'};onProgress(report);
    try{
-    await navigate(page,ORIGIN+section.path,section.heading,org.name_exact);
+    await openScope(ORIGIN+section.path,section.heading,org);
     if(section.state!=='to-hold'){
      await page.getByRole('button',{name:section.tab,exact:true}).click();
      await sleep(400);await pageReady(page,section.heading);
@@ -379,7 +390,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
    if(Date.now()-started>budgetMs)break;
    const scope=`wb:${org.research_id}:${point.wb_point_id}:tickets:${namespace}`;
    try{
-    await navigate(page,ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org.name_exact);
+    await openScope(ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org);
     const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();if(await search.count())await search.fill('',{timeout:5000});
     await chooseTicketPoint(page,point.wb_point_id);
     await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(button=>/^№\s*\d+$/.test(button.innerText.trim()))||/Нет данных|Нет обращений|Нет тикетов|Ничего не найдено|Обращений пока нет/.test(document.body?.innerText||''),null,{timeout:20000});
@@ -414,15 +425,18 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
    let complete=true,failed=0,firstFailure=null;
    try{
     report.current={organization:org.research_id,point:point.wb_point_id,section:'tickets',namespace,step:'reading_dialogues'};onProgress(report);
-    await navigate(page,ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org.name_exact);
+    await openScope(ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org);
     const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();if(await search.count())await search.fill('',{timeout:5000});
     await chooseTicketPoint(page,point.wb_point_id);
     const closed=row=>/Реш[её]н|Закрыт|Отмен/i.test(row.status||'')?1:0;
     pending.sort((a,b)=>closed(a.row)-closed(b.row)||Date.parse(a.cached?.last_attempt_at||'1970-01-01')-Date.parse(b.cached?.last_attempt_at||'1970-01-01'));
+    let detailsOnPage=0;
     for(const task of pending){
      if(Date.now()-started>budgetMs){complete=false;break}
      const ticket={...task.ticket};
      try{
+      if(detailsOnPage>=10){await openScope(ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org);await chooseTicketPoint(page,point.wb_point_id);detailsOnPage=0;}
+      detailsOnPage++;
       await closeDrawers(page).catch(()=>{});await page.keyboard.press('Escape');
       const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();await search.fill(ticket.ticket_number,{timeout:5000});await sleep(400);
       Object.assign(ticket,await ticketDetail(page,task.row));

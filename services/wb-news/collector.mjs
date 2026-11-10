@@ -1,5 +1,6 @@
 import {syncConfigured,sessionEnvelope,ingest,saveScope} from './disputes-supabase.mjs';
 import {encryptSession,decryptSession} from './session.mjs';
+import {renewWBPage} from './browser-memory.mjs';
 import {syncWBDisputes} from './disputes-browser.mjs';
 import {randomUUID} from 'node:crypto';
 import {hasWBCookies} from './disputes-model.mjs';
@@ -43,7 +44,7 @@ export class Collector {
       if(backup.envelope){
         const state=decryptSession(backup.envelope,process.env.EDPVZ_INGEST_TOKEN);
         await this.context.addCookies(state.cookies);
-        await this.context.addInitScript(({origins})=>{
+        await this.page.addInitScript(({origins})=>{
           const matching=origins.find(x=>x.origin===location.origin);
           if(matching&&!sessionStorage.getItem('__edpvz_wb_restored')){
             for(const item of matching.localStorage||[])try{localStorage.setItem(item.name,item.value)}catch{}
@@ -173,6 +174,7 @@ export class Collector {
       await this.backupSession().catch(()=>{});
       const result=await syncWBDisputes(this.page,{
         registry:config.registry,tickets:config.tickets||[],
+        renewPage:async previous=>{this.page=await renewWBPage(previous);return this.page},
         saveScope:batch=>saveScope(batch,lease),
         onProgress:report=>{this.disputeInspection={...report,lastAttempt:report.started_at}}
       });
