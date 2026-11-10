@@ -25,7 +25,7 @@ export class Collector {
     this.feed = await readFeed(this.directory);
     const launch = this.launch || (await import('playwright')).chromium.launchPersistentContext.bind((await import('playwright')).chromium);
     this.context = await launch(this.directory + '/browser', {
-      headless: false, viewport: {width: 960, height: 640},
+      headless: false, viewport: {width: 1280, height: 800},
       args: ['--disable-dev-shm-usage', '--renderer-process-limit=2', '--disable-gpu', '--disable-software-rasterizer', '--js-flags=--max-old-space-size=96'],
     });
     this.page = this.context.pages()[0] || await this.context.newPage();
