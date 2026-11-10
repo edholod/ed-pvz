@@ -10,7 +10,13 @@ from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, P
 import httpx
 
 app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
-CHANNELS=['pvz_zamena','mskpodmena','marketplacepvz','whitelistpvz','zamena_vPVZ','OZONpvzArh','rabotapvz','pvz889','OnlinePvz','rabotapvzoff','pvzrabota','pvzzamena','Rabota_Zamena_PVZ','spbpvz','rabota_v_pvz','tochka_pvz','wildberries_ozone_help']
+CHANNELS=['pvz_zamena','mskpodmena','marketplacepvz','whitelistpvz','zamena_vPVZ','OZONpvzArh','rabotapvz','pvz889','OnlinePvz','rabotapvzoff','pvzrabota','pvzzamena','Rabota_Zamena_PVZ','spbpvz','rabota_v_pvz','tochka_pvz','wildberries_ozone_help','pvzworks']
+# Message links supplied by the portal owner. These are message IDs, not necessarily topic IDs.
+SEED_MESSAGES={
+    'pvz_zamena':[8984,6854,911,5626,912,910,546],
+    'Rabota_Zamena_PVZ':[265771,265773],
+    'marketplacepvz':[77922,99104,99101,99107,99102,99105,99109,99108,99113,99112],
+}
 API_ID=int(os.getenv('TELEGRAM_API_ID','0'))
 API_HASH=os.getenv('TELEGRAM_API_HASH','')
 ADMIN_TOKEN=os.getenv('COLLECTOR_ADMIN_TOKEN','')
@@ -139,6 +145,23 @@ async def collect():
                         offset_date=getattr(tail,'date',None)
                 except Exception as topic_error:
                     statuses[name]={'ok':False,'error':'ForumTopics:'+type(topic_error).__name__}
+            # Resolve supplied message links to their actual topic roots.
+            seed_messages=SEED_MESSAGES.get(name,[])
+            seed_topics=[]
+            if seed_messages:
+                try:
+                    samples=await c.get_messages(entity,ids=seed_messages)
+                    for sample in samples:
+                        if sample is None:continue
+                        reply=getattr(sample,'reply_to',None)
+                        root=getattr(reply,'reply_to_top_id',None) or getattr(reply,'reply_to_msg_id',None)
+                        if root:seed_topics.append(root)
+                        elif isinstance(entity,Channel) and getattr(entity,'forum',False):
+                            # A supplied link may itself point at a topic starter.
+                            seed_topics.append(sample.id)
+                except Exception as seed_error:
+                    statuses[name]={'ok':False,'error':'SeedResolve:'+type(seed_error).__name__}
+            topics=list(dict.fromkeys(topics+seed_topics))
             seen=set()
             async def history():
                 async for message in c.iter_messages(entity,limit=350):
@@ -165,7 +188,7 @@ async def collect():
                 link=f'https://t.me/{name}/{msg.id}' + (f'?thread={topic_id}' if topic_id else '')
                 items.append({'id':f'tg:{name}:{msg.id}','source':name,'url':link,'text':text[:2400],'published_at':msg.date.isoformat() if msg.date else None,'marketplaces':(['wb'] if re.search(r'wb|вб|wildberries|вайлдбер',text,re.I) else [])+(['ozon'] if re.search(r'ozon|озон',text,re.I) else []),'kind':'resume' if re.search(r'ищу работу|ищу смен|выйду на замен|ищу подработ',text,re.I) else 'vacancy',**author})
                 count+=1
-            statuses[name]={'ok':True,'posts':count,'topics':len(topics)}
+            statuses[name]={'ok':True,'posts':count,'topics':len(topics),'seed_links':len(seed_messages)}
         except Exception as e:
             statuses[name]={'ok':False,'error':type(e).__name__}
     # Every source is isolated: a missing/private forum cannot interrupt other groups.
