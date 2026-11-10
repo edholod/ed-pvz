@@ -62,7 +62,6 @@ export function ticketNeedsDetail(ticket,cached,now=Date.now()){
 }
 
 export function eligibleObservation(row){
- if(row.wb_state!=='to-hold')return false;
- if(row.raw?.collection_since==='2026-10-01')return true;
- const date=localDate(row.raw?.date_label);return Boolean(date&&date>='2026-09-30T21:00:00.000Z');
+ // An appeal deadline is not proof of the event's collection period.
+ return row.wb_state==='to-hold'&&row.raw?.collection_since==='2026-10-01';
 }

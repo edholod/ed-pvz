@@ -19,9 +19,7 @@ Deno.serve(async req=>{
    for(const row of data||[]){
     const url=row.photo_url||'';
     if(!/^https:\/\/[^/?]+\.(wbbasket|wb|wildberries)\.ru\/[^?]+\.(webp|jpg|jpeg|png)$/.test(url)||seen.has(url))continue;
-    const match=(row.raw?.date_label||'').match(/(\d{2})\.(\d{2})\.(\d{4})/);
-    const date=match?`${match[3]}-${match[2]}-${match[1]}`:null;
-    if(row.raw?.collection_since!=='2026-10-01'&&(!date||date<'2026-10-01'))continue;
+    if(row.raw?.collection_since!=='2026-10-01')continue;
     seen.add(url);photos.push({url,path:'assets/wb-disputes/'+await sha(url)+'.'+url.split('.').pop()});
    }
    return json({photos});

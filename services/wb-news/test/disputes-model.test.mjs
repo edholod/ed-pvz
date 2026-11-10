@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {money,observationRows,normalizeMessages,appendedSupport,ticketNeedsDetail,safeImage,hasWBCookies} from '../disputes-model.mjs';
+import {money,eligibleObservation,observationRows,normalizeMessages,appendedSupport,ticketNeedsDetail,safeImage,hasWBCookies} from '../disputes-model.mjs';
 const scope={organization:'org01',point:'001234',category:'Зависший',state:'to-hold'};
 test('WB session backup recognizes real WB domains and rejects lookalikes',()=>{
  for(const domain of ['my-pvz.wb.ru','.wb.ru','wildberries.ru'])assert.equal(hasWBCookies({cookies:[{domain}]}),true);
@@ -30,3 +30,5 @@ test('repeated identical messages retain occurrence IDs; separate ticket caches 
  assert.equal(ticketNeedsDetail({status:'В работе'},{baseline_completed_at:'2026-11-09',last_checked_at:new Date().toISOString()}),true);
 });
 test('manual card identity survives mutable WB deadline title and linked ticket changes',()=>{const a=observationRows([{barcode:'123456789',dateLabel:'до 10.11.2026',ticketNumber:'1',title:'old'}],scope)[0];const b=observationRows([{barcode:'123456789',dateLabel:'до 15.11.2026',ticketNumber:'2',title:'new'}],scope)[0];assert.equal(a.source_event_id,b.source_event_id)});
+
+test('pending goods require verified event period; future appeal deadline alone cannot qualify legacy records',()=>{assert.equal(eligibleObservation({wb_state:'to-hold',raw:{date_label:'до 20.11.2026'}}),false);assert.equal(eligibleObservation({wb_state:'to-hold',raw:{collection_since:'2026-10-01'}}),true);assert.equal(eligibleObservation({wb_state:'paid',raw:{collection_since:'2026-10-01'}}),false)});

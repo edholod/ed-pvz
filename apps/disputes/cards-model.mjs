@@ -2,8 +2,7 @@ export const STATUSES=['Обращение не создано','Тикет в �
 export const STATUS_CLASSES=['new','working','technical','employee','success'];
 export const FIELDS=['sticker','cost','withholding_date','withholding_type','employee_fault','employee_fault_date','ticket_number','comment'];
 export const blankNote=()=>({status:STATUSES[0],sticker:'',cost:null,withholding_date:null,withholding_type:'',employee_fault:'',employee_fault_date:null,ticket_number:'',comment:'',revision:0});
-export function sourceDate(row){const m=String(row.raw?.date_label||'').match(/(\d{2})\.(\d{2})\.(\d{4})/);return m?`${m[3]}-${m[2]}-${m[1]}`:null}
-export function eligible(row){return row.is_current!==false&&row.wb_state==='to-hold'&&(row.raw?.collection_since==='2026-10-01'||Boolean(sourceDate(row)&&sourceDate(row)>='2026-10-01'))}
+export function eligible(row){return row.is_current!==false&&row.wb_state==='to-hold'&&row.raw?.collection_since==='2026-10-01'}
 export function validateNote(input){
  const out={};if(!STATUSES.includes(input.status))throw Error('Выбери статус из списка');out.status=input.status;
  for(const key of ['sticker','withholding_type','employee_fault','ticket_number','comment']){out[key]=String(input[key]??'').trim();if(out[key].length>(key==='comment'?20000:200))throw Error('Слишком длинное поле: '+key)}
