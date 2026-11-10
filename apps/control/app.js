@@ -1,6 +1,23 @@
 'use strict';
 let KEY='pvz-control-v1';
 try{const active=localStorage.getItem('pvz-control-active-key');if(/^pvz-control-tg-[1-9][0-9]*$/.test(active||''))KEY=active}catch{}
+// Separate calendar workspaces when different accounts use the same device.
+let calendarAccountId=null;
+try{
+ const auth=JSON.parse(localStorage.getItem('edpvz-auth-v1')||'null');
+ if(auth?.access_token&&/^[a-f0-9-]{36}$/i.test(auth.user?.id||'')){
+  calendarAccountId=auth.user.id;
+  const legacy=KEY;KEY='pvz-control-account-'+calendarAccountId;
+  if(!localStorage.getItem(KEY)){
+   const claim=localStorage.getItem(legacy+'-account-owner');
+   if(!claim||claim===calendarAccountId){
+    const old=localStorage.getItem(legacy);
+    if(old)localStorage.setItem(KEY,old); // Original is retained for recovery.
+    localStorage.setItem(legacy+'-account-owner',calendarAccountId);
+   }
+  }
+ }
+}catch{}
 let storageFault=false, persistedSnapshot=null;
 function writeLocal(value,{recover=false}={}){
  if(storageFault&&!recover)throw Error('Хранилище повреждено или недоступно. Сохраните исходные данные перед восстановлением.');
@@ -80,7 +97,7 @@ function dashboard(p){
  const choices=markets.map(m=>`<button type="button" class="market-choice ${p.market===m?'selected':''}" data-market="${m}" aria-pressed="${p.market===m}" onclick="setMarketplace('${m}')"><span>${MARKET_INFO[m].short}</span>${p.market===m?'<span class="market-tick" aria-hidden="true">✓</span>':''}</button>`).join('');
  const monthStart=monthPrefix();
  const shifts=db.shifts.filter(s=>s.point===p.id&&s.date.startsWith(monthStart));
- const staffIds=new Set([...shifts.map(s=>s.person),...db.people.filter(w=>!w.archived&&w.points?.includes(p.id)).map(w=>w.id)]);
+ const staffIds=new Set([...shifts.map(s=>s.person),...db.people.filter(w=>!w.archived&&!w.cloudInactive&&w.points?.includes(p.id)).map(w=>w.id)]);
  const staff=staffIds.size;
  const incidents=db.incidents.filter(x=>x.point===p.id&&x.status!=='отменено'&&x.status!=='подтверждено');
  const pending=db.installments.filter(x=>x.point===p.id&&x.status==='active').length;
@@ -170,7 +187,7 @@ function render(){const p=activePoint();if(p)pointId=p.id;document.body.classNam
  if(tab==='network'){h+=unclosedNotice(null);h+=unstaffedNotice(null)}if(tab==='calendar')h+=calendar(p);if(tab==='people')h+=peopleView();if(tab==='profile')h+=profileView();if(tab==='network')h+=networkView();if(tab==='finance')h+=financeView();if(tab==='settings')h+=settingsView();document.getElementById('app').innerHTML=h;if(tab==='settings'&&settingsQuery)filterSettings(settingsQuery);try{localStorage.setItem(KEY+'-view',JSON.stringify({pointId,networkMarket,settingsQuery}))}catch{}}
 function calendar(p){if(!p)return `<div class="card">Добавьте первый ПВЗ, чтобы начать.</div>`;const days=new Date(year,month+1,0).getDate(),off=(new Date(year,month,1).getDay()+6)%7;let h=`<div class="card"><div class="row"><button onclick="moveMonth(-1)">‹</button><b class="grow" style="text-align:center">${new Intl.DateTimeFormat('ru-RU',{month:'long',year:'numeric'}).format(new Date(year,month,1))}</b><button onclick="moveMonth(1)">›</button></div><div class="calendar">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(x=>`<div class="weekday">${x}</div>`).join('')}${Array(off).fill('<div></div>').join('')}`;
 for(let d=1;d<=days;d++){const ss=shiftAt(p.id,dateStr(d),'employee');const cs=ss.map(s=>person(s.person)?.substitute?'#c9c9c9':person(s.person)?.color||'#ccc');const fill=cs.length?`linear-gradient(90deg,${cs.map((c,i)=>`${c} ${i*100/cs.length}% ${(i+1)*100/cs.length}%`).join(',')})`:'linear-gradient(#fff,#fff)';const borderColors=ss.map(s=>person(s.person)?.substitute?'#888888':person(s.person)?.color||'#999999');const rim=borderColors.length?`linear-gradient(90deg,${borderColors.map((c,i)=>`${c} ${i*100/borderColors.length}% ${(i+1)*100/borderColors.length}%`).join(',')})`:'linear-gradient(#cfcbd2,#cfcbd2)';h+=`<button class="day" style="background:${esc(fill)} padding-box,${esc(rim)} border-box;border:2.5px solid transparent;${bulkSelection&&selectedDates.has(d)?'outline:3px solid #333;outline-offset:1px;':''}" onclick="dayView(${d})">${d}</button>`}h+=`</div><div class="calendar-tools"><div class="tools-title">Управление календарём</div><div class="tools-grid"><button onclick="copyPrevious()">Копировать месяц</button><button onclick="toggleBulk()">${bulkSelection?'Завершить выбор':'Выбрать даты'}</button><button onclick="undoLast()" ${undo.length?'':'disabled'}>Отменить</button><button onclick="redoLast()" ${redo.length?'':'disabled'}>Вернуть</button><button onclick="exportCsv()">Скачать CSV</button><button onclick="exportExcel()">Excel (.xlsx)</button><button onclick="exportPdf()">PDF / печать</button><button onclick="calendarCopySheet()">Копировать по правилу</button></div>${bulkSelection?`<p class="muted">Отметьте даты прямо в календаре. Выбрано: ${selectedDates.size}</p><button class="primary wide" onclick="bulk()" ${selectedDates.size?'':'disabled'}>Назначить сотрудника на выбранные даты</button><div class="tools-grid" style="margin-top:9px"><button onclick="bulkMarkWorked()">Отметить отработанными</button><button onclick="bulkRemovePlanned()">Удалить плановые смены</button><button onclick="bulkMoveSheet()">Перенести смены</button><button onclick="bulkReplaceSheet()">Заменить сотрудника</button></div>`:''}</div></div>`;
-h+=`<div class="card legend"><b>Сотрудники и цвета</b><div class="legend-grid">${db.people.filter(x=>!x.archived&&x.role==='employee'&&(db.shifts.some(s=>s.point===p.id&&s.person===x.id)||!x.points?.length||x.points.includes(p.id))).map(x=>`<div class="legend-item"><span class="legend-swatch" style="background:${x.substitute?'#c9c9c9':esc(x.color||'#aaa')};border-color:${x.substitute?'#888':esc(x.color||'#aaa')}"></span>${esc(x.name)}${x.substitute?' · подмена':''}</div>`).join('')||'<span class="muted">Пока нет назначенных сотрудников</span>'}</div></div>`;const managers=db.people.filter(x=>x.role==='manager'&&((x.points||[]).includes(p.id)||db.shifts.some(s=>s.point===p.id&&s.person===x.id)));if(managers.length){h+=`<div class="card"><b>Управляющие</b><div class="muted">Отдельный календарь назначенных управляющих</div><div class="calendar">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(x=>`<div class="weekday">${x}</div>`).join('')}${Array(off).fill('<div></div>').join('')}`;for(let d=1;d<=days;d++){const s=shiftAt(p.id,dateStr(d),'manager');h+=`<button class="day" style="background:${s.length?'#d4d4d4':'white'};border:2.5px solid ${s.length?'#888888':'#cfcbd2'}" onclick="dayView(${d})">${d}</button>`}h+='</div></div>'}return h}
+h+=`<div class="card legend"><b>Сотрудники и цвета</b><div class="legend-grid">${db.people.filter(x=>!x.archived&&!x.cloudInactive&&x.role==='employee'&&(db.shifts.some(s=>s.point===p.id&&s.person===x.id)||!x.points?.length||x.points.includes(p.id))).map(x=>`<div class="legend-item"><span class="legend-swatch" style="background:${x.substitute?'#c9c9c9':esc(x.color||'#aaa')};border-color:${x.substitute?'#888':esc(x.color||'#aaa')}"></span>${esc(x.name)}${x.substitute?' · подмена':''}</div>`).join('')||'<span class="muted">Пока нет назначенных сотрудников</span>'}</div></div>`;const managers=db.people.filter(x=>x.role==='manager'&&((x.points||[]).includes(p.id)||db.shifts.some(s=>s.point===p.id&&s.person===x.id)));if(managers.length){h+=`<div class="card"><b>Управляющие</b><div class="muted">Отдельный календарь назначенных управляющих</div><div class="calendar">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(x=>`<div class="weekday">${x}</div>`).join('')}${Array(off).fill('<div></div>').join('')}`;for(let d=1;d<=days;d++){const s=shiftAt(p.id,dateStr(d),'manager');h+=`<button class="day" style="background:${s.length?'#d4d4d4':'white'};border:2.5px solid ${s.length?'#888888':'#cfcbd2'}" onclick="dayView(${d})">${d}</button>`}h+='</div></div>'}return h}
 function dayView(d){if(bulkSelection){selectedDates.has(d)?selectedDates.delete(d):selectedDates.add(d);render();return}selectedDay=dateStr(d);openSheet('day')}
 function toggleBulk(){bulkSelection=!bulkSelection;selectedDates.clear();render()}
 function peopleView(){return `<div class="card"><div class="row"><h3 class="grow">Персонал</h3><button class="primary" onclick="addPerson()">${ico('plus')} Добавить</button></div>${db.people.map(x=>`<div class="listitem"><div class="row"><span style="display:inline-block;background:${esc(x.substitute?'#bbb':x.color)};width:14px;height:14px;border-radius:4px"></span><button class="person-link grow" onclick="openProfile('${x.id}')">${esc(x.name)}</button><span class="pill">${x.role==='manager'?'Управляющий':x.substitute?'Подменный':'Сотрудник'}</span></div><div class="muted">Ставка: ${Number(x.rate||0).toLocaleString('ru-RU')} ₽ · ${x.archived?'Архив':'Активен'}</div><div class="row"><button onclick="openProfile('${x.id}')">Карточка</button><button onclick="scheduleSheet('${x.id}')">График</button><button onclick="editRate('${x.id}')">Ставки</button>${x.role==='manager'?`<button onclick="assignManager('${x.id}')">Назначить на ПВЗ</button>`:''}<button onclick="toggleArchive('${x.id}')">${x.archived?'Восстановить':'В архив'}</button></div></div>`).join('')||'<p>Пока нет сотрудников.</p>'}</div>`}
@@ -194,7 +211,7 @@ function networkView(){
  const totals={shifts:0,staff:new Set(),problems:0};
  const cards=points.map(p=>{
   const shifts=db.shifts.filter(s=>s.point===p.id&&s.date.startsWith(prefix));
-  const staff=new Set([...shifts.map(s=>s.person),...db.people.filter(w=>!w.archived&&w.points?.includes(p.id)).map(w=>w.id)]);
+  const staff=new Set([...shifts.map(s=>s.person),...db.people.filter(w=>!w.archived&&!w.cloudInactive&&w.points?.includes(p.id)).map(w=>w.id)]);
   const problems=db.incidents.filter(x=>x.point===p.id&&x.status!=='отменено'&&x.status!=='подтверждено').length;
   totals.shifts+=shifts.length;staff.forEach(x=>totals.staff.add(x));totals.problems+=problems;
   const market=MARKET_INFO[p.market]||{name:'ПВЗ'};
@@ -363,7 +380,7 @@ function closeDatePicker(){document.getElementById('date-picker-overlay')?.remov
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('date-picker-overlay')){e.preventDefault();closeDatePicker()}});
 
 function selectField(label,name,opts){return `<label class="form-field"><span>${label}</span><select name="${name}">${opts.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('')}</select></label>`}
-function staffOptions(){const p=activePoint();return db.people.filter(x=>!x.archived&&(!x.points?.length||x.points.includes(p?.id))).map(x=>[x.id,x.name])}
+function staffOptions(){const p=activePoint();return db.people.filter(x=>!x.archived&&!x.cloudInactive&&(!x.points?.length||x.points.includes(p?.id))).map(x=>[x.id,x.name])}
 function openSheet(kind){sheetKind=kind;const p=activePoint();const date=selectedDay||new Date().toLocaleDateString('sv-SE');let title='',content='';
 if(kind==='menu'){title='Что добавить?';content=`<div class="action-grid">${[['point','store','ПВЗ','Новый пункт'],['person','users','Сотрудника','В команду'],['day','calendar','Смену','В календарь'],['payment','wallet','Выплату','Зарплата или аванс'],['incident','alert','Проблему','Штраф или претензия'],['note','note','Заметку','К рабочему дню']].map(([k,i,n,d])=>`<button type="button" class="action-tile" onclick="${k==='day'&&!selectedDay?"selectedDay=new Date().toLocaleDateString('sv-SE');":''}openSheet('${k}')">${ico(i)}<strong>${n}</strong><small>${d}</small></button>`).join('')}</div>`}
 if(kind==='point'){title='Новый ПВЗ';content=`<form id="quick-form" onsubmit="submitSheet(event)">${field('Название или адрес','name','text','required maxlength="120" placeholder="Например, Ленина, 12"')}${selectField('Маркетплейс','market',[['wb','Wildberries'],['ozon','Ozon'],['ym','Яндекс Маркет']])}<button class="primary wide" type="submit">Создать ПВЗ</button></form>`}

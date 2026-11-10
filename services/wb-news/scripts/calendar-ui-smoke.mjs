@@ -1,0 +1,47 @@
+import {chromium} from 'playwright';
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const root=fileURLToPath(new URL('../../../',import.meta.url));
+const server=createServer(async(req,res)=>{try{const name=decodeURIComponent(new URL(req.url,'http://local').pathname);const resolved=path.resolve(root,'.'+name+(name.endsWith('/')?'index.html':''));if(!resolved.startsWith(root))throw Error();const data=await readFile(resolved);res.setHeader('Content-Type',resolved.endsWith('.html')?'text/html':resolved.endsWith('.js')?'text/javascript':'application/octet-stream');res.end(data)}catch{res.writeHead(404).end()}});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
+const browser=await chromium.launch({executablePath:process.env.CARDS_BROWSER_EXECUTABLE||undefined,headless:true,args:['--no-sandbox']});
+try{
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+ const uid='11111111-1111-4111-8111-111111111111',staff='22222222-2222-4222-8222-222222222222';
+ await context.addInitScript(({uid})=>{if(!sessionStorage.getItem('fixture-auth')){localStorage.setItem('edpvz-auth-v1',JSON.stringify({access_token:'synthetic-test-token',expires_at:9999999999,user:{id:uid}}));sessionStorage.setItem('fixture-auth','1')}},{uid});
+ await context.route('https://duerixyhzapotoeclggz.supabase.co/**',route=>{
+  const p=new URL(route.request().url()).pathname;let data=[];
+  if(p.endsWith('/edpvz_points'))data=[{point_id:'5000',name:'Тестовый',owner_id:uid}];
+  if(p.endsWith('/edpvz_memberships'))data=[{point_id:'5000',user_id:staff,status:'approved'}];
+  if(p.endsWith('/edpvz_profiles'))data=[{user_id:staff,username:'fixture_employee',role:'employee'}];
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data),headers:{'access-control-allow-origin':'*'}});
+ });
+ await context.route(/https:\/\/(?!duerixyhzapotoeclggz\.supabase\.co)/,r=>r.abort());
+ const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(base+'/');await page.getByRole('link',{name:'Управление моими пунктами Команда, смены, задачи и все инструменты ПВЗ'}).click();
+ let frame=page.frameLocator('#viewer');await frame.getByRole('link',{name:'Календарь смен Графики сотрудников'}).click();
+ await frame.getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
+ assert.equal(await page.locator('.appbar:visible').count(),1);assert.equal(await frame.locator('#viewer').count(),0);
+ assert.match(await page.locator('#external').getAttribute('href'),/\/apps\/control\/$/);
+ assert.match(await frame.locator('#app').innerText(),/Тестовый/);
+ await frame.locator('.day').nth(4).click();
+ assert.match(await frame.locator('select[name="person"]').innerText(),/fixture_employee/);
+ await frame.getByRole('button',{name:'Добавить смену',exact:true}).click();
+ assert.match(await frame.locator('#sheet-root').innerText(),/fixture_employee/);
+ await page.reload();frame=page.frameLocator('#viewer');await frame.getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
+ const current=page.frames().find(f=>f.url().includes('/apps/control/'));
+ assert.equal(await current.evaluate(()=>db.shifts.length),1);
+ assert.equal(await current.evaluate(()=>db.people.length),1);
+ // Old nested portal URLs are flattened into the same outer frame.
+ await page.goto(base+'/#section='+encodeURIComponent(base+'/apps/management/'));
+ frame=page.frameLocator('#viewer');await frame.getByRole('heading',{name:'Управление ПВЗ',exact:true}).waitFor();
+ await page.locator('#viewer').evaluate((el,url)=>{el.src=url},base+'/#section='+encodeURIComponent(base+'/apps/control/'));
+ await page.frameLocator('#viewer').getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
+ assert.equal(await page.frameLocator('#viewer').locator('#viewer').count(),0);
+ assert.equal(await page.locator('.appbar:visible').count(),1);
+ assert.deepEqual(errors,[]);console.log('PASS mobile navigation, nested portal recovery, cloud employee picker, shift save/reload');
+ await context.close();
+}finally{await browser.close();await new Promise(resolve=>server.close(resolve))}

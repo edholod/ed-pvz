@@ -1,5 +1,5 @@
 'use strict';
-// Standalone Ed PVZ calendar. No external authentication, API calls or account switching.
+// Local shifts and salary data; confirmed account team is refreshed separately.
 // Existing KEY and its saved data are intentionally left unchanged.
 function syncStatus(message){
  const status=document.getElementById('sync-status');
@@ -70,3 +70,34 @@ window.addEventListener('edpvz-auth-changed',runSync);
 window.addEventListener('storage',e=>{if(e.key===KEY)syncStatus('Данные изменились в другой вкладке. Обновите страницу перед редактированием.')});
 window.addEventListener('pvz-saved',()=>runSync());
 runSync();
+
+let teamLoading=false,teamLastAttempt=0,teamRevision=0;
+async function refreshAccountTeam(force=false){
+ const api=window.EdPVZAccount;
+ const uid=api?.user?.id||null;
+ if(uid!==calendarAccountId){location.reload();return}
+ if(!uid||!window.EdPVZCalendarTeam||teamLoading||(!force&&Date.now()-teamLastAttempt<60000))return;
+ teamLoading=true;teamLastAttempt=Date.now();const revision=++teamRevision;
+ let status=document.getElementById('team-sync-status');
+ if(!status){status=document.createElement('p');status.id='team-sync-status';status.setAttribute('role','status');document.querySelector('.market-intro')?.after(status);if(!status.parentNode)document.querySelector('main')?.before(status)}
+ status.textContent='Загрузка ПВЗ и подтверждённой команды…';
+ try{
+  await api.ensure();
+  const team=await window.EdPVZCalendarTeam.load(api);
+  if(api.user?.id!==uid||revision!==teamRevision)return;
+  if(storageFault)throw Error('Сначала восстановите локальную базу из резервной копии.');
+  const merged=window.EdPVZCalendarTeam.merge(db,team);validate(merged);
+  if(JSON.stringify(merged)!==JSON.stringify(db)){
+   // Write before replacing memory; failed storage or a concurrent tab leaves current data intact.
+   writeLocal(JSON.stringify(merged));db=merged;undo=[];redo=[];render();
+   if(sheetKind==='day'&&document.querySelector('#sheet-root form'))openSheet('day');
+  }
+  status.textContent='Команда аккаунта обновлена. ПВЗ: '+team.points.length+' · сотрудников: '+new Set(team.members.filter(m=>m.status==='approved').map(m=>m.user_id)).size+'. Смены и ставки сохраняются на устройстве.';
+ }catch(error){status.textContent='Не удалось обновить команду: '+error.message+' Сохранённые смены и ставки не изменены.'}
+ finally{teamLoading=false}
+}
+window.addEventListener('edpvz-auth-changed',()=>refreshAccountTeam(true));
+window.addEventListener('focus',()=>refreshAccountTeam());
+window.addEventListener('pageshow',()=>refreshAccountTeam());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAccountTeam()});
+refreshAccountTeam(true);
