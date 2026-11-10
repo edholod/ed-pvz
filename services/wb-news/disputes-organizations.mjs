@@ -19,7 +19,7 @@ export function readOrganizationEvidence(root){
   return label?[text(label),...[...label.querySelectorAll('span,p')].map(text)]:[];
  }).filter(Boolean);
  const pointIds=[...new Set([...text(root).matchAll(/\bID\s+(\d{4,12})\b/g)].map(m=>m[1]))];
- const options=[...root.querySelectorAll('label,[role="option"],[role="radio"]')].map(text).map(s=>s.trim()).filter(s=>/^(ИП|ООО|АО|ПАО)\s/.test(s)).slice(0,30);
+ const options=[...root.querySelectorAll('label,[role="option"],[role="radio"]')].filter(el=>typeof el.getClientRects!=='function'||el.getClientRects().length>0).map(text).map(s=>s.trim()).filter(s=>/^(ИП|ООО|АО|ПАО)\s/.test(s)).slice(0,30);
  return {header:text(header).slice(0,1200),selected:selected.map(s=>s.slice(0,500)).slice(0,20),pointIds,options,headings:[...root.querySelectorAll('h1,h2')].map(text).slice(0,8)};
 }
 export function verifyOrganization(evidence,name,{pointIds=[],allPointIds=[]}={}){

@@ -26,6 +26,12 @@ test('active registered PVZ proves the organization when legal name is omitted; 
  assert.equal(verifyOrganization({...base,pointIds:['123456','654321']},'ИП Тест',context),false);
  assert.equal(verifyOrganization({...base,options:['ИП Другая']},'ИП Тест',context),false);
 });
+test('closed hidden organization options do not hide active-point evidence',()=>{
+ const {document}=parseHTML('<body><header data-testid="app-header">Адрес ПВЗ</header><label>ИП Другая</label><article>ID 123456</article></body>');
+ document.querySelector('label').getClientRects=()=>[];
+ const evidence=readOrganizationEvidence(document);
+ assert.deepEqual(evidence.options,[]);assert.ok(verifyOrganization(evidence,'ИП Нужная',{pointIds:['123456'],allPointIds:['123456']}));
+});
 test('expired login aborts organization switching before any click or organization retry',async()=>{
  let clicked=false;const page={url:()=> 'https://my-pvz.wb.ru/login',locator:()=>({innerText:async()=> 'Отправить код',click:async()=>clicked=true})};
  await assert.rejects(selectOrganization(page,'ИП Тест'),error=>error.code==='authentication_required');assert.equal(clicked,false);
