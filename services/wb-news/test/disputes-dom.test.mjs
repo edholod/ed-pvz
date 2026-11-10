@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseHTML} from 'linkedom';
-import {extractGoods,extractPointGroups,extractTicketRows,extractMessages,pageReady,extractHangingGroupLabels,expandVisibleReasons,readGoodsScopeProof,confirmsAbsentPoints} from '../disputes-browser.mjs';
+import {chooseTicketPoint,releaseBrowserMemory,waitGoodsDrawer,extractGoods,extractPointGroups,extractTicketRows,extractMessages,pageReady,extractHangingGroupLabels,expandVisibleReasons,readGoodsScopeProof,confirmsAbsentPoints} from '../disputes-browser.mjs';
 test('missing groups confirm zero only with a complete unfiltered list, matching WB total and correct owner',()=>{
  const {document}=parseHTML('<main><header data-testid="app-header">ИП Тест</header><div aria-expanded="false">Адрес или ID ПВЗ</div><div>Период</div><div>2 ПВЗ</div><input value=""></main>');
  const root=document.querySelector('main'),proof=readGoodsScopeProof(root),org={name_exact:'ИП Тест',points:[{wb_point_id:'111111'},{wb_point_id:'222222'},{wb_point_id:'333333'}]},scan={complete:true,rows:[{point:'111111'},{point:'222222'}]};
@@ -48,4 +48,34 @@ test('support author outside the message bubble and date separators are retained
  const before=globalThis.Node;globalThis.Node=Node;
  try{const rows=extractMessages(document.querySelector('main'));assert.equal(rows.length,2);assert.equal(rows[1].role,'wb_support');assert.equal(rows[1].author,'Менеджер');assert.equal(rows[1].dateLocal,'02.11.2026 11:21');assert.equal(rows[0].role,'unknown');}
  finally{globalThis.Node=before}
+});
+
+test('a visible goods drawer is not ready until its asynchronously loaded content arrives',async()=>{
+ const previous=globalThis.document;
+ try{
+  let ready;const {document}=parseHTML('<main><div role="dialog">ID 50136835</div></main>');globalThis.document=document;
+  const page={waitForFunction:async(predicate,args,options)=>{ready=predicate(args);assert.equal(options.timeout,25000)}};
+  await waitGoodsDrawer(page,{groups:true});assert.equal(ready,false);
+  document.querySelector('[role="dialog"]').innerHTML='<div>Товары из ПВЗ</div>';
+  await waitGoodsDrawer(page,{groups:true});assert.equal(ready,true);
+  await waitGoodsDrawer(page);assert.equal(ready,false);
+  document.querySelector('[role="dialog"]').innerHTML='<button>ШК 123456789</button>';
+  await waitGoodsDrawer(page);assert.equal(ready,true);
+ }finally{globalThis.document=previous}
+});
+
+test('memory housekeeping releases its CDP handle and never changes browser storage',async()=>{
+ const calls=[];const session={send:async(method,args)=>calls.push([method,args]),detach:async()=>calls.push('detached')};
+ await releaseBrowserMemory({context:()=>({newCDPSession:async()=>session})});
+ assert.deepEqual(calls,[['Memory.simulatePressureNotification',{level:'critical'}],'detached']);
+ calls.length=0;session.send=async()=>{throw Error('unsupported')};await releaseBrowserMemory({context:()=>({newCDPSession:async()=>session})});assert.deepEqual(calls,['detached']);
+ await releaseBrowserMemory({context:()=>({newCDPSession:async()=>{throw Error('browser unavailable')}})});
+});
+
+test('the new ticket multiselect resets previous points and closes before scanning rows',async()=>{
+ let expanded=false;const calls=[];
+ const multi={count:async()=>1,getAttribute:async()=>String(expanded),click:async()=>{expanded=!expanded;calls.push('toggle')}};
+ const reset={count:async()=>1,isVisible:async()=>true,click:async()=>calls.push('reset')};
+ const page={getByTestId:id=>id==='new-tickets-point-multiselect'?multi:reset,getByText:(text,options)=>{assert.equal(text,'ID 50136835');assert.equal(options.exact,true);return {last:()=>({click:async()=>calls.push('point')})}}};
+ await chooseTicketPoint(page,'50136835');assert.equal(expanded,false);assert.deepEqual(calls,['toggle','reset','point','toggle']);
 });
