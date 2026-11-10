@@ -210,7 +210,11 @@ export async function chooseTicketPoint(page,point){
   if(await reset.count()&&await reset.isVisible()&&await reset.isEnabled())await reset.click({timeout:5000});
   if(await multi.getAttribute('aria-expanded')!=='true')await multi.click({timeout:5000});
   await page.getByText('ID '+point,{exact:true}).last().click({timeout:5000});
-  if(await multi.getAttribute('aria-expanded')==='true')await page.keyboard.press('Escape');
+  if(await multi.getAttribute('aria-expanded')==='true'){
+   await page.keyboard.press('Escape');await sleep(250);
+   if(await multi.getAttribute('aria-expanded')==='true')await page.getByRole('heading',{name:'Тикеты',exact:true}).click({timeout:10000});
+   await page.waitForFunction(()=>document.querySelector('[data-testid="new-tickets-point-multiselect"]')?.getAttribute('aria-expanded')!=='true',null,{timeout:5000});
+  }
   if(await multi.getAttribute('aria-expanded')==='true')throw new WBReadError('ticket_point_filter_open');
   await sleep(500);return;
  }
@@ -315,10 +319,11 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
   report.phase=phase;
   if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
   if(Date.now()-started>budgetMs){report.sections.push({key:'budget',state:'partial'});break}
+  report.current={organization:org.research_id,section:'organization',step:'selecting_organization'};onProgress(report);
   try{
    if(!await page.getByTestId('app-header').count())await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
    await selectOrganization(page,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))});
-  }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,240),diagnostic:e.diagnostic||await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}))});onProgress(report);if(state==='wb_page_not_ready'){report.state='unavailable';return report}if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
+  }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,240),failureLog:String(e.message||'').slice(0,1800),diagnostic:e.diagnostic||await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}))});onProgress(report);if(state==='wb_page_not_ready'){report.state='unavailable';return report}if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
   for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='inventory'?(x.key==='hanging'&&x.state==='to-hold'):phase==='secondary'?!(x.key==='hanging'&&x.state==='to-hold'):false))){
    if(Date.now()-started>budgetMs){report.sections.push({key:'budget:goods',state:'partial'});break}
    report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section'};onProgress(report);

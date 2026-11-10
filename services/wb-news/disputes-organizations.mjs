@@ -67,7 +67,7 @@ export async function selectOrganization(page,name,context={}){
   for(const candidate of [page.locator('label,[role="option"],[role="radio"]').filter({hasText:pattern}),page.getByText(pattern)]){
    for(let i=0,n=Math.min(await candidate.count(),20);i<n;i++){
     const option=candidate.nth(i);if(!await option.isVisible()||!organizationLabelMatches(await option.innerText(),name))continue;
-    await option.click({timeout:4000});clicked=true;
+    await option.click({timeout:20000});clicked=true;
     for(let pass=0;pass<12;pass++){
      await pause(250);evidence=await inspect();if(verified())return true;
     }
@@ -89,7 +89,7 @@ export async function selectOrganization(page,name,context={}){
   for(let i=0;i<count;i++){
    const trigger=group.nth(i);if(!await trigger.isVisible())continue;
    const attempt={trigger:(await trigger.innerText()).slice(0,120),before:await trigger.getAttribute('aria-expanded')};attempts.push(attempt);
-   try{await trigger.click({timeout:8000})}catch(error){attempt.error=error.name||'click_failed';continue}
+   try{await trigger.click({timeout:15000})}catch(error){attempt.error=error.name||'click_failed';continue}
    // Rendering a portal/list can take longer than its opening animation on the server.
    await page.getByText(pattern).first().waitFor({state:'visible',timeout:12000}).catch(()=>{});
    evidence=await inspect();attempt.after=await trigger.getAttribute('aria-expanded');attempt.options=evidence.options;

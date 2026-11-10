@@ -76,7 +76,7 @@ test('the new ticket multiselect resets previous points and closes before scanni
  let expanded=false;const calls=[];
  const multi={count:async()=>1,getAttribute:async()=>String(expanded),click:async()=>{expanded=!expanded;calls.push('toggle')}};
  const reset={count:async()=>1,isVisible:async()=>true,isEnabled:async()=>true,click:async()=>calls.push('reset')};
- const page={keyboard:{press:async key=>{assert.equal(key,'Escape');expanded=false;calls.push('escape')}},getByTestId:id=>id==='new-tickets-point-multiselect'?multi:reset,getByText:(text,options)=>{assert.equal(text,'ID 50136835');assert.equal(options.exact,true);return {last:()=>({click:async()=>calls.push('point')})}}};
+ const page={waitForFunction:async()=>{},keyboard:{press:async key=>{assert.equal(key,'Escape');expanded=false;calls.push('escape')}},getByTestId:id=>id==='new-tickets-point-multiselect'?multi:reset,getByText:(text,options)=>{assert.equal(text,'ID 50136835');assert.equal(options.exact,true);return {last:()=>({click:async()=>calls.push('point')})}}};
  await chooseTicketPoint(page,'50136835');assert.equal(expanded,false);assert.deepEqual(calls,['toggle','reset','point','escape']);
 });
 
@@ -84,4 +84,11 @@ test('a virtual scroller which cannot advance stops without claiming the list is
  let reads=0;const scroller={count:async()=>1,evaluate:async fn=>fn.toString().includes('clientHeight')&&fn.toString().includes('top:')?{top:0,height:100,total:1000}:undefined};
  const root={getByTestId:()=>({filter:options=>{assert.equal(options.visible,true);return {last:()=>scroller}}}),evaluate:async()=>{reads++;return [{point:'50136835'}]}};
  const result=await scanVirtual({},root,()=>[],{maxWindows:150});assert.equal(result.complete,false);assert.equal(result.reason,'stalled_scroller');assert.equal(result.rows.length,1);assert.ok(reads<=6);
+});
+test('new ticket filters skip disabled reset and close with an outside heading when Escape is ignored',async()=>{
+ let expanded=false;const calls=[];
+ const multi={count:async()=>1,getAttribute:async()=>String(expanded),click:async()=>{expanded=!expanded;calls.push('toggle')}};
+ const reset={count:async()=>1,isVisible:async()=>true,isEnabled:async()=>false,click:async()=>{throw Error('disabled reset must not be clicked')}};
+ const page={waitForFunction:async()=>{},keyboard:{press:async()=>calls.push('escape')},getByTestId:id=>id==='new-tickets-point-multiselect'?multi:reset,getByText:()=>({last:()=>({click:async()=>calls.push('point')})}),getByRole:(role,options)=>{assert.equal(role,'heading');assert.equal(options.name,'Тикеты');return {click:async()=>{expanded=false;calls.push('outside')}}}};
+ await chooseTicketPoint(page,'50136835');assert.equal(expanded,false);assert.deepEqual(calls,['toggle','point','escape','outside']);
 });
