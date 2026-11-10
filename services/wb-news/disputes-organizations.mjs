@@ -20,7 +20,8 @@ export function readOrganizationEvidence(root){
  }).filter(Boolean);
  const pointIds=[...new Set([...text(root).matchAll(/\bID\s+(\d{4,12})\b/g)].map(m=>m[1]))];
  const options=[...root.querySelectorAll('label,[role="option"],[role="radio"]')].filter(el=>typeof el.getClientRects!=='function'||el.getClientRects().length>0).map(text).map(s=>s.trim()).filter(s=>/^(ИП|ООО|АО|ПАО)\s/.test(s)).slice(0,30);
- return {header:text(header).slice(0,1200),selected:selected.map(s=>s.slice(0,500)).slice(0,20),pointIds,options,headings:[...root.querySelectorAll('h1,h2')].map(text).slice(0,8)};
+ const doc=root.ownerDocument||root;
+ return {header:text(header).slice(0,1200),selected:selected.map(s=>s.slice(0,500)).slice(0,20),pointIds,options,headings:[...root.querySelectorAll('h1,h2')].map(text).slice(0,8),page:{path:doc.location?.pathname||'',title:doc.title||'',readyState:doc.readyState||'',textSample:text(root).trim().slice(0,600)}};
 }
 export function verifyOrganization(evidence,name,{pointIds=[],allPointIds=[]}={}){
  const same=value=>organizationLabelMatches(value,name);
@@ -38,10 +39,19 @@ export class OrganizationSelectionError extends Error{
 export async function selectOrganization(page,name,context={}){
  const inspect=async()=>{
   const url=new URL(page.url());
-  const body=await page.locator('body').innerText();
+  let body=await page.locator('body').innerText();
   if(url.origin!==ORIGIN||/\/(login|auth|signin)(\/|$)/i.test(url.pathname)||/Отправить код/.test(body))throw new OrganizationSelectionError('authentication_required');
   if(/verify you are human|checking your browser|unusual traffic|подтвердите.{0,30}(человек|робот)/i.test(body))throw new OrganizationSelectionError('blocked');
-  return page.locator('body').evaluate(readOrganizationEvidence);
+  if(!await page.getByTestId('app-header').count()&&!/Выберите организацию/.test(body)){
+   // domcontentloaded only means the JS bundle was downloaded, not that WB mounted.
+   await page.waitForFunction(()=>document.querySelector('[data-testid="app-header"],h1,h2')||/Выберите организацию|Отправить код|verify you are human|checking your browser/i.test(document.body?.innerText||''),null,{timeout:60000}).catch(()=>{});
+   body=await page.locator('body').innerText();
+   if(/\/(login|auth|signin)(\/|$)/i.test(new URL(page.url()).pathname)||/Отправить код/.test(body))throw new OrganizationSelectionError('authentication_required');
+   if(/verify you are human|checking your browser|unusual traffic/i.test(body))throw new OrganizationSelectionError('blocked');
+  }
+  const evidence=await page.locator('body').evaluate(readOrganizationEvidence);
+  if(!evidence.header&&!evidence.headings.length&&!evidence.options.length&&!/Выберите организацию/.test(body))throw new OrganizationSelectionError('wb_page_not_ready',evidence);
+  return evidence;
  };
  let evidence=await inspect();
  const verified=()=>verifyOrganization(evidence,name,context);

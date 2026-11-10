@@ -36,3 +36,9 @@ test('expired login aborts organization switching before any click or organizati
  let clicked=false;const page={url:()=> 'https://my-pvz.wb.ru/login',locator:()=>({innerText:async()=> 'Отправить код',click:async()=>clicked=true})};
  await assert.rejects(selectOrganization(page,'ИП Тест'),error=>error.code==='authentication_required');assert.equal(clicked,false);
 });
+test('empty WB shell waits for mount and reports page readiness instead of missing organizations',async()=>{
+ let waited=false;
+ const evidence={header:'',headings:[],selected:[],pointIds:[],options:[],page:{path:'/pickpoints',textSample:''}};
+ const page={url:()=> 'https://my-pvz.wb.ru/pickpoints',getByTestId:()=>({count:async()=>0}),locator:()=>({innerText:async()=>'',evaluate:async()=>evidence}),waitForFunction:async()=>{waited=true;throw Error('timeout')}};
+ await assert.rejects(selectOrganization(page,'ИП Тест'),error=>error.code==='wb_page_not_ready'&&error.diagnostic===evidence);assert.equal(waited,true);
+});
