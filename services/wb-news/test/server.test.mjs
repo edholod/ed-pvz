@@ -77,3 +77,17 @@ test('manual input remains blocked outside an explicitly opened control session'
   assert.equal((await fetch(url+'/admin/input',{method:'POST',headers:{origin:url,cookie,'content-type':'application/json'},body:JSON.stringify({type:'text',text:'ed12'})})).status,409);
 });
 
+
+test('public API permits exact portal origins without opening admin control',async t=>{
+ const {url}=await fixture(t,true);
+ for(const origin of ['https://edholod.github.io','https://edpvz.ru','https://www.edpvz.ru']){
+  const response=await fetch(url+'/api/status',{headers:{origin}});
+  assert.equal(response.headers.get('access-control-allow-origin'),origin);
+  assert.equal(response.headers.get('vary'),'Origin');
+  assert.equal((await fetch(url+'/admin/login',{method:'POST',headers:{origin},body:new URLSearchParams({token})})).status,403);
+  assert.equal((await fetch(url+'/admin/status',{headers:{origin}})).headers.get('access-control-allow-origin'),null);
+ }
+ for(const origin of ['https://evil.example','https://edpvz.ru.evil.example','http://edpvz.ru']){
+  assert.equal((await fetch(url+'/api/status',{headers:{origin}})).headers.get('access-control-allow-origin'),null);
+ }
+});

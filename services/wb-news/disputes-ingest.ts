@@ -1,12 +1,14 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 const db=createClient(Deno.env.get('SUPABASE_URL')||'',Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'',{auth:{persistSession:false}});
-const owner='0f75065b-2b26-4a87-bf26-005f5a2284d4',origin='https://edholod.github.io';
-const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':origin,
+const owner='0f75065b-2b26-4a87-bf26-005f5a2284d4';
+const baseHeaders={'Content-Type':'application/json','Cache-Control':'no-store',
  'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-edpvz-ingest-token','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};
-const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers});
 const sha=async value=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function rpc(payload){const {data,error}=await db.rpc('edpvz_dispute_sync_commit',{p:payload});if(error)throw Error(error.message);return data}
+const allowedOrigins=new Set(['https://edholod.github.io','https://edpvz.ru','https://www.edpvz.ru']);
 Deno.serve(async req=>{
+ const headers={...baseHeaders,'Vary':'Origin',...(allowedOrigins.has(req.headers.get('origin')||'')?{'Access-Control-Allow-Origin':req.headers.get('origin')!}:{})};
+ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers});
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(!['GET','POST'].includes(req.method))return json({error:'method_not_allowed'},405);
  try{
@@ -36,7 +38,7 @@ Deno.serve(async req=>{
    if(!bearer)return json({error:'unauthorized'},401);
    const {data,error}=await db.auth.getUser(bearer);
    if(error||data.user?.id!==owner)return json({error:'forbidden'},403);
-   if(req.method!=='POST'||req.headers.get('origin')!==origin)return json({error:'forbidden'},403);
+   if(req.method!=='POST'||!allowedOrigins.has(req.headers.get('origin')||''))return json({error:'forbidden'},403);
    const body=await req.json();if(body.kind!=='request_sync')return json({error:'forbidden'},403);
    return json(await rpc({kind:'request'}),202);
   }

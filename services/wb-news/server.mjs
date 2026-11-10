@@ -20,6 +20,7 @@ function cookie(req) {
 }
 export function createServer({collector, adminToken, sessionStorePath, publish = false, secure = true, allowedOrigin = 'https://edholod.github.io'}) {
   if (!adminToken || adminToken.length < 32) throw new Error('ADMIN_TOKEN must contain at least 32 characters');
+  const publicOrigins = new Set([allowedOrigin, 'https://edpvz.ru', 'https://www.edpvz.ru']);
   const sessions = new Map();
   const fingerprint=createHash('sha256').update(adminToken).digest('hex');
   const sessionKey=value=>createHash('sha256').update(String(value||'')).digest('hex');
@@ -53,8 +54,8 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'");
     if (secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
-    if (req.headers.origin === allowedOrigin && req.url?.startsWith('/api/')) {
-      res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    if (publicOrigins.has(req.headers.origin) && req.url?.startsWith('/api/')) {
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
       res.setHeader('Vary', 'Origin');
     }
     const send = (status, body, type = 'application/json') => {

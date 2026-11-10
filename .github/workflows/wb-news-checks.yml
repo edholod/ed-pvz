@@ -3,18 +3,24 @@ on:
   push:
     paths:
       - 'services/wb-news/**'
+      - 'services/edge/**'
       - 'apps/news/wb-news.js'
       - 'apps/disputes/**'
       - 'assets/account.js'
+      - 'apps/transfer/**'
+      - 'sw.js'
       - 'index.html'
       - 'render-wb-news.yaml'
       - '.github/workflows/wb-news-checks.yml'
   pull_request:
     paths:
       - 'services/wb-news/**'
+      - 'services/edge/**'
       - 'apps/news/wb-news.js'
       - 'apps/disputes/**'
       - 'assets/account.js'
+      - 'apps/transfer/**'
+      - 'sw.js'
       - 'index.html'
       - 'render-wb-news.yaml'
 permissions:

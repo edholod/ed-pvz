@@ -1,0 +1,27 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+import {parseHTML} from 'linkedom';
+import * as model from '../../../apps/transfer/storage.mjs';
+test('transfer screen downloads a backup, previews a file and restores only missing data',async()=>{
+ const html=await readFile(new URL('../../../apps/transfer/index.html',import.meta.url),'utf8');
+ const code=await readFile(new URL('../../../apps/transfer/page.mjs',import.meta.url),'utf8');
+ const {document}=parseHTML(html),data=new Map([['edpvz-ui-settings-v1','original']]),blobs=[];
+ const storage={get length(){return data.size},key:i=>[...data.keys()][i]??null,getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};
+ const context={...model,document,localStorage:storage,location:{origin:'https://edpvz.ru'},Blob,URL:{createObjectURL:blob=>{blobs.push(blob);return 'blob:test'},revokeObjectURL(){}},setTimeout:f=>f()};
+ vm.runInNewContext(code.replace(/^import .*;\s*$/m,''),context);
+ document.getElementById('export').onclick();
+ assert.equal(blobs.length,1);
+ assert.equal(JSON.parse(await blobs[0].text()).entries[0].value,'original');
+ const backup={format:'edpvz-local-transfer',version:1,entries:[{key:'edpvz-ui-settings-v1',value:'different'},{key:'edpvz-salary-v1',value:'new'}]};
+ Object.defineProperty(document.getElementById('file'),'files',{value:[{size:200,text:async()=>JSON.stringify(backup)}],configurable:true});
+ await document.getElementById('file').onchange();
+ assert.equal(document.querySelectorAll('#preview li').length,2);
+ assert.match(document.getElementById('preview').textContent,/будет пропущено/);
+ assert.equal(document.getElementById('restore').disabled,false);
+ document.getElementById('restore').onclick();
+ assert.equal(data.get('edpvz-ui-settings-v1'),'original');
+ assert.equal(data.get('edpvz-salary-v1'),'new');
+ assert.match(document.getElementById('status').textContent,/Добавлено: 1/);
+});
