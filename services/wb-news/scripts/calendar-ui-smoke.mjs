@@ -59,6 +59,6 @@ try{
  await page.frameLocator('#viewer').getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
  assert.equal(await page.frameLocator('#viewer').locator('#viewer').count(),0);
  assert.equal(await page.locator('.appbar:visible').count(),1);
- assert.deepEqual(errors,[]);console.log('PASS mobile navigation, nested portal recovery, cloud employee picker, shift save/reload');
+ assert.deepEqual(errors,[]);console.log('PASS mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
  await context.close();
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}

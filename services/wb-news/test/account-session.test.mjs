@@ -45,3 +45,12 @@ test('a failed refresh in one tab cannot clear a newer session saved by another 
  const pending=api.ensure();data.set('edpvz-auth-v1',JSON.stringify(fresh));finish();await pending;
  assert.equal(api.signedIn,true);assert.equal(JSON.parse(data.get('edpvz-auth-v1')).refresh_token,'refresh-new');
 });
+
+test('point creation stores the selected marketplace and authenticated owner',async()=>{
+ for(const market of ['wb','ozon','ym']){
+  let body;const {api}=setup(async(url,opt)=>{body=JSON.parse(opt.body);return reply(200,[body])},fresh);
+  await api.createPoint({point_id:'5000',name:'Point',market,owner_id:'forged'});
+  assert.equal(body.market,market);assert.equal(body.owner_id,'one');
+ }
+ const {api}=setup(async()=>reply(200,[]),fresh);await assert.rejects(api.createPoint({point_id:'5000',market:'unknown'}),/маркетплейс/);
+});

@@ -71,8 +71,12 @@ window.addEventListener('storage',e=>{if(e.key===KEY)syncStatus('Данные и
 window.addEventListener('pvz-saved',()=>runSync());
 runSync();
 
-let teamLoading=false,teamLastAttempt=0,teamRevision=0;
-async function refreshAccountTeam(force=false){
+let teamLoading=false,teamLastAttempt=0,teamRevision=0,teamJob=null;
+function refreshAccountTeam(force=false){
+ if(teamJob)return force?teamJob.then(()=>refreshAccountTeam(true)):teamJob;
+ teamJob=loadAccountTeam(force).finally(()=>{teamJob=null});return teamJob;
+}
+async function loadAccountTeam(force=false){
  const api=window.EdPVZAccount;
  const uid=api?.user?.id||null;
  if(uid!==calendarAccountId){location.reload();return}
