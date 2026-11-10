@@ -8,7 +8,34 @@ const seeker=/(ищу\s+(?:работ|подработ|ваканси|смен|�
 const shortShift=/(подмен|замен[уыае]|подработ|разов.{0,12}смен|на\s+(?:сегодня|завтра|послезавтра)|выйду\s+(?:на\s+)?смен|выйти\s+на\s+смен|возьму\s+смен|свободн.{0,15}смен|срочн.{0,20}(?:сегодня|завтра)|оплата\s+сразу\s+после\s+смен|на\s+выходн)/i;
 const ongoing=/(постоянн|2\s*\/\s*2|3\s*\/\s*3|5\s*\/\s*2|в\s+штат|долгосрочн|полная\s+занятост)/i;
 const noise=/(за\s+последние\s+\d+\s+час|в\s+чате\s+обсуждал|скандал|шутки\s+про|подписывайтесь|рекламн(?:ый|ое)\s+пост|розыгрыш|продам\s+пвз|куплю\s+пвз)/i;
-function getMode(x){if(x.source==='Эд ПВЗ'){if(/^Разовая замена · /.test(x.schedule||''))return 'replacement';if(/^Ищу подработку · /.test(x.schedule||''))return 'parttime';return x.kind==='resume'?'staff':'work'}const t=[x.title,x.text,x.description,x.schedule].filter(Boolean).join(' ').replace(/https?:\/\/\S+/g,' ').trim();if(!t||t.length<12||noise.test(t))return null;const local=x.source==='Эд ПВЗ';if(!local&&!pvzContext.test(t)&&!/(сотрудник|оператор|менеджер|работник)/i.test(t)&&!(shortShift.test(t)&&/(смен|ставк|оплат|метро|м\.|шк|пвз)/i.test(t)))return null;const ask=employer.test(t),offer=seeker.test(t),short=shortShift.test(t),long=ongoing.test(t);if(!ask&&!offer){if(x.source==='hh.ru'&&pvzContext.test(t))return 'work';if(local)return x.kind==='resume'?'staff':'work';return null}if(offer&&!ask){return short?'parttime':'staff'}if(ask&&!offer){return short&&!long?'replacement':'work'}if(/(?:ищем|требуется|нужна|нужен).{0,32}(?:замен|подмен)/i.test(t))return 'replacement';if(/(?:выйду|ищу\s+подработ|возьму\s+смен)/i.test(t))return 'parttime';return x.kind==='resume'?'staff':'work'}
+function getMode(x){
+  // Determine who is speaking before interpreting words like "ищу" or "замена".
+  // A jobseeker saying "ищу работу" must never become an employer vacancy.
+  const t=[x.title,x.text,x.description,x.schedule].filter(Boolean).join(' ').replace(/https?:\/\/\S+/g,' ').trim();
+  if(x.source==='Эд ПВЗ'){
+    if(/^Разовая замена · /.test(x.schedule||''))return 'replacement';
+    if(/^Ищу подработку · /.test(x.schedule||''))return 'parttime';
+    return x.kind==='resume'?'staff':'work';
+  }
+  if(!t||t.length<12||noise.test(t))return null;
+  if(!pvzContext.test(t)&&!/(сотрудник|оператор|менеджер|работник)/i.test(t)&&!(shortShift.test(t)&&/(смен|ставк|оплат|метро|м\.|шк|пвз)/i.test(t)))return null;
+  if(x.source==='hh.ru')return 'work';
+  const lines=t.split(/[\n.!?]+/).map(v=>v.trim()).filter(Boolean);
+  const first=lines.slice(0,3).join(' ');
+  const explicitSeeker=/(?:^|[\s,:;])(?:ищу\s+(?:работу|работы|вакансию|подработку|смену|смены|подмену)|выйду\s+(?:на\s+)?(?:смену|подмену|работу)|готов[аы]?\s+(?:выйти|работать)|возьму\s+(?:смену|подмену)|рассмотрю\s+(?:вакансии|предложения)|ищем\s+работу\s+для\s+себя)/i.test(first);
+  const explicitEmployer=/(?:^|[\s,:;])(?:ищем\s+(?:сотрудника|сотрудников|работника|оператора|менеджера|замену|подмену)|ищу\s+(?:сотрудника|работника|оператора|менеджера|замену|подмену)|требуется|требуются|нужен\s+(?:сотрудник|работник|оператор|менеджер)|нужна\s+(?:сотрудница|замена|подмена)|вакансия|приглашаем\s+на\s+работу|набираем\s+сотрудников)/i.test(first);
+  const short=shortShift.test(t),long=ongoing.test(t);
+  if(explicitSeeker&&!explicitEmployer)return short?'parttime':'staff';
+  if(explicitEmployer&&!explicitSeeker)return short&&!long?'replacement':'work';
+  // Source tags are secondary evidence, useful for terse posts without a clear subject.
+  if(x.kind==='resume')return short?'parttime':'staff';
+  if(x.kind==='replacement')return 'replacement';
+  if(x.kind==='vacancy'&&!(seeker.test(first)&&!employer.test(first)))return short&&!long?'replacement':'work';
+  const ask=employer.test(first),offer=seeker.test(first);
+  if(offer&&!ask)return short?'parttime':'staff';
+  if(ask&&!offer)return short&&!long?'replacement':'work';
+  return null;
+}
 function payValue(x){const t=[x.pay,x.text,x.title].filter(Boolean).join(' ');const m=t.match(/(?:ставк[аиу]|оплат[аыу]|зарплат[аыу]|з\/п|за\s+смену|от)\D{0,35}?(\d[\d\s.]{2,7})\s*(?:₽|р\b|руб|за\s+смену)?/i);if(!m)return 0;const v=Number(m[1].replace(/\s/g,'').replace(/\.(?=\d{3}\b)/g,''));return v>=500&&v<=30000?v:0}
 function contactLinks(x){const text=[x.text||'',x.contact||''].join('\n');const links=[];const tg=new Set();const regex=/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/([a-zA-Z][a-zA-Z0-9_]{4,31})(?![\w/])/gi;let m;while((m=regex.exec(text))!==null)tg.add(m[1]);const at=/(^|[^\w@])@([a-zA-Z][a-zA-Z0-9_]{4,31})\b/gm;while((m=at.exec(text))!==null)tg.add(m[2]);if(x.author_url&&/^(https:\/\/t\.me\/[a-zA-Z][a-zA-Z0-9_]{4,31}|tg:\/\/user\?id=\d+)$/.test(x.author_url)){links.push({label:'Открыть автора'+(x.author_name?' · '+x.author_name:''),url:x.author_url});}const sourceName=x.source.replace(/^Telegram · @/,'').toLowerCase();for(const username of tg){if(username.toLowerCase()===sourceName)continue;links.push({label:'Написать в Telegram',url:'https://t.me/'+username});break}const phoneRe=/(?:\+7|8)[\s(\-]*\d{3}[)\s\-]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}\b/g;const phone=phoneRe.exec(text);if(phone){const digits=phone[0].replace(/\D/g,'');if(digits.length===11)links.push({label:'Позвонить: '+phone[0],url:'tel:+7'+digits.slice(1)})}if(x.url)links.push({label:'Оригинал объявления',url:x.url});return links}
 function openDetail(x){const backdrop=node('div','');backdrop.className='detail-backdrop';backdrop.setAttribute('role','presentation');const panel=node('section','');panel.className='detail-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Объявление');const close=node('button','Закрыть');close.className='close-detail';close.onclick=()=>backdrop.remove();panel.append(close,node('h2',x.title),node('small',x.source+(x.date?' · '+new Date(x.date).toLocaleString('ru-RU'):'')));const body=node('p',x.text||'Описание не указано');body.className='detail-body';panel.append(body);if(x.pay)panel.append(node('p','Оплата: '+x.pay));if(x.city)panel.append(node('p','Город: '+x.city));if(x.schedule)panel.append(node('p','График: '+x.schedule));if(x.contact)panel.append(node('p','Контакт: '+x.contact));const actions=node('div','');actions.className='detail-actions';const links=contactLinks(x);for(const l of links){const a=node('a',l.label);a.className='link';a.href=l.url;if(!l.url.startsWith('tel:')){a.target='_blank';a.rel='noopener noreferrer'}actions.append(a)}if(!links.some(l=>l.label.startsWith('Открыть автора')||l.label==='Написать в Telegram'))panel.append(node('small','Telegram не предоставил профиль отправителя этого сообщения. Можно открыть исходную публикацию и посмотреть автора в самом чате.'));panel.append(actions);backdrop.append(panel);backdrop.onclick=e=>{if(e.target===backdrop)backdrop.remove()};const key=e=>{if(e.key==='Escape'){backdrop.remove();document.removeEventListener('keydown',key)}};document.addEventListener('keydown',key);document.body.append(backdrop);close.focus()}
