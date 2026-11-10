@@ -29,7 +29,7 @@ test('active registered PVZ proves the organization when legal name is omitted; 
 test('closed hidden organization options do not hide active-point evidence',()=>{
  const {document}=parseHTML('<body><header data-testid="app-header">Адрес ПВЗ</header><label>ИП Другая</label><article>ID 123456</article></body>');
  document.querySelector('label').getClientRects=()=>[];
- const evidence=readOrganizationEvidence(document);
+ const evidence=readOrganizationEvidence(document.querySelector('body'));
  assert.deepEqual(evidence.options,[]);assert.ok(verifyOrganization(evidence,'ИП Нужная',{pointIds:['123456'],allPointIds:['123456']}));
 });
 test('expired login aborts organization switching before any click or organization retry',async()=>{
