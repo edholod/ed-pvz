@@ -29,7 +29,7 @@ export {selectOrganization} from './disputes-organizations.mjs';
 async function closeDrawers(page){
  for(let i=0;i<4;i++){
   const dialogs=page.getByRole('dialog');if(!await dialogs.count())break;
-  await dialogs.last().getByRole('button').first().click();
+  await dialogs.last().getByRole('button').first().click({timeout:5000});
   await sleep(250);
  }
 }
@@ -93,6 +93,21 @@ export function extractPointGroups(root){
  }
  return result;
 }
+export function extractHangingGroupLabels(root){
+ return [...new Set([...root.querySelectorAll('*')].map(el=>(el.innerText||el.textContent||'').replace(/\s+/gu,' ').trim()).filter(text=>/^Товары из ПВЗ$|^№\s*\d+$/.test(text)))];
+}
+export async function expandVisibleReasons(root){
+ const matches=root.getByText('Развернуть',{exact:true});
+ for(let attempt=0;attempt<30;attempt++){
+  const count=await matches.count();let target;
+  for(let i=0;i<count;i++)if(await matches.nth(i).isVisible()){target=matches.nth(i);break}
+  if(!target)return true;
+  try{await target.click({timeout:2000})}catch{return false}
+  await sleep(100);
+  // Do not repeatedly toggle/retry a control which did not change after its click.
+  if(await matches.count()>=count)return false;
+ }return false;
+}
 async function collectPoint(page,point,section){
  await closeDrawers(page);
  const group=page.locator('body').getByText('ID '+point,{exact:true});
@@ -110,26 +125,24 @@ async function collectPoint(page,point,section){
   }
  }
  if(!await group.count())throw new WBReadError('point_group_missing');
- await group.first().click();
+ await group.first().click({timeout:5000});
  const dialog=page.getByRole('dialog').last();await dialog.waitFor({state:'visible',timeout:12000});
  await sleep(400);
  let goods=await scanVirtual(page,dialog,extractGoods);
  if(section.key==='hanging'&&!goods.rows.length){
-  const labels=await dialog.locator('p').allTextContents();
-  const groups=[...new Set(labels.map(x=>x.trim()).filter(x=>/^Товары из ПВЗ$|^№\s*\d+$/.test(x)))];
+  const groups=await dialog.evaluate(extractHangingGroupLabels);
   if(!groups.length)throw new WBReadError('hanging_groups_not_found');
   const outerCount=await page.getByRole('dialog').count();
   const items=[];let complete=true;
   for(const label of groups){
-   await page.getByRole('dialog').first().getByText(label,{exact:true}).click();
+   await page.getByRole('dialog').first().getByText(label,{exact:true}).click({timeout:5000});
    await page.waitForFunction(n=>document.querySelectorAll('[role="dialog"]').length>n,outerCount,{timeout:10000});
    const inner=page.getByRole('dialog').last();await sleep(250);
-   const expanded=inner.getByText('Развернуть',{exact:true});
-   for(let attempt=0;attempt<30&&await expanded.count();attempt++)await expanded.first().click().catch(()=>{});
+   const reasonsComplete=await expandVisibleReasons(inner);
    const batch=await scanVirtual(page,inner,extractGoods);
-   items.push(...batch.rows.map(x=>({...x,groupLabel:label})));complete&&=batch.complete;
+   items.push(...batch.rows.map(x=>({...x,groupLabel:label})));complete&&=batch.complete&&reasonsComplete;
    // Close only the inner drawer. If WB closes both, reopen the original point.
-   await inner.getByRole('button').first().click();await sleep(300);
+   await inner.getByRole('button').first().click({timeout:5000});await sleep(300);
    if(!await page.getByRole('dialog').count()){
     await page.locator('body').getByText('ID '+point,{exact:true}).first().click();
     await page.getByRole('dialog').last().waitFor({state:'visible'});await sleep(300);
@@ -253,13 +266,13 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
- for(const org of ordered){
+ for(const phase of ['primary','secondary'])for(const org of ordered){
   if(Date.now()-started>budgetMs){report.sections.push({key:'budget',state:'partial'});break}
   try{
    if(!await page.getByTestId('app-header').count())await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
    await selectOrganization(page,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))});
   }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,...(e.diagnostic?{diagnostic:e.diagnostic}:{})});onProgress(report);if(state==='wb_page_not_ready'){report.state='unavailable';return report}if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
-  for(const section of sections.filter(x=>categories.includes(x.key))){
+  for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='primary'?(x.key==='hanging'&&x.state==='to-hold'):!(x.key==='hanging'&&x.state==='to-hold')))){
    report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section'};onProgress(report);
    try{
     await navigate(page,ORIGIN+section.path,section.heading,org.name_exact);
@@ -300,7 +313,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
    }
   }
-  if(categories.includes('tickets'))for(const namespace of ['legacy','new'])for(const point of org.points){
+  if(phase==='primary'&&categories.includes('tickets'))for(const namespace of ['legacy','new'])for(const point of org.points){
    report.current={organization:org.research_id,point:point.wb_point_id,section:'tickets',namespace,step:'reading_tickets'};onProgress(report);
    if(Date.now()-started>budgetMs)break;
    const scope=`wb:${org.research_id}:${point.wb_point_id}:tickets:${namespace}`;

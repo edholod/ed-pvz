@@ -1,7 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseHTML} from 'linkedom';
-import {extractGoods,extractPointGroups,extractTicketRows,extractMessages,pageReady} from '../disputes-browser.mjs';
+import {extractGoods,extractPointGroups,extractTicketRows,extractMessages,pageReady,extractHangingGroupLabels,expandVisibleReasons} from '../disputes-browser.mjs';
+test('reason expansion skips hidden controls and stops after a failed or unchanged click',async()=>{
+ let clicks=0;const nodes=[{visible:false},{visible:true}];
+ const root={getByText:()=>({count:async()=>nodes.length,nth:i=>({isVisible:async()=>nodes[i].visible,click:async options=>{assert.equal(options.timeout,2000);clicks++;nodes.splice(i,1)}})})};
+ assert.equal(await expandVisibleReasons(root),true);assert.equal(clicks,1);
+ const unchanged={getByText:()=>({count:async()=>1,nth:()=>({isVisible:async()=>true,click:async()=>{clicks++}})})};
+ assert.equal(await expandVisibleReasons(unchanged),false);assert.equal(clicks,2);
+});
+test('hanging groups are read from div/span labels as well as paragraph markup',()=>{
+ const {document}=parseHTML('<main><div><span>Товары из ПВЗ</span></div><button><span>№ 001234</span></button><p>Не группа</p><div>№ 001234</div></main>');
+ assert.deepEqual(extractHangingGroupLabels(document.querySelector('main')),['Товары из ПВЗ','№ 001234']);
+});
 test('WB section title rendered without h1/h2 is accepted while login redirects remain rejected',async()=>{
  let info={url:'https://my-pvz.wb.ru/defects/to-hold',text:'Меню\nБрак\nТоваров 1',headings:[]};
  const page={waitForFunction:async()=>{},evaluate:async()=>info};
