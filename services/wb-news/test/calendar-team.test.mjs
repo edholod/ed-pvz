@@ -39,3 +39,13 @@ test('calendar account workspaces retain legacy copy and do not import another a
  const first=boot(uid);assert.equal(values.get(first.KEY),'original calendar');assert.equal(values.get('pvz-control-v1'),'original calendar');
  const second=boot('22222222-2222-4222-8222-222222222222');assert.notEqual(first.KEY,second.KEY);assert.equal(values.has(second.KEY),false);
 });
+
+test('an existing local point receives account staff without losing its original ID',()=>{
+ const db=empty();db.points.push({id:'local-point',name:'Тестовый',market:'wb'});const result=merge(db,team());assert.equal(result.points.length,1);assert.equal(result.points[0].id,'local-point');assert.equal(result.people[0].points[0],'local-point');
+});
+test('legacy local point beside cloud copy also receives its confirmed team',()=>{
+ const db=merge(empty(),team());db.points.push({id:'legacy',name:'Тестовый',market:'wb'});assert.ok(merge(db,team()).people[0].points.includes('legacy'));
+});
+test('marketplace is inherited for WB, Ozon and Yandex Market',()=>{
+ for(const market of ['wb','ozon','ym']){const t=team();t.points[0].market=market;assert.equal(merge(empty(),t).points[0].market,market)}
+});

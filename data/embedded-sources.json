@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "repo": "edholod/wb-qr-generotor",
+      "revision": "2dfe7290ecf1f7582909376cd4fbcbd0b6b1b90f",
+      "files": {
+        "index.html": "apps/qr/index.html",
+        "wb-finance.html": "apps/finance/index.html",
+        "wb-rating.html": "apps/rating/index.html"
+      }
+    },
+    {
+      "repo": "edholod/wb-pvz-academy",
+      "revision": "f498e71c212dc5b8684f78cc534be64624300d82",
+      "files": {
+        "style.css": "apps/academy/style.css",
+        "index.html": "apps/academy/index.html",
+        "content.js": "apps/academy/content.js",
+        "app.js": "apps/academy/app.js"
+      }
+    },
+    {
+      "repo": "edholod/wb-ege",
+      "revision": "2b273cac1300ea9e6cf27bf47a1d972d8d73a04f",
+      "files": {
+        "style.css": "apps/ege/style.css",
+        "questions.json": "apps/ege/questions.json",
+        "index.html": "apps/ege/index.html",
+        "config.js": "apps/ege/config.js",
+        "app.js": "apps/ege/app.js"
+      }
+    },
+    {
+      "repo": "edholod/pvz-control",
+      "revision": "fc67bc493bee494c605364d0b0822c9acd29c255",
+      "files": {
+        "index.html": "apps/control/index.html",
+        "app.js": "apps/control/app.js",
+        "sync.js": "apps/control/sync.js"
+      }
+    }
+  ],
+  "liveExternal": [
+    {
+      "repo": "edholod/all-code-generator",
+      "url": "https://edholod.github.io/all-code-generator/"
+    }
+  ]
+}

@@ -12,13 +12,17 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
  const uid='11111111-1111-4111-8111-111111111111',staff='22222222-2222-4222-8222-222222222222';
  await context.addInitScript(({uid})=>{if(!sessionStorage.getItem('fixture-auth')){localStorage.setItem('edpvz-auth-v1',JSON.stringify({access_token:'synthetic-test-token',expires_at:9999999999,user:{id:uid}}));sessionStorage.setItem('fixture-auth','1')}},{uid});
- await context.route('https://duerixyhzapotoeclggz.supabase.co/**',route=>{
+ let cloudState=null;
+ const backend=route=>{
   const p=new URL(route.request().url()).pathname;let data=[];
   if(p.endsWith('/edpvz_points'))data=[{point_id:'5000',name:'Тестовый',owner_id:uid}];
   if(p.endsWith('/edpvz_memberships'))data=[{point_id:'5000',user_id:staff,status:'approved'}];
   if(p.endsWith('/edpvz_profiles'))data=[{user_id:staff,username:'fixture_employee',role:'employee'}];
+  if(p.endsWith('/edpvz_user_data'))data=cloudState?[{payload:cloudState}]:[];
+  if(p.endsWith('/edpvz_calendar_write')){const body=route.request().postDataJSON();if(body.p_revision!==(cloudState?.revision||0))data={conflict:true,...cloudState};else{cloudState={revision:body.p_revision+1,data:body.p_data};data=cloudState}}
   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data),headers:{'access-control-allow-origin':'*'}});
- });
+ };
+ await context.route('https://duerixyhzapotoeclggz.supabase.co/**',backend);
  await context.route(/https:\/\/(?!duerixyhzapotoeclggz\.supabase\.co)/,r=>r.abort());
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/');await page.getByRole('link',{name:'Управление моими пунктами Команда, смены, задачи и все инструменты ПВЗ'}).click();
@@ -35,6 +39,19 @@ try{
  const current=page.frames().find(f=>f.url().includes('/apps/control/'));
  assert.equal(await current.evaluate(()=>db.shifts.length),1);
  assert.equal(await current.evaluate(()=>db.people.length),1);
+ // A second device starts empty and receives the full calendar.
+ await current.evaluate(()=>synchronizeCalendar());
+ assert.equal(cloudState.data.shifts.length,1);
+ const other=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+ await other.addInitScript(({uid})=>localStorage.setItem('edpvz-auth-v1',JSON.stringify({access_token:'synthetic-test-token',expires_at:9999999999,user:{id:uid}})),{uid});
+ await other.route('https://duerixyhzapotoeclggz.supabase.co/**',backend);
+ const second=await other.newPage();second.on('pageerror',e=>errors.push(e.message));await second.goto(base+'/apps/control/');
+ await second.getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
+ assert.equal(await second.evaluate(()=>db.shifts.length),1);assert.equal(await second.evaluate(()=>db.people.length),1);
+ await second.evaluate(()=>commit(()=>db.people[0].rate=2500));await second.evaluate(()=>synchronizeCalendar());
+ await current.evaluate(()=>synchronizeCalendar());assert.equal(await current.evaluate(()=>db.people[0].rate),2500);
+ assert.equal(await current.evaluate(()=>db.shifts.length),1);
+ await other.close();
  // Old nested portal URLs are flattened into the same outer frame.
  await page.goto(base+'/#section='+encodeURIComponent(base+'/apps/management/'));
  frame=page.frameLocator('#viewer');await frame.getByRole('heading',{name:'Управление ПВЗ',exact:true}).waitFor();

@@ -22,4 +22,6 @@ window.addEventListener('storage',event=>{if(event.key===SESSION_KEY||event.key=
 window.addEventListener('focus',syncStoredSession);window.addEventListener('pageshow',syncStoredSession);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncStoredSession()});
 async function readTable(path){if(!/^edpvz_[a-z_]+\?/.test(path))throw Error('Некорректная таблица');await ensure();if(!session)throw Error('Войдите в аккаунт');return request('/rest/v1/'+path)}
-window.EdPVZAccount={readTable,signUp,registerUsername,signIn,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
+async function rpc(name,args){if(!['edpvz_calendar_write'].includes(name))throw Error('Неизвестная операция');await ensure();if(!session)throw Error('Войдите в аккаунт');return request('/rest/v1/rpc/'+name,{method:'POST',body:JSON.stringify(args)})}
+async function createPoint(point){await ensure();if(!session)throw Error('Войдите в аккаунт');if(!['wb','ozon','ym'].includes(point.market))throw Error('Выберите маркетплейс');return request('/rest/v1/edpvz_points',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({point_id:point.point_id,name:point.name,market:point.market,owner_id:session.user.id})})}
+window.EdPVZAccount={rpc,createPoint,readTable,signUp,registerUsername,signIn,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();

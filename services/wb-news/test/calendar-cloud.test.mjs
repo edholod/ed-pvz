@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
+const window={};vm.runInNewContext(readFileSync(new URL('../../../apps/control/cloud-model.js',import.meta.url),'utf8'),{window});const {merge}=window.EdPVZCalendarCloud;
+const base=()=>({points:[{id:'p',name:'Point',market:'wb'}],people:[{id:'e',name:'Staff',rate:100}],shifts:[],settings:{mode:'standard'},history:[]});
+test('two devices add different shifts without overwriting each other',()=>{const b=base(),a=base(),c=base();a.shifts.push({id:'one',date:'2026-11-01'});c.shifts.push({id:'two',date:'2026-11-02'});const r=merge(b,a,c);assert.equal(r.conflicts.length,0);assert.equal(r.data.shifts.length,2)});
+test('independent edits to one staff card merge by field',()=>{const b=base(),a=base(),c=base();a.people[0].rate=200;c.people[0].name='Renamed';const r=merge(b,a,c);assert.equal(r.conflicts.length,0);assert.equal(r.data.people[0].rate,200);assert.equal(r.data.people[0].name,'Renamed')});
+test('conflicting salary rates remain local and require a choice',()=>{const b=base(),a=base(),c=base();a.people[0].rate=200;c.people[0].rate=300;const r=merge(b,a,c);assert.equal(r.conflicts.length,1);assert.equal(r.data.people[0].rate,200)});
+test('remote deletion is retained unless the local record was changed too',()=>{const b=base(),a=base(),c=base();c.people=[];assert.equal(merge(b,a,c).data.people.length,0);a.people[0].rate=300;assert.equal(merge(b,a,c).conflicts.length,1)});

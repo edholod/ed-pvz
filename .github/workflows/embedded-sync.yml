@@ -1,0 +1,65 @@
+name: Synchronize embedded app repositories
+on:
+  schedule:
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/sync_embedded.py'
+      - 'data/embedded-sources.json'
+      - '.github/workflows/embedded-sync.yml'
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: embedded-source-sync
+  cancel-in-progress: false
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test source merge protection
+        run: python -m unittest discover -s scripts -p 'test_*.py'
+      - name: Merge source updates without overwriting portal adaptations
+        run: python scripts/sync_embedded.py --apply
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --include=dev
+        working-directory: services/wb-news
+      - name: Test non-game portal integrations
+        run: npm test
+        working-directory: services/wb-news
+      - name: Commit synchronized files
+        id: changes
+        shell: bash
+        run: |
+          git add -- apps/control apps/academy apps/ege apps/qr apps/finance apps/rating data/embedded-sources.json
+          if git diff --cached --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Synchronize embedded apps preserving portal adaptations [skip render]'
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - if: steps.changes.outputs.changed == 'true'
+        uses: actions/configure-pages@v5
+      - if: steps.changes.outputs.changed == 'true'
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v3
+      - if: steps.changes.outputs.changed == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
