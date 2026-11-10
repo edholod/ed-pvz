@@ -33,3 +33,10 @@ export function mapNotes(rows,notes){
  for(const row of rows){if(result.has(row.id))continue;const matches=notes.filter(note=>note.source&&family(note.source)===family(row));if(matches.length===1)result.set(row.id,{...matches[0],canonical_id:matches[0].observation_id})}
  return result;
 }
+
+export function monthKey(note){const d=String(note?.withholding_date||'');return /^\d{4}-\d{2}-\d{2}$/.test(d)?d.slice(0,7):'undated'}
+export function monthLabel(key){if(key==='undated')return 'Без срока обращения';const [year,month]=key.split('-').map(Number);return new Date(Date.UTC(year,month-1,1)).toLocaleDateString('ru-RU',{month:'long',year:'numeric',timeZone:'UTC'})}
+export function monthGroups(rows,getNote){
+ const groups=new Map();for(const row of rows){const key=monthKey(getNote(row.id));if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)}
+ return [...groups].sort(([a],[b])=>a==='undated'?1:b==='undated'?-1:b.localeCompare(a)).map(([key,items])=>({key,label:monthLabel(key),rows:items.sort((a,b)=>String(getNote(a.id).withholding_date||'').localeCompare(String(getNote(b.id).withholding_date||'')))}));
+}

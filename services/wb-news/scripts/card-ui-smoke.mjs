@@ -13,7 +13,7 @@ try{
  if(table==='edpvz_dispute_sync_control')data=[{last_state:'ok',last_report:{}}];
  return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,PATCH,OPTIONS'},body:JSON.stringify(r.method()==='OPTIONS'?{}:data)});
  });
- const enter=async()=>{await page.getByRole('button',{name:/ИП Тест/}).click();await page.locator('.point>summary').click()};
+ const enter=async()=>{await page.getByRole('button',{name:/ИП Тест/}).click();await page.locator('.point>summary').click();assert.equal(await page.locator('.card-editor').getAttribute('open'),null);assert.ok(await page.locator('.case').evaluate(el=>el.getBoundingClientRect().height<280));await page.locator('.card-editor>summary').click()};
  await page.goto('https://edholod.github.io/ed-pvz/apps/disputes/');await enter();
  assert.equal(await page.locator('[name=sticker]').inputValue(),'59038506501');assert.equal(await page.locator('[name=cost]').inputValue(),'2589.00');assert.equal(await page.locator('[name=withholding_date]').inputValue(),'2026-11-10');assert.equal(await page.locator('[name=comment]').inputValue(),'');
  await page.locator('[name=status]').selectOption({label:'Вина сотрудника'});await page.locator('[name=employee_fault]').fill('Тестовый сотрудник');await page.locator('[name=comment]').fill('Мой комментарий');await page.getByRole('button',{name:'Сохранить',exact:true}).click();await page.getByText('Сохранено',{exact:true}).waitFor();
