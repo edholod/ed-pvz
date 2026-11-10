@@ -1,4 +1,4 @@
-import {selectOrganization,readOrganizationEvidence,verifyOrganization} from './disputes-organizations.mjs';
+import {selectOrganization,readOrganizationEvidence,verifyOrganization,organizationLabelMatches} from './disputes-organizations.mjs';
 import {observationRows,normalizeMessages,ticketNeedsDetail} from './disputes-model.mjs';
 const ORIGIN='https://my-pvz.wb.ru';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -26,13 +26,14 @@ async function navigate(page,url,heading,org){
 }
 export {selectOrganization} from './disputes-organizations.mjs';
 
-async function closeDrawers(page){
- for(let i=0;i<4;i++){
-  const dialogs=page.getByRole('dialog');if(!await dialogs.count())break;
-  await dialogs.last().getByRole('button').first().click({timeout:5000});
-  await sleep(250);
- }
+async function closeTopDrawer(page){
+ const dialogs=page.getByRole('dialog');if(!await dialogs.count())return false;
+ const dialog=dialogs.last(),handle=await dialog.elementHandle();if(!handle)return false;
+ try{await dialog.getByRole('button').first().click({timeout:5000});await handle.waitForElementState('hidden',{timeout:5000})}
+ finally{await handle.dispose()}
+ return true;
 }
+async function closeDrawers(page){for(let i=0;i<4;i++)if(!await closeTopDrawer(page))break}
 async function scanVirtual(page,root,extract,{maxWindows=150}={}){
  const found=new Map();let bottomPasses=0,lastSize=0;
  const scroller=root.getByTestId('virtuoso-scroller').last();
@@ -96,6 +97,16 @@ export function extractPointGroups(root){
 export function extractHangingGroupLabels(root){
  return [...new Set([...root.querySelectorAll('*')].map(el=>(el.innerText||el.textContent||'').replace(/\s+/gu,' ').trim()).filter(text=>/^Товары из ПВЗ$|^№\s*\d+$/.test(text)))];
 }
+export function readGoodsScopeProof(root){
+ const text=root.innerText||root.textContent||'';
+ const declared=text.match(/(?:^|\n)\s*(\d+)\s*ПВЗ\s*(?:\n|$)/);
+ const pointSelect=[...root.querySelectorAll('[aria-expanded]')].find(el=>(el.innerText||el.textContent||'').trim()==='Адрес или ID ПВЗ');
+ return {header:root.querySelector('[data-testid="app-header"]')?.innerText||'',declaredPoints:declared?Number(declared[1]):null,noGoods:/Нет товаров/i.test(text),pointFilterEmpty:Boolean(pointSelect&&pointSelect.getAttribute('aria-expanded')==='false'),inputsEmpty:[...root.querySelectorAll('input')].every(el=>!String(el.value||'').trim()),periodPresent:text.split('\n').some(line=>line.trim()==='Период')};
+}
+export function confirmsAbsentPoints(proof,groupScan,org){
+ const allowed=new Set(org.points.map(point=>point.wb_point_id)),ids=new Set(groupScan.rows.map(group=>group.point));
+ return groupScan.complete&&organizationLabelMatches(proof.header,org.name_exact)&&proof.pointFilterEmpty&&proof.inputsEmpty&&proof.periodPresent&&[...ids].every(id=>allowed.has(id))&&(proof.declaredPoints===ids.size||(proof.noGoods&&ids.size===0));
+}
 export async function expandVisibleReasons(root){
  const matches=root.getByText('Развернуть',{exact:true});
  for(let attempt=0;attempt<30;attempt++){
@@ -142,7 +153,7 @@ async function collectPoint(page,point,section){
    const batch=await scanVirtual(page,inner,extractGoods);
    items.push(...batch.rows.map(x=>({...x,groupLabel:label})));complete&&=batch.complete&&reasonsComplete;
    // Close only the inner drawer. If WB closes both, reopen the original point.
-   await inner.getByRole('button').first().click({timeout:5000});await sleep(300);
+   await closeTopDrawer(page);await sleep(100);
    if(!await page.getByRole('dialog').count()){
     await page.locator('body').getByText('ID '+point,{exact:true}).first().click();
     await page.getByRole('dialog').last().waitFor({state:'visible'});await sleep(300);
@@ -186,7 +197,9 @@ async function chooseTicketPoint(page,point){
  if(await select.count()&&!(await select.innerText()).includes(point))throw new WBReadError('ticket_point_mismatch');
 }
 async function openTicket(page,number){
+ await closeDrawers(page);
  const button=page.getByRole('button',{name:'№ '+number,exact:true}).first();
+ await button.waitFor({state:'visible',timeout:8000});
  const handle=await button.evaluateHandle(button=>{
   let el=button.parentElement;
   for(let n=0;el&&n<9;n++,el=el.parentElement){
@@ -196,7 +209,7 @@ async function openTicket(page,number){
   }return null;
  });
  const element=handle.asElement();if(!element)throw new WBReadError('ticket_card_not_found');
- await element.click();await handle.dispose();
+ await element.click({timeout:5000});await handle.dispose();
  await page.getByRole('dialog').last().waitFor({state:'visible',timeout:10000});
  const banner=await page.getByRole('dialog').last().innerText();
  if(!banner.includes(number))throw new WBReadError('ticket_number_mismatch');
@@ -242,7 +255,7 @@ async function ticketDetail(page,row){
  const header=(await page.getByTestId('app-header').innerText()).split('\n').map(x=>x.trim());
  const user=header[header.findIndex(x=>/^ID\s/.test(x))-1];
  const messages=normalizeMessages(all.rows.map(m=>({...m,role:m.role==='unknown'&&m.author===user?'user':m.role})));
- await closeDrawers(page);
+ await closeDrawers(page).catch(()=>{});
  return {messages,history_complete:all.complete};
 }
 export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},categories=['hanging','tickets','brak','podmena'],budgetMs=100*60000}={}){
@@ -283,6 +296,8 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     await page.waitForFunction(()=>/Товаров\s*\d|Нет товаров/.test(document.body?.innerText||''),null,{timeout:20000});
     const groupScan=await scanVirtual(page,page.locator('body'),extractPointGroups);
     const groups=groupScan.rows;
+    const proof=await page.locator('body').evaluate(readGoodsScopeProof);
+    const absentConfirmed=confirmsAbsentPoints(proof,groupScan,org);
     let sectionComplete=groupScan.complete;
     for(const point of org.points){
      report.current={organization:org.research_id,point:point.wb_point_id,section:section.key,state:section.state,step:'reading_point'};onProgress(report);
@@ -291,6 +306,11 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      // Missing group is not proof of zero goods: WB may not have mounted it,
      // or the organization switch may have failed. Never archive existing rows.
      if(!group){
+      if(absentConfirmed){
+       await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,rows:[],complete:true,status:'ok',expected_count:0,finished_at:stamp()});
+       checkedPoints.add(org.research_id+':'+point.wb_point_id);report.checked_points=checkedPoints.size;
+       report.sections.push({key:org.research_id+':'+point.wb_point_id+':'+section.key+':'+section.state,state:'ok',evidence:'complete_unfiltered_group_list',count:0});onProgress(report);continue;
+      }
       await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,
        rows:[],complete:false,status:'point_group_missing',expected_count:null,finished_at:stamp()});
       sectionComplete=false;
@@ -319,7 +339,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
    const scope=`wb:${org.research_id}:${point.wb_point_id}:tickets:${namespace}`;
    try{
     await navigate(page,ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org.name_exact);
-    const search=page.getByPlaceholder('Поиск',{exact:true});if(await search.count())await search.fill('');
+    const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();if(await search.count())await search.fill('',{timeout:5000});
     await chooseTicketPoint(page,point.wb_point_id);
     await sleep(400);
     const list=await scanVirtual(page,page.locator('body'),extractTicketRows);
@@ -335,12 +355,13 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      if(ticketNeedsDetail(row,cached)){
       try{
        // Scroll back to the list row when virtualization has unmounted it.
-       const search=page.getByPlaceholder('Поиск',{exact:true});await search.fill(row.number);await sleep(400);
+       await closeDrawers(page).catch(()=>{});await page.keyboard.press('Escape');
+       const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();await search.fill(row.number,{timeout:5000});await sleep(400);
        Object.assign(ticket,await ticketDetail(page,row));
       }catch(e){detailsComplete=false;ticket.detail_error=e.code||'detail_unavailable';await closeDrawers(page).catch(()=>{});}
      }
      saved.push(ticket);report.tickets++;
-     if(saved.length%15===0){await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved.splice(0),complete:false,status:'running'});onProgress(report)}
+     if(saved.length){await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved.splice(0),complete:false,status:'running'});onProgress(report)}
     }
     if(!found.length&&!/Нет данных|Нет обращений|Нет тикетов/.test(await page.locator('body').innerText()))throw new WBReadError('ticket_list_not_mapped');
     await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved,

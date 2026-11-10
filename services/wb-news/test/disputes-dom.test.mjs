@@ -1,7 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseHTML} from 'linkedom';
-import {extractGoods,extractPointGroups,extractTicketRows,extractMessages,pageReady,extractHangingGroupLabels,expandVisibleReasons} from '../disputes-browser.mjs';
+import {extractGoods,extractPointGroups,extractTicketRows,extractMessages,pageReady,extractHangingGroupLabels,expandVisibleReasons,readGoodsScopeProof,confirmsAbsentPoints} from '../disputes-browser.mjs';
+test('missing groups confirm zero only with a complete unfiltered list, matching WB total and correct owner',()=>{
+ const {document}=parseHTML('<main><header data-testid="app-header">ИП Тест</header><div aria-expanded="false">Адрес или ID ПВЗ</div><div>Период</div><div>2 ПВЗ</div><input value=""></main>');
+ const root=document.querySelector('main'),proof=readGoodsScopeProof(root),org={name_exact:'ИП Тест',points:[{wb_point_id:'111111'},{wb_point_id:'222222'},{wb_point_id:'333333'}]},scan={complete:true,rows:[{point:'111111'},{point:'222222'}]};
+ assert.equal(confirmsAbsentPoints(proof,scan,org),true);
+ assert.equal(confirmsAbsentPoints({...proof,declaredPoints:3},scan,org),false);
+ assert.equal(confirmsAbsentPoints(proof,{...scan,complete:false},org),false);
+ assert.equal(confirmsAbsentPoints({...proof,header:'ИП Другой'},scan,org),false);
+ assert.equal(confirmsAbsentPoints(proof,{complete:true,rows:[{point:'999999'},{point:'222222'}]},org),false);
+ root.querySelector('input').value='10.11.2026';assert.equal(confirmsAbsentPoints(readGoodsScopeProof(root),scan,org),false);
+});
 test('reason expansion skips hidden controls and stops after a failed or unchanged click',async()=>{
  let clicks=0;const nodes=[{visible:false},{visible:true}];
  const root={getByText:()=>({count:async()=>nodes.length,nth:i=>({isVisible:async()=>nodes[i].visible,click:async options=>{assert.equal(options.timeout,2000);clicks++;nodes.splice(i,1)}})})};

@@ -30,6 +30,7 @@ export class Collector {
     });
     const pages=this.context.pages();
     this.page = pages.find(page=>page.url().startsWith(WB_ORIGIN))||pages[0]||await this.context.newPage();
+    this.page.setDefaultTimeout?.(10000);
     for(const page of pages)if(page!==this.page)await page.close();
     await this.context.route('**/*',async route=>{
       const kind=route.request().resourceType();
@@ -100,6 +101,7 @@ export class Collector {
     const state=await this.context.storageState();
     if(!hasWBCookies(state)&&!state.origins?.some(x=>/^https:\/\/([\w-]+\.)*(wb|wildberries)\.ru$/.test(x.origin)&&x.localStorage?.length))return;
     await sessionEnvelope('POST',encryptSession(state,process.env.EDPVZ_INGEST_TOKEN));
+    this.sessionBackedUpAt=Date.now();
   }
   async collect() {
     if (this.running || this.disputeRunning || this.controlUntil > Date.now() || this.state === 'blocked' || this.state === 'authentication_required') return;
@@ -162,7 +164,7 @@ export class Collector {
       let heartbeatBusy=false;
       heartbeat=setInterval(async()=>{
         if(heartbeatBusy)return;heartbeatBusy=true;
-        try{await ingest({kind:'heartbeat',...lease,report:this.disputeInspection})}
+        try{await ingest({kind:'heartbeat',...lease,report:this.disputeInspection});if(Date.now()-(this.sessionBackedUpAt||0)>300000)await this.backupSession().catch(()=>{})}
         catch{console.error('disputes_heartbeat_failed')}
         finally{heartbeatBusy=false}
       },30000);heartbeat.unref?.();
