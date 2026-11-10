@@ -260,7 +260,8 @@ async function ticketDetail(page,row){
 }
 export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},categories=['hanging','tickets','brak','podmena'],budgetMs=100*60000}={}){
  const started=Date.now(),report={started_at:stamp(),state:'running',checked_points:0,rows:0,tickets:0,sections:[]};
- const checkedPoints=new Set();
+ const checkedPoints=new Set(),detailQueue=[];
+ report.dialogues_attempted=0;report.dialogues_failed=0;
  if(!await page.getByTestId('app-header').count()){
   await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
   await page.waitForFunction(()=>document.querySelector('[data-testid="app-header"]')?.innerText.trim()||/Отправить код|Выберите организацию|verify you are human/.test(document.body.innerText),null,{timeout:60000}).catch(()=>{});
@@ -279,13 +280,16 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
- for(const phase of ['primary','secondary'])for(const org of ordered){
+ for(const phase of ['inventory','details','secondary'])for(const org of ordered){
+  report.phase=phase;
+  if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
   if(Date.now()-started>budgetMs){report.sections.push({key:'budget',state:'partial'});break}
   try{
    if(!await page.getByTestId('app-header').count())await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
    await selectOrganization(page,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))});
   }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,...(e.diagnostic?{diagnostic:e.diagnostic}:{})});onProgress(report);if(state==='wb_page_not_ready'){report.state='unavailable';return report}if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
-  for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='primary'?(x.key==='hanging'&&x.state==='to-hold'):!(x.key==='hanging'&&x.state==='to-hold')))){
+  for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='inventory'?(x.key==='hanging'&&x.state==='to-hold'):phase==='secondary'?!(x.key==='hanging'&&x.state==='to-hold'):false))){
+   if(Date.now()-started>budgetMs){report.sections.push({key:'budget:goods',state:'partial'});break}
    report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section'};onProgress(report);
    try{
     await navigate(page,ORIGIN+section.path,section.heading,org.name_exact);
@@ -300,6 +304,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     const absentConfirmed=confirmsAbsentPoints(proof,groupScan,org);
     let sectionComplete=groupScan.complete;
     for(const point of org.points){
+     if(Date.now()-started>budgetMs){sectionComplete=false;break}
      report.current={organization:org.research_id,point:point.wb_point_id,section:section.key,state:section.state,step:'reading_point'};onProgress(report);
      const group=groups.find(x=>x.point===point.wb_point_id);
      const scope={organization:org.research_id,point:point.wb_point_id,category:section.category,state:section.state,key:section.key};
@@ -333,7 +338,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
    }
   }
-  if(phase==='primary'&&categories.includes('tickets'))for(const namespace of ['legacy','new'])for(const point of org.points){
+  if(phase==='inventory'&&categories.includes('tickets'))for(const namespace of ['legacy','new'])for(const point of org.points){
    report.current={organization:org.research_id,point:point.wb_point_id,section:'tickets',namespace,step:'reading_tickets'};onProgress(report);
    if(Date.now()-started>budgetMs)break;
    const scope=`wb:${org.research_id}:${point.wb_point_id}:tickets:${namespace}`;
@@ -352,14 +357,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      const ticket={ticket_number:row.number,status:row.status,title:row.title,created_local:row.created_local,
       namespace,wb_point_id:point.wb_point_id,organization_research_id:org.research_id};
      const cached=tickets.find(x=>x.organization_research_id===org.research_id&&x.namespace===namespace&&x.ticket_number===row.number);
-     if(ticketNeedsDetail(row,cached)){
-      try{
-       // Scroll back to the list row when virtualization has unmounted it.
-       await closeDrawers(page).catch(()=>{});await page.keyboard.press('Escape');
-       const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();await search.fill(row.number,{timeout:5000});await sleep(400);
-       Object.assign(ticket,await ticketDetail(page,row));
-      }catch(e){detailsComplete=false;ticket.detail_error=e.code||'detail_unavailable';await closeDrawers(page).catch(()=>{});}
-     }
+     if(ticketNeedsDetail(row,cached)){detailQueue.push({organization:org.research_id,point:point.wb_point_id,namespace,row,cached,ticket});report.pending_dialogues=detailQueue.length;}
      saved.push(ticket);report.tickets++;
      if(saved.length){await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved.splice(0),complete:false,status:'running'});onProgress(report)}
     }
@@ -372,6 +370,45 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
    }
   }
+  if(phase==='details'&&categories.includes('tickets'))for(const namespace of ['legacy','new'])for(const point of org.points){
+   const pending=detailQueue.filter(task=>task.organization===org.research_id&&task.point===point.wb_point_id&&task.namespace===namespace);
+   if(!pending.length)continue;
+   if(Date.now()-started>budgetMs){report.sections.push({key:'budget:details',state:'partial'});break}
+   const scope=`wb:${org.research_id}:${point.wb_point_id}:ticket-history:${namespace}`;
+   let complete=true,failed=0,firstFailure=null;
+   try{
+    report.current={organization:org.research_id,point:point.wb_point_id,section:'tickets',namespace,step:'reading_dialogues'};onProgress(report);
+    await navigate(page,ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org.name_exact);
+    const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();if(await search.count())await search.fill('',{timeout:5000});
+    await chooseTicketPoint(page,point.wb_point_id);
+    const closed=row=>/Реш[её]н|Закрыт|Отмен/i.test(row.status||'')?1:0;
+    pending.sort((a,b)=>closed(a.row)-closed(b.row)||Date.parse(a.cached?.last_attempt_at||'1970-01-01')-Date.parse(b.cached?.last_attempt_at||'1970-01-01'));
+    for(const task of pending){
+     if(Date.now()-started>budgetMs){complete=false;break}
+     const ticket={...task.ticket};
+     try{
+      await closeDrawers(page).catch(()=>{});await page.keyboard.press('Escape');
+      const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();await search.fill(ticket.ticket_number,{timeout:5000});await sleep(400);
+      Object.assign(ticket,await ticketDetail(page,task.row));
+      if(!ticket.history_complete){complete=false;failed++}
+     }catch(e){
+      if(['blocked','authentication_required'].includes(e.code)){report.state=e.code;return report}
+      complete=false;failed++;ticket.detail_error=e.code||'detail_unavailable';
+      if(!firstFailure)firstFailure={ticket:ticket.ticket_number,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,200)};
+      await closeDrawers(page).catch(()=>{});
+     }
+     await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'ticket_history',namespace,tickets:[ticket],complete:false,status:'running'});
+     report.dialogues_attempted++;report.pending_dialogues=detailQueue.length-report.dialogues_attempted;report.dialogues_failed+=ticket.history_complete?0:1;onProgress(report);
+    }
+    await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'ticket_history',namespace,complete,status:complete?'ok':'partial'});
+    report.sections.push({key:scope,state:complete?'ok':'partial',failed,...(firstFailure?{firstFailure}:{})});onProgress(report);
+   }catch(e){
+    const state=e.code||'unavailable';report.sections.push({key:scope,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,200)});onProgress(report);
+    await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'ticket_history',namespace,complete:false,status:state}).catch(()=>{});
+    if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
+   }
+  }
+
  }
  report.state=report.sections.some(x=>x.state!=='ok')?'partial':'ok';report.finished_at=stamp();return report;
 }
