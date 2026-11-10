@@ -1,4 +1,4 @@
-import os, asyncio, time, re, json, secrets, html
+import os, asyncio, time, re, json, secrets, html, logging
 from datetime import datetime, timezone
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -9,6 +9,7 @@ from telethon.tl.functions.channels import GetForumTopicsRequest
 from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, PhoneCodeExpiredError
 import httpx
 
+logger=logging.getLogger('edpvz.collector')
 app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
 CHANNELS=['pvz_zamena','mskpodmena','marketplacepvz','whitelistpvz','zamena_vPVZ','OZONpvzArh','rabotapvz','pvz889','OnlinePvz','rabotapvzoff','pvzrabota','pvzzamena','Rabota_Zamena_PVZ','spbpvz','rabota_v_pvz','tochka_pvz','wildberries_ozone_help','pvzworks']
 # Message links supplied by the portal owner. These are message IDs, not necessarily topic IDs.
@@ -119,8 +120,11 @@ async def collect():
     c=await get_client()
     if not await c.is_user_authorized():
         state['authorized']=False
+        state['error']='Telegram account authorization required'
+        logger.warning('Telegram collector: account authorization required')
         return {'authorized':False,'message':'Account authorization required'}
     state['authorized']=True
+    state['error']=None
     items=[]
     statuses={}
     for name in CHANNELS:
@@ -191,11 +195,13 @@ async def collect():
             statuses[name]={'ok':True,'posts':count,'topics':len(topics),'seed_links':len(seed_messages)}
         except Exception as e:
             statuses[name]={'ok':False,'error':type(e).__name__}
+            logger.warning('Telegram source %s failed: %s',name,type(e).__name__)
     # Every source is isolated: a missing/private forum cannot interrupt other groups.
     # Telethon iter_messages on a forum supergroup returns messages from its topics
     # as part of the channel history; topic links are preserved when available.
     items.sort(key=lambda x:x['published_at'] or '',reverse=True)
     state.update({'count':len(items),'channels':statuses,'last_sync':datetime.now(timezone.utc).isoformat(),'error':None})
+    logger.info('Telegram collection: posts=%d successful_sources=%d/%d',len(items),sum(bool(v.get('ok')) for v in statuses.values()),len(CHANNELS))
     if SUPABASE_URL and INGEST_TOKEN and ANON_KEY:
         try:
             saved=await rpc('edpvz_telegram_ingest',{'p_token':INGEST_TOKEN,'p_items':items})
@@ -211,11 +217,23 @@ async def start():
     async def loop():
         while True:
             try:
-                if not SESSION and client is None:
-                    await restore_session()
+                if client is None:
+                    if not SESSION:
+                        restored=await restore_session()
+                        if not restored:
+                            state['error']='Stored Telegram session missing or unauthorized'
+                            logger.warning('Stored Telegram session missing or unauthorized')
+                    else:
+                        await get_client()
                 await collect()
             except Exception as e:
                 state['error']=type(e).__name__+': '+str(e)[:100]
+                logger.exception('Telegram collector cycle failed')
+                if client is not None:
+                    try:
+                        await client.disconnect()
+                    except Exception:pass
+                    globals()['client']=None
             await asyncio.sleep(300)
     asyncio.create_task(loop())
 
