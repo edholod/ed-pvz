@@ -1,4 +1,4 @@
-import {selectOrganization} from './disputes-organizations.mjs';
+import {selectOrganization,readOrganizationEvidence,verifyOrganization} from './disputes-organizations.mjs';
 import {observationRows,normalizeMessages,ticketNeedsDetail} from './disputes-model.mjs';
 const ORIGIN='https://my-pvz.wb.ru';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -6,20 +6,21 @@ const stamp=()=>new Date().toISOString();
 export class WBReadError extends Error{constructor(code){super(code);this.code=code}}
 export async function pageReady(page,heading){
  await page.waitForFunction(({heading})=>{
-  const text=document.querySelector('#root')?.innerText||'';
-  return [...document.querySelectorAll('h1,h2')].some(x=>x.textContent.trim()===heading)||
+  const text=document.body?.innerText||'';
+  return text.split('\n').some(line=>line.trim()===heading)||
    /Отправить код|Войти по|Раздел недоступен|verify you are human|checking your browser/i.test(text);
  },{heading},{timeout:35000}).catch(()=>{});
- const info=await page.evaluate(()=>({url:location.href,text:document.querySelector('#root')?.innerText||'',headings:[...document.querySelectorAll('h1,h2')].map(x=>x.textContent.trim())}));
+ const info=await page.evaluate(()=>({url:location.href,text:document.body?.innerText||'',headings:[...document.querySelectorAll('h1,h2')].map(x=>x.textContent.trim())}));
  if(/verify you are human|checking your browser|unusual traffic|automated traffic|подтвердите.{0,30}(человек|робот)/i.test(info.text))throw new WBReadError('blocked');
  if(new URL(info.url).origin!==ORIGIN||/\/(login|auth|signin)(\/|$)/i.test(new URL(info.url).pathname)||/Отправить код/.test(info.text))throw new WBReadError('authentication_required');
  if(/Раздел недоступен/.test(info.text))throw new WBReadError('access_denied');
- if(!info.headings.includes(heading))throw new WBReadError(info.headings.includes('ПВЗ')?'role_restricted':'layout_changed');
+ if(!info.headings.includes(heading)&&!info.text.split('\n').some(line=>line.trim()===heading))throw new WBReadError(info.headings.includes('ПВЗ')?'role_restricted':'layout_changed');
  return info;
 }
 async function navigate(page,url,heading,org){
  await page.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
  await pageReady(page,heading);
+ if(new URL(page.url()).pathname.replace(/\/$/,'')!==new URL(url).pathname.replace(/\/$/,''))throw new WBReadError('role_restricted');
  // WB may display only the active PVZ in its header. Selection is verified
  // separately; absence of the legal name here is not evidence of mismatch.
 }
@@ -94,10 +95,10 @@ export function extractPointGroups(root){
 }
 async function collectPoint(page,point,section){
  await closeDrawers(page);
- const group=page.locator('#root').getByText('ID '+point,{exact:true});
+ const group=page.locator('body').getByText('ID '+point,{exact:true});
  // A previous complete scan can leave earlier point rows unmounted at the bottom.
  if(!await group.count()){
-  const scroller=page.locator('#root').getByTestId('virtuoso-scroller').last();
+  const scroller=page.locator('body').getByTestId('virtuoso-scroller').last();
   if(await scroller.count()){
    await scroller.evaluate(e=>{e.scrollTop=0});
    for(let window=0;window<150;window++){
@@ -130,7 +131,7 @@ async function collectPoint(page,point,section){
    // Close only the inner drawer. If WB closes both, reopen the original point.
    await inner.getByRole('button').first().click();await sleep(300);
    if(!await page.getByRole('dialog').count()){
-    await page.locator('#root').getByText('ID '+point,{exact:true}).first().click();
+    await page.locator('body').getByText('ID '+point,{exact:true}).first().click();
     await page.getByRole('dialog').last().waitFor({state:'visible'});await sleep(300);
    }
   }
@@ -249,7 +250,10 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
   {key:'brak',heading:'Брак',path:'/defects/to-hold',category:'Брак'},
   {key:'podmena',heading:'Подмены',path:'/replace-goods/to-hold',category:'Подмена'}];
  const sections=baseSections.flatMap(x=>['to-hold','withheld','paid'].map((state,i)=>({...x,state,tab:['К удержанию','Удержано','Доплачено'][i]})));
- for(const org of registry){
+ const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
+ const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
+ const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
+ for(const org of ordered){
   if(Date.now()-started>budgetMs){report.sections.push({key:'budget',state:'partial'});break}
   try{
    if(!await page.getByTestId('app-header').count())await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
@@ -262,8 +266,8 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      await page.getByRole('button',{name:section.tab,exact:true}).click();
      await sleep(400);await pageReady(page,section.heading);
     }
-    await page.waitForFunction(()=>/Товаров\s*\d|Нет товаров/.test(document.querySelector('#root')?.innerText||''),null,{timeout:20000});
-    const groupScan=await scanVirtual(page,page.locator('#root'),extractPointGroups);
+    await page.waitForFunction(()=>/Товаров\s*\d|Нет товаров/.test(document.body?.innerText||''),null,{timeout:20000});
+    const groupScan=await scanVirtual(page,page.locator('body'),extractPointGroups);
     const groups=groupScan.rows;
     let sectionComplete=groupScan.complete;
     for(const point of org.points){
@@ -302,7 +306,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     const search=page.getByPlaceholder('Поиск',{exact:true});if(await search.count())await search.fill('');
     await chooseTicketPoint(page,point.wb_point_id);
     await sleep(400);
-    const list=await scanVirtual(page,page.locator('#root'),extractTicketRows);
+    const list=await scanVirtual(page,page.locator('body'),extractTicketRows);
     const found=list.rows.filter(x=>x.point===point.wb_point_id);
     const cacheFor=row=>tickets.find(x=>x.organization_research_id===org.research_id&&x.namespace===namespace&&x.ticket_number===row.number);
     found.sort((a,b)=>Date.parse(cacheFor(a)?.last_attempt_at||'1970-01-01')-Date.parse(cacheFor(b)?.last_attempt_at||'1970-01-01'));
@@ -322,7 +326,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      saved.push(ticket);report.tickets++;
      if(saved.length%15===0){await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved.splice(0),complete:false,status:'running'});onProgress(report)}
     }
-    if(!found.length&&!/Нет данных|Нет обращений|Нет тикетов/.test(await page.locator('#root').innerText()))throw new WBReadError('ticket_list_not_mapped');
+    if(!found.length&&!/Нет данных|Нет обращений|Нет тикетов/.test(await page.locator('body').innerText()))throw new WBReadError('ticket_list_not_mapped');
     await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved,
       complete:list.complete&&detailsComplete,status:list.complete&&detailsComplete?'ok':'partial'});
     report.sections.push({key:scope,state:list.complete&&detailsComplete?'ok':'partial'});onProgress(report);

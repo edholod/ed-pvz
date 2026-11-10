@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseHTML} from 'linkedom';
-import {extractGoods,extractPointGroups,extractTicketRows,extractMessages} from '../disputes-browser.mjs';
+import {extractGoods,extractPointGroups,extractTicketRows,extractMessages,pageReady} from '../disputes-browser.mjs';
+test('WB section title rendered without h1/h2 is accepted while login redirects remain rejected',async()=>{
+ let info={url:'https://my-pvz.wb.ru/defects/to-hold',text:'Меню\nБрак\nТоваров 1',headings:[]};
+ const page={waitForFunction:async()=>{},evaluate:async()=>info};
+ assert.equal(await pageReady(page,'Брак'),info);
+ info={url:'https://my-pvz.wb.ru/login',text:'Отправить код',headings:[]};
+ await assert.rejects(pageReady(page,'Брак'),error=>error.code==='authentication_required');
+});
 test('goods extraction binds each barcode to its own photo, amount, ticket and date',()=>{
  const {document}=parseHTML('<main><div data-index="0"><article><img alt="Первый товар" src="https://basket-1.wbbasket.ru/first.webp"><button>ШК 0000123456789</button><div>Первый товар</div><div>Другой предмет</div><button>В тикет</button><button>№ 20529613</button><div>540.5 ₽</div><div>до 27.09.2026, 21:22</div></article></div><div data-index="1"><article><img alt="Второй товар" src="https://basket-1.wbbasket.ru/second.webp"><button>ШК 0000123456789</button><div>Второй товар</div><div>Пыль/грязь</div><button>В тикет</button><button>№ 20529614</button><div>498 ₽</div></article></div></main>');
  const rows=extractGoods(document.querySelector('main'));
