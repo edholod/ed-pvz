@@ -22,7 +22,9 @@ export function readOrganizationEvidence(root){
  const options=[...root.querySelectorAll('label,[role="option"],[role="radio"]')].filter(el=>typeof el.getClientRects!=='function'||el.getClientRects().length>0).map(text).map(s=>s.trim()).filter(s=>/^(ИП|ООО|АО|ПАО)\s/.test(s)).slice(0,30);
  const doc=root.ownerDocument||root;
  const controls=[...root.querySelectorAll('button,[aria-expanded]')].filter(el=>typeof el.getClientRects!=='function'||el.getClientRects().length>0).slice(0,40).map(el=>({tag:el.tagName,text:text(el).trim().slice(0,80),label:el.getAttribute('aria-label'),title:el.getAttribute('title'),expanded:el.getAttribute('aria-expanded'),testId:el.getAttribute('data-testid')}));
- return {header:text(header).slice(0,1200),selected:selected.map(s=>s.slice(0,500)).slice(0,20),pointIds,options,headings:[...root.querySelectorAll('h1,h2,[role="heading"]')].map(text).slice(0,8),controls,page:{path:doc.location?.pathname||'',title:doc.title||'',readyState:doc.readyState||'',textSample:text(root).trim().slice(0,600)}};
+ const forms=[...root.querySelectorAll('input,select')].slice(0,30).map(el=>({tag:el.tagName,placeholder:el.getAttribute('placeholder'),label:el.getAttribute('aria-label'),testId:el.getAttribute('data-testid')}));
+ const dialogs=[...root.querySelectorAll('[role="dialog"]')].slice(-2).map(el=>({text:text(el).slice(0,2000),paragraphs:[...el.querySelectorAll('p')].slice(0,20).map(text)}));
+ return {header:text(header).slice(0,1200),selected:selected.map(s=>s.slice(0,500)).slice(0,20),pointIds,options,headings:[...root.querySelectorAll('h1,h2,[role="heading"]')].map(text).slice(0,8),controls,forms,dialogs,page:{path:doc.location?.pathname||'',title:doc.title||'',readyState:doc.readyState||'',textSample:text(root).trim().slice(0,600),textTail:text(root).trim().slice(-1800)}};
 }
 export function verifyOrganization(evidence,name,{pointIds=[],allPointIds=[]}={}){
  const same=value=>organizationLabelMatches(value,name);

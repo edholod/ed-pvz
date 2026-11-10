@@ -260,6 +260,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
    await selectOrganization(page,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))});
   }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,...(e.diagnostic?{diagnostic:e.diagnostic}:{})});onProgress(report);if(state==='wb_page_not_ready'){report.state='unavailable';return report}if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
   for(const section of sections.filter(x=>categories.includes(x.key))){
+   report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section'};onProgress(report);
    try{
     await navigate(page,ORIGIN+section.path,section.heading,org.name_exact);
     if(section.state!=='to-hold'){
@@ -271,6 +272,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     const groups=groupScan.rows;
     let sectionComplete=groupScan.complete;
     for(const point of org.points){
+     report.current={organization:org.research_id,point:point.wb_point_id,section:section.key,state:section.state,step:'reading_point'};onProgress(report);
      const group=groups.find(x=>x.point===point.wb_point_id);
      const scope={organization:org.research_id,point:point.wb_point_id,category:section.category,state:section.state,key:section.key};
      // Missing group is not proof of zero goods: WB may not have mounted it,
@@ -279,7 +281,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
       await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,
        rows:[],complete:false,status:'point_group_missing',expected_count:null,finished_at:stamp()});
       sectionComplete=false;
-      report.sections.push({key:org.research_id+':'+point.wb_point_id+':'+section.key+':'+section.state,state:'point_group_missing'});
+      report.sections.push({key:org.research_id+':'+point.wb_point_id+':'+section.key+':'+section.state,state:'point_group_missing',diagnostic:await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({})),groupIds:groups.map(group=>group.point)});
       onProgress(report);
       continue;
      }
@@ -293,12 +295,13 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      report.rows+=rows.length;checkedPoints.add(org.research_id+':'+point.wb_point_id);report.checked_points=checkedPoints.size;onProgress(report);
     }
     report.sections.push({key:org.research_id+':'+section.key+':'+section.state,state:sectionComplete?'ok':'partial'});
-   }catch(e){await closeDrawers(page).catch(()=>{});const state=e.code||'unavailable';report.sections.push({key:org.research_id+':'+section.key,state});
+   }catch(e){const diagnostic=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}));await closeDrawers(page).catch(()=>{});const state=e.code||'unavailable';report.sections.push({key:org.research_id+':'+section.key+':'+section.state,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,200),diagnostic});onProgress(report);
     await saveScope({scope:`wb:${org.research_id}:all:${section.key}`,organization:org.research_id,key:section.key,status:state,complete:false,rows:[]}).catch(()=>{});
     if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
    }
   }
   if(categories.includes('tickets'))for(const namespace of ['legacy','new'])for(const point of org.points){
+   report.current={organization:org.research_id,point:point.wb_point_id,section:'tickets',namespace,step:'reading_tickets'};onProgress(report);
    if(Date.now()-started>budgetMs)break;
    const scope=`wb:${org.research_id}:${point.wb_point_id}:tickets:${namespace}`;
    try{
@@ -330,7 +333,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved,
       complete:list.complete&&detailsComplete,status:list.complete&&detailsComplete?'ok':'partial'});
     report.sections.push({key:scope,state:list.complete&&detailsComplete?'ok':'partial'});onProgress(report);
-   }catch(e){const state=e.code||'unavailable';report.sections.push({key:scope,state});
+   }catch(e){const state=e.code||'unavailable';report.sections.push({key:scope,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,200),diagnostic:await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}))});onProgress(report);
     await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,status:state,complete:false}).catch(()=>{});
     if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
    }
