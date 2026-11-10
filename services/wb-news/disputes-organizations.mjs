@@ -58,7 +58,7 @@ export async function selectOrganization(page,name,context={}){
  const verified=()=>verifyOrganization(evidence,name,context);
  if(verified())return;
  const pattern=organizationPattern(name);
- let clicked=false;
+ let clicked=false;const attempts=[];
  async function chooseVisible(){
   // A radio input often has no text; click its label, including portalled labels.
   for(const candidate of [page.locator('label,[role="option"],[role="radio"]').filter({hasText:pattern}),page.getByText(pattern)]){
@@ -73,29 +73,33 @@ export async function selectOrganization(page,name,context={}){
      await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
      for(let pass=0;pass<12;pass++){await pause(250);evidence=await inspect();if(verified())return true}
     }
-    throw new OrganizationSelectionError('organization_selection_unverified',evidence);
+    throw new OrganizationSelectionError('organization_selection_unverified',{...evidence,attempts});
    }
   }return false;
  }
  if(await chooseVisible())return;
  // Only semantic picker controls; never enumerate unrelated profile/logout buttons.
- const triggers=[page.getByTestId('app-header').locator('[aria-expanded]'),page.getByRole('button',{name:/организац|компани|сменить\s+(ПВЗ|пункт)/i}),page.locator('[role="combobox"][aria-label*="организац" i],[data-testid*="organization"][aria-expanded]')];
+ const triggers=[page.getByTestId('app-header').locator('[aria-expanded]').filter({hasText:/^(ИП|ООО|АО|ПАО)\s/}),page.getByRole('button',{name:/организац|компани|сменить\s+(ПВЗ|пункт)/i}),page.locator('[role="combobox"][aria-label*="организац" i],[data-testid*="organization"][aria-expanded]')];
  if(!await page.getByTestId('app-header').count()&&/Выберите организацию/.test(await page.locator('body').innerText()))triggers.push(page.locator('[aria-expanded]'));
  for(const group of triggers){
   const count=Math.min(await group.count(),5);
   for(let i=0;i<count;i++){
    const trigger=group.nth(i);if(!await trigger.isVisible())continue;
-   try{await trigger.click({timeout:2500})}catch{continue}
-   await pause(300);evidence=await inspect();if(await chooseVisible())return;
+   const attempt={trigger:(await trigger.innerText()).slice(0,120),before:await trigger.getAttribute('aria-expanded')};attempts.push(attempt);
+   try{await trigger.click({timeout:8000})}catch(error){attempt.error=error.name||'click_failed';continue}
+   // Rendering a portal/list can take longer than its opening animation on the server.
+   await page.getByText(pattern).first().waitFor({state:'visible',timeout:12000}).catch(()=>{});
+   evidence=await inspect();attempt.after=await trigger.getAttribute('aria-expanded');attempt.options=evidence.options;
+   if(await chooseVisible())return;
    // Some account menus expose the organization picker in a second step.
    const change=page.getByText(/^(Сменить|Выбрать|Изменить)\s+организацию$/i);
    if(await change.count()&&await change.first().isVisible()){
-    await change.first().click({timeout:2500});await pause(300);if(await chooseVisible())return;
+    await change.first().click({timeout:4000});await page.getByText(pattern).first().waitFor({state:'visible',timeout:12000}).catch(()=>{});if(await chooseVisible())return;
    }
    if(await trigger.getAttribute('aria-expanded')==='true')await trigger.click({timeout:2500}).catch(()=>{});
   }
  }
  await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
  await pause(500);evidence=await inspect();if(verified()||await chooseVisible())return;
- throw new OrganizationSelectionError(clicked?'organization_selection_unverified':'organization_option_missing',evidence);
+ throw new OrganizationSelectionError(clicked?'organization_selection_unverified':'organization_option_missing',{...evidence,attempts});
 }
