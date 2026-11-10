@@ -1,5 +1,5 @@
 import {selectOrganization,readOrganizationEvidence,verifyOrganization,organizationLabelMatches} from './disputes-organizations.mjs';
-import {observationRows,normalizeMessages,ticketNeedsDetail} from './disputes-model.mjs';
+import {eligibleObservation,observationRows,normalizeMessages,ticketNeedsDetail} from './disputes-model.mjs';
 const ORIGIN='https://my-pvz.wb.ru';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const stamp=()=>new Date().toISOString();
@@ -80,7 +80,7 @@ export function extractGoods(root){
   const title=img?.alt&&img.alt!=='product image'?img.alt:lines[lines.findIndex(x=>/^ШК/.test(x))+1];
   const amount=lines.findLast(x=>/^-?[\d\s.,\u00a0]+\s*₽$/.test(x));
   const ticket=chosen.innerText.match(/№\s*(\d{3,})/);
-  const dateLabel=lines.findLast(x=>/\d{2}\.\d{2}\.\d{2,4}/.test(x))||'';
+  const dateLabel=lines.find(x=>/^до\s+\d{2}\.\d{2}\.\d{2,4}/i.test(x))||'';
   const start=lines.indexOf(title),end=lines.findIndex(x=>/^(В тикет|Оспорить)$/.test(x));
   const reason=lines.slice(start+1,end>=0?end:undefined).filter(x=>x!==amount&&x!==dateLabel).join('\n');
   const wrapper=chosen.closest('[data-index],[data-item-index]');
@@ -293,7 +293,31 @@ async function ticketDetail(page,row){
  await closeDrawers(page).catch(()=>{});
  return {messages,history_complete:all.complete};
 }
-export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},renewPage=async current=>current,categories=['hanging','tickets','brak','podmena'],budgetMs=100*60000}={}){
+export async function selectCollectionPeriod(page,heading){
+ const start='01.10.2026',end=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date());
+ try{
+  await page.getByText('Период',{exact:true}).first().click({timeout:5000});
+  const inputs=page.locator('input').filter({visible:true});const candidates=[];const evidence=[];
+  for(let i=0;i<await inputs.count();i++){
+   const input=inputs.nth(i),info=await input.evaluate(el=>({type:el.type,placeholder:el.placeholder,value:el.value,readOnly:el.readOnly}));evidence.push(info);
+   if(!['checkbox','radio','search','button','submit','hidden'].includes(info.type)&&info.placeholder!=='Поиск'&&!info.readOnly)candidates.push({input,info});
+  }
+  if(candidates.length!==2){await page.keyboard.press('Escape');return {verified:false,inputs:evidence}}
+  for(const [i,item] of candidates.entries()){
+   const date=i===0?start:end;await item.input.fill(item.info.type==='date'?date.split('.').reverse().join('-'):date);await item.input.press('Tab');
+  }
+  const values=await Promise.all(candidates.map(item=>item.input.inputValue()));
+  const verified=(values[0].includes(start)||values[0]==='2026-10-01')&&(values[1].includes(end)||values[1]===end.split('.').reverse().join('-'));
+  if(!verified)return {verified:false,inputs:evidence,values};
+  const apply=page.getByRole('button',{name:/^(Применить|Показать)$/});
+  if(await apply.count()&&await apply.first().isVisible()&&await apply.first().isEnabled())await apply.first().click();
+  else await page.getByRole('heading',{name:heading,exact:true}).click();
+  await page.waitForLoadState('networkidle',{timeout:10000}).catch(()=>{});
+  return {verified:true,start:'2026-10-01',end:end.split('.').reverse().join('-')};
+ }catch(error){await page.keyboard.press('Escape').catch(()=>{});return {verified:false,error:String(error.message).slice(0,120)}}
+}
+
+export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},renewPage=async current=>current,categories=['hanging','brak','podmena'],budgetMs=100*60000}={}){
  const started=Date.now(),report={started_at:stamp(),state:'running',checked_points:0,rows:0,tickets:0,sections:[]};
  const checkedPoints=new Set(),detailQueue=[];
  const openScope=async(url,heading,org)=>{
@@ -322,11 +346,11 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const baseSections=[{key:'hanging',heading:'Зависшие ШК',path:'/hanging-goods/to-hold',category:'Зависший'},
   {key:'brak',heading:'Брак',path:'/defects/to-hold',category:'Брак'},
   {key:'podmena',heading:'Подмены',path:'/replace-goods/to-hold',category:'Подмена'}];
- const sections=baseSections.flatMap(x=>['to-hold','withheld','paid'].map((state,i)=>({...x,state,tab:['К удержанию','Удержано','Доплачено'][i]})));
+ const sections=baseSections.map(x=>({...x,state:'to-hold',tab:'К удержанию'}));
  const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
- for(const phase of ['inventory','details','secondary'])for(const org of ordered){
+ for(const phase of ['inventory'])for(const org of ordered){
   report.phase=phase;
   if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
   if(Date.now()-started>budgetMs){report.sections.push({key:'budget',state:'partial'});break}
@@ -335,11 +359,13 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
    if(!await page.getByTestId('app-header').count())await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
    await selectOrganization(page,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))});
   }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,240),failureLog:String(e.message||'').slice(0,1800),diagnostic:e.diagnostic||await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}))});onProgress(report);if(state==='wb_page_not_ready'){report.state='unavailable';return report}if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
-  for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='inventory'?(x.key==='hanging'&&x.state==='to-hold'):phase==='secondary'?!(x.key==='hanging'&&x.state==='to-hold'):false))){
+  for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='inventory'?(x.state==='to-hold'):phase==='secondary'?!(x.state==='to-hold'):false))){
    if(Date.now()-started>budgetMs){report.sections.push({key:'budget:goods',state:'partial'});break}
    report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section'};onProgress(report);
    try{
     await openScope(ORIGIN+section.path,section.heading,org);
+    const dateProof=await selectCollectionPeriod(page,section.heading);
+    if(!dateProof.verified)report.sections.push({key:org.research_id+':'+section.key+':date-range',state:'date_range_unverified',diagnostic:dateProof});
     if(section.state!=='to-hold'){
      await page.getByRole('button',{name:section.tab,exact:true}).click();
      await sleep(400);await pageReady(page,section.heading);
@@ -348,7 +374,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     const groupScan=await scanVirtual(page,page.locator('body'),extractPointGroups);
     const groups=groupScan.rows;
     const proof=await page.locator('body').evaluate(readGoodsScopeProof);
-    const absentConfirmed=confirmsAbsentPoints(proof,groupScan,org);
+    const absentConfirmed=dateProof.verified&&groupScan.complete&&groups.every(group=>org.points.some(point=>point.wb_point_id===group.point))&&organizationLabelMatches(proof.header,org.name_exact)&&(proof.declaredPoints===new Set(groups.map(group=>group.point)).size||proof.noGoods);
     let sectionComplete=groupScan.complete;
     for(const point of org.points){
      if(Date.now()-started>budgetMs){sectionComplete=false;break}
@@ -372,8 +398,8 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      }
      let result={rows:[],complete:true};
      if(group?.count>0)result=await collectPoint(page,point.wb_point_id,section);
-     const complete=groupScan.complete&&result.complete&&(!group||result.rows.length===group.count);
-     const rows=observationRows(result.rows,scope);
+     const complete=dateProof.verified&&groupScan.complete&&result.complete&&(!group||result.rows.length===group.count);
+     const rows=observationRows(result.rows,{...scope,date_range_verified:dateProof.verified}).filter(row=>eligibleObservation(row));
      const saved=await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,rows,complete,
        status:complete?'ok':'partial',expected_count:group?.count||0,finished_at:stamp()});
      sectionComplete&&=complete&&saved.complete!==false;

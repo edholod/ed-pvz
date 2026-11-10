@@ -10,6 +10,22 @@ Deno.serve(async req=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(!['GET','POST'].includes(req.method))return json({error:'method_not_allowed'},405);
  try{
+  // Only public product-image URLs are exported. No owner, point, barcode,
+  // amount, ticket, message or annotation is exposed by this manifest.
+  if(req.method==='GET'&&new URL(req.url).searchParams.get('asset_manifest')==='1'){
+   const {data,error}=await db.from('edpvz_dispute_observations').select('photo_url,raw').eq('owner_id',owner).eq('is_current',true).eq('wb_state','to-hold').limit(10000);
+   if(error)return json({error:'asset_manifest_unavailable'},503);
+   const photos=[];const seen=new Set();
+   for(const row of data||[]){
+    const url=row.photo_url||'';
+    if(!/^https:\/\/[^/?]+\.(wbbasket|wb|wildberries)\.ru\/[^?]+\.(webp|jpg|jpeg|png)$/.test(url)||seen.has(url))continue;
+    const match=(row.raw?.date_label||'').match(/(\d{2})\.(\d{2})\.(\d{4})/);
+    const date=match?`${match[3]}-${match[2]}-${match[1]}`:null;
+    if(row.raw?.collection_since!=='2026-10-01'&&(!date||date<'2026-10-01'))continue;
+    seen.add(url);photos.push({url,path:'assets/wb-disputes/'+await sha(url)+'.'+url.split('.').pop()});
+   }
+   return json({photos});
+  }
   const token=req.headers.get('x-edpvz-ingest-token')||'';
   let machine=false;
   if(token.length>=32&&token.length<=1024){
@@ -31,7 +47,7 @@ Deno.serve(async req=>{
     db.from('edpvz_wb_encrypted_sessions').select('envelope').eq('owner_id',owner).maybeSingle(),
     db.from('edpvz_dispute_organizations').select('research_id,name_exact').eq('owner_id',owner),
     db.from('edpvz_dispute_points').select('wb_point_id,organization_research_id,address_observed').eq('owner_id',owner),
-    db.from('edpvz_dispute_tickets').select('organization_research_id,namespace,ticket_number,baseline_completed_at,last_checked_at,last_attempt_at,status').eq('owner_id',owner).limit(10000),
+    Promise.resolve({data:[],error:null}),
     db.from('edpvz_dispute_sync_control').select('next_due_at,last_state').eq('owner_id',owner).maybeSingle()
    ]);
    if([session,orgs,points,tickets,control].some(x=>x.error))return json({error:'database_read_failed'},500);

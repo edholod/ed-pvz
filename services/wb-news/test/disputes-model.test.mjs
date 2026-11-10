@@ -29,3 +29,4 @@ test('repeated identical messages retain occurrence IDs; separate ticket caches 
  const rows=normalizeMessages([{role:'wb_support',text:'yes'},{role:'wb_support',text:'yes'}]);assert.notEqual(rows[0].source_message_id,rows[1].source_message_id);
  assert.equal(ticketNeedsDetail({status:'В работе'},{baseline_completed_at:'2026-11-09',last_checked_at:new Date().toISOString()}),true);
 });
+test('manual card identity survives mutable WB deadline title and linked ticket changes',()=>{const a=observationRows([{barcode:'123456789',dateLabel:'до 10.11.2026',ticketNumber:'1',title:'old'}],scope)[0];const b=observationRows([{barcode:'123456789',dateLabel:'до 15.11.2026',ticketNumber:'2',title:'new'}],scope)[0];assert.equal(a.source_event_id,b.source_event_id)});

@@ -17,23 +17,23 @@ export function localDate(value){
 export function safeImage(value){
   try{const u=new URL(value);return u.protocol==='https:'&&/(^|\.)(wbbasket\.ru|wb\.ru|wildberries\.ru)$/.test(u.hostname)&&!u.search&&!u.username?u.href:null}catch{return null}
 }
-export function observationRows(items,{organization,point,category,state,group=''}){
+export function observationRows(items,{organization,point,category,state,group='',date_range_verified=false}){
   const repeated=new Map();
   return items.map(item=>{
     const barcode=String(item.barcode||'');
     if(!/^\d{4,40}$/.test(barcode))throw Error('invalid_barcode');
     // This is an observed-card identity, explicitly not an invented native WB event ID.
     const itemGroup=item.groupLabel||group;
-    const base=[organization,point,category,itemGroup,barcode,item.dateLabel||'',item.ticketNumber||'',item.title||''];
+    const base=[organization,point,category,itemGroup,barcode];
     const hash=digest(base),occurrence=(repeated.get(hash)||0)+1;repeated.set(hash,occurrence);
     const native=item.eventId?String(item.eventId):null;
     return {organization_research_id:organization,wb_point_id:String(point),category,
       source_namespace:`browser:v1:${organization}:${point}:${category}:${state}`,
-      source_event_id:native?'native:'+native:'observed:'+hash+':'+occurrence,
+      source_event_id:native?'native:'+native:'observed:v2:'+hash+':'+occurrence,
       identity_kind:native?'native':'observed_card',wb_state:state,barcode,
       title:String(item.title||'').slice(0,500),photo_url:safeImage(item.photo),amount:money(item.amount),
       provenance:'wb_browser_read_only',raw:{reason:String(item.reason||'').slice(0,10000),
-        date_label:String(item.dateLabel||''),ticket_number:item.ticketNumber||null,group:itemGroup,
+        date_label:String(item.dateLabel||''),collection_since:date_range_verified?'2026-10-01':null,ticket_number:item.ticketNumber||null,group:itemGroup,
         native_event_id:native,occurrence,identity_warning:native?null:'Идентичность события WB не подтверждена',
         amount_kind:state==='to-hold'?'expected':state==='paid'?'refund':'withholding'}};
   });
@@ -59,4 +59,10 @@ export function ticketNeedsDetail(ticket,cached,now=Date.now()){
   if(!cached?.baseline_completed_at)return true;
   const age=now-Date.parse(cached.last_checked_at||0);
   return !/реш[её]н|закрыт|отмен[её]н/i.test(ticket.status||'')||age>7*86400000;
+}
+
+export function eligibleObservation(row){
+ if(row.wb_state!=='to-hold')return false;
+ if(row.raw?.collection_since==='2026-10-01')return true;
+ const date=localDate(row.raw?.date_label);return Boolean(date&&date>='2026-09-30T21:00:00.000Z');
 }

@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';import{readFile}from'node:fs/promises';import{resolve}from'node:path';import{createHash}from'node:crypto';import{chromium}from'playwright';
+const root=process.env.CARDS_FIXTURE_DIR,owner='0f75065b-2b26-4a87-bf26-005f5a2284d4',id='10000000-0000-4000-8000-000000000001',photo='https://basket-1.wbbasket.ru/test.webp',asset='assets/wb-disputes/'+createHash('sha256').update(photo).digest('hex')+'.webp';let authorized=true,notes=[],amount='2589.00',calls=0;
+if(!root)throw Error('CARDS_FIXTURE_DIR required');const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+try{
+ const page=await browser.newPage({viewport:{width:390,height:844}});
+ await page.route('https://edholod.github.io/**',async route=>{const path=new URL(route.request().url()).pathname;if(path.endsWith('/assets/account.js'))return route.fulfill({contentType:'text/javascript',body:`window.EdPVZAccount={signedIn:${authorized},user:{id:'${owner}'},ensure:async()=>({access_token:'synthetic'})};`});const file=path.split('/apps/disputes/')[1]||'index.html';if(file.includes('..'))throw Error('Unsafe path');return route.fulfill({contentType:file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/javascript',body:await readFile(resolve(root,file))})});
+ await page.route('https://raw.githubusercontent.com/**',r=>r.fulfill({contentType:r.request().url().includes('index.json')?'application/json':'image/svg+xml',body:r.request().url().includes('index.json')?JSON.stringify([asset]):'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="100"/>'}));
+ await page.route('https://duerixyhzapotoeclggz.supabase.co/**',async route=>{calls++;const r=route.request(),table=new URL(r.url()).pathname.split('/').pop();let data=[];
+ if(table==='edpvz_dispute_organizations')data=[{research_id:'org01',name_exact:'ИП Тест'}];
+ if(table==='edpvz_dispute_points')data=[{wb_point_id:'500001',organization_research_id:'org01',address_observed:'Москва, Тестовая 1'}];
+ if(table==='edpvz_dispute_observations')data=[{id,organization_research_id:'org01',wb_point_id:'500001',wb_state:'to-hold',is_current:true,barcode:'59038506501',amount,category:'Зависший',title:'Товар WB',photo_url:photo,raw:{collection_since:'2026-10-01',date_label:'до 10.11.2026, 12:00'}}];
+ if(table==='edpvz_dispute_notes'){if(r.method()==='POST')notes=[{...JSON.parse(r.postData()),revision:0}];else if(r.method()==='PATCH')notes=[{...notes[0],...JSON.parse(r.postData()),revision:notes[0].revision+1}];data=notes}
+ if(table==='edpvz_dispute_sync_control')data=[{last_state:'ok',last_report:{}}];
+ return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,PATCH,OPTIONS'},body:JSON.stringify(r.method()==='OPTIONS'?{}:data)});
+ });
+ const enter=async()=>{await page.getByRole('button',{name:/ИП Тест/}).click();await page.locator('.point>summary').click()};
+ await page.goto('https://edholod.github.io/ed-pvz/apps/disputes/');await enter();
+ assert.equal(await page.locator('[name=sticker]').inputValue(),'59038506501');assert.equal(await page.locator('[name=cost]').inputValue(),'2589.00');assert.equal(await page.locator('[name=withholding_date]').inputValue(),'2026-11-10');assert.equal(await page.locator('[name=comment]').inputValue(),'');
+ await page.locator('[name=status]').selectOption({label:'Вина сотрудника'});await page.locator('[name=employee_fault]').fill('Тестовый сотрудник');await page.locator('[name=comment]').fill('Мой комментарий');await page.getByRole('button',{name:'Сохранить',exact:true}).click();await page.getByText('Сохранено',{exact:true}).waitFor();
+ assert.equal(await page.locator('.case').evaluate(el=>getComputedStyle(el).borderTopColor),'rgb(185, 212, 238)');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ amount='9999.00';await page.reload();await enter();assert.equal(await page.locator('[name=cost]').inputValue(),'2589.00');assert.equal(await page.locator('[name=comment]').inputValue(),'Мой комментарий');assert.equal(await page.locator('[name=employee_fault]').inputValue(),'Тестовый сотрудник');
+ authorized=false;calls=0;await page.reload();await page.getByText('Доступ только для владельца раздела. Войди в свой аккаунт Эд ПВЗ.',{exact:true}).waitFor();assert.equal(calls,0);
+ console.log('Cards UI passed: auto fields, edits, persistence, pastel status, mobile width, private gate.');
+}finally{await browser.close()}

@@ -1,0 +1,36 @@
+name: Copy product photos to GitHub
+on:
+  push:
+    paths:
+      - '.github/workflows/wb-dispute-photos.yml'
+      - 'services/wb-news/scripts/sync-dispute-photos.mjs'
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: wb-product-photos
+  cancel-in-progress: false
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Copy only product images
+        run: node services/wb-news/scripts/sync-dispute-photos.mjs
+      - name: Store photos without business records
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          mkdir -p assets/wb-disputes
+          git add assets/wb-disputes
+          if ! git diff --cached --quiet; then
+            git commit -m 'Store WB product images [skip render] [skip ci]'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi

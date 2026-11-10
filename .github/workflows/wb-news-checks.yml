@@ -4,12 +4,14 @@ on:
     paths:
       - 'services/wb-news/**'
       - 'apps/news/wb-news.js'
+      - 'apps/disputes/**'
       - 'render-wb-news.yaml'
       - '.github/workflows/wb-news-checks.yml'
   pull_request:
     paths:
       - 'services/wb-news/**'
       - 'apps/news/wb-news.js'
+      - 'apps/disputes/**'
       - 'render-wb-news.yaml'
 permissions:
   contents: read
@@ -28,6 +30,8 @@ jobs:
       - run: node --check apps/news/wb-news.js
       - name: Build cloud connector image
         run: docker build -t ed-pvz-wb-news services/wb-news
+      - name: Verify retention cards in a mobile browser
+        run: docker run --rm -e CARDS_FIXTURE_DIR=/ui -v "$PWD/apps/disputes:/ui:ro" --entrypoint node ed-pvz-wb-news scripts/card-ui-smoke.mjs
       - name: Verify container startup and HTTP health
         run: |
           docker run -d --name wb-news-smoke -e START_PAUSED=true -e ADMIN_TOKEN=ci-synthetic-admin-key-do-not-use-in-production -p 127.0.0.1:3000:3000 ed-pvz-wb-news

@@ -1,6 +1,5 @@
 import {syncConfigured,sessionEnvelope,ingest,saveScope} from './disputes-supabase.mjs';
 import {encryptSession,decryptSession} from './session.mjs';
-import {renewWBPage} from './browser-memory.mjs';
 import {syncWBDisputes} from './disputes-browser.mjs';
 import {randomUUID} from 'node:crypto';
 import {hasWBCookies} from './disputes-model.mjs';
@@ -24,6 +23,25 @@ export class Collector {
   }
   async start({paused = false} = {}) {
     this.feed = await readFeed(this.directory);
+    await this.openBrowser();
+    try {
+      const backup=await sessionEnvelope('GET');
+      if(backup.envelope){
+        const state=decryptSession(backup.envelope,process.env.EDPVZ_INGEST_TOKEN);
+        await this.restoreBrowserState(state);
+        this.browserStorage=state;
+        this.sessionRestored=true;
+      }
+    }catch(e){this.sessionRestored=false;console.error('encrypted_session_restore_failed',String(e.message||'error').slice(0,70))}
+    this.timer = setInterval(() => this.collect(), this.intervalMs);
+    // Poll the persistent due time/request queue; an active run is leased across restarts.
+    this.disputeTimer = setInterval(() => this.inspectDisputes().catch(()=>{}), 60000);
+    this.disputeTimer.unref?.();
+    if (paused) this.state = 'authentication_required';
+    else await this.collect();
+    await this.inspectDisputes();
+  }
+  async openBrowser(){
     const launch = this.launch || (await import('playwright')).chromium.launchPersistentContext.bind((await import('playwright')).chromium);
     this.context = await launch(this.directory + '/browser', {
       headless: process.env.WB_BROWSER_HEADFUL!=='true', viewport: {width: 1280, height: 800}, locale:'ru-RU',timezoneId:'Europe/Moscow',
@@ -39,28 +57,26 @@ export class Collector {
       if(kind==='image')return route.fulfill({status:200,contentType:'image/svg+xml',headers:{'Cache-Control':'no-store'},body:'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>'});
       return route.abort();
     });
-    try {
-      const backup=await sessionEnvelope('GET');
-      if(backup.envelope){
-        const state=decryptSession(backup.envelope,process.env.EDPVZ_INGEST_TOKEN);
-        await this.context.addCookies(state.cookies);
-        await this.page.addInitScript(({origins})=>{
-          const matching=origins.find(x=>x.origin===location.origin);
-          if(matching&&!sessionStorage.getItem('__edpvz_wb_restored')){
-            for(const item of matching.localStorage||[])try{localStorage.setItem(item.name,item.value)}catch{}
-            sessionStorage.setItem('__edpvz_wb_restored','1');
-          }
-        },{origins:state.origins});
-        this.sessionRestored=true;
+  }
+  async restoreBrowserState(state){
+    await this.context.addCookies(state.cookies||[]);
+    await this.page.addInitScript(({origins})=>{
+      const matching=(origins||[]).find(item=>item.origin===location.origin);
+      if(matching&&!sessionStorage.getItem('__edpvz_wb_restored')){
+        for(const item of matching.localStorage||[])localStorage.setItem(item.name,item.value);
+        sessionStorage.setItem('__edpvz_wb_restored','1');
       }
-    }catch(e){this.sessionRestored=false;console.error('encrypted_session_restore_failed',String(e.message||'error').slice(0,70))}
-    this.timer = setInterval(() => this.collect(), this.intervalMs);
-    // Poll the persistent due time/request queue; an active run is leased across restarts.
-    this.disputeTimer = setInterval(() => this.inspectDisputes().catch(()=>{}), 60000);
-    this.disputeTimer.unref?.();
-    if (paused) this.state = 'authentication_required';
-    else await this.collect();
-    await this.inspectDisputes();
+    },{origins:state.origins||[]});
+  }
+  async restartBrowser(){
+    let timer;
+    try{this.browserStorage=await Promise.race([this.context.storageState(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('snapshot_timeout')),10000)})])}
+    catch{if(!this.browserStorage)throw Error('browser_snapshot_unavailable')}
+    finally{clearTimeout(timer)}
+    await this.context.close().catch(()=>{});
+    await this.openBrowser();
+    await this.restoreBrowserState(this.browserStorage);
+    return this.page;
   }
   status() {
     return {state: this.state, updated: this.feed.updated, count: this.feed.items.length,
@@ -174,7 +190,7 @@ export class Collector {
       await this.backupSession().catch(()=>{});
       const result=await syncWBDisputes(this.page,{
         registry:config.registry,tickets:config.tickets||[],
-        renewPage:async previous=>{this.page=await renewWBPage(previous);return this.page},
+        renewPage:async()=>this.restartBrowser(),
         saveScope:batch=>saveScope(batch,lease),
         onProgress:report=>{this.disputeInspection={...report,lastAttempt:report.started_at}}
       });
