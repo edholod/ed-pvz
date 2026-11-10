@@ -43,7 +43,7 @@ async function closeTopDrawer(page){
  return true;
 }
 async function closeDrawers(page){for(let i=0;i<4;i++)if(!await closeTopDrawer(page))break}
-export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietMs=1500,wait=sleep,now=Date.now}={}){
+export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietMs=2500,wait=sleep,now=Date.now}={}){
  const found=new Map();let bottomPasses=0,lastSize=0,stalledPasses=0,lastMetrics=null,quietSince=null;
  const scroller=root.getByTestId('virtuoso-scroller').filter({visible:true}).last();
  const has=await scroller.count();
@@ -53,13 +53,13 @@ export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietM
   const rows=await root.evaluate(extract);
   rows.forEach((row,index)=>found.set(row.position??(row.point&&!row.number?'point:'+row.point:JSON.stringify([row.barcode,row.number,row.groupLabel,row.text,index])),row));
   if(!has)return {rows:[...found.values()],complete:true};
-  const metrics=await scroller.evaluate(e=>({top:e.scrollTop,height:e.clientHeight,total:e.scrollHeight}));
+  const metrics=await scroller.evaluate(e=>({top:e.scrollTop,height:e.clientHeight,total:e.scrollHeight,busy:[...e.querySelectorAll('[role="progressbar"],[aria-busy="true"]')].some(el=>el.getClientRects().length>0)}));
   const bottom=metrics.top+metrics.height>=metrics.total-3;
   if(bottom&&found.size===lastSize)bottomPasses++;else bottomPasses=0;
-  if(!bottom||found.size!==lastSize)quietSince=null;else if(quietSince===null)quietSince=now();
+  if(!bottom||metrics.busy||found.size!==lastSize)quietSince=null;else if(quietSince===null)quietSince=now();
   if(bottomPasses>=3&&quietSince!==null&&now()-quietSince>=bottomQuietMs)return {rows:[...found.values()],complete:true};
   const signature=JSON.stringify(metrics);
-  stalledPasses=!bottom&&signature===lastMetrics&&found.size===lastSize?stalledPasses+1:0;
+  stalledPasses=!bottom&&!metrics.busy&&signature===lastMetrics&&found.size===lastSize?stalledPasses+1:0;
   if(stalledPasses>=4)return {rows:[...found.values()],complete:false,reason:'stalled_scroller'};
   lastMetrics=signature;lastSize=found.size;
   await scroller.evaluate(e=>{e.scrollTop=Math.min(e.scrollTop+Math.max(120,e.clientHeight*.75),e.scrollHeight)});
