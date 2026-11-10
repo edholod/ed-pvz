@@ -43,14 +43,15 @@ export async function selectOrganization(page,name,context={}){
   let body=await page.locator('body').innerText();
   if(url.origin!==ORIGIN||/\/(login|auth|signin)(\/|$)/i.test(url.pathname)||/Отправить код/.test(body))throw new OrganizationSelectionError('authentication_required');
   if(/verify you are human|checking your browser|unusual traffic|подтвердите.{0,30}(человек|робот)/i.test(body))throw new OrganizationSelectionError('blocked');
-  if(!await page.getByTestId('app-header').count()&&!/Выберите организацию/.test(body)){
+  let evidence=await page.locator('body').evaluate(readOrganizationEvidence);
+  if(!evidence.header&&!evidence.headings.length&&!evidence.options.length&&!/Выберите организацию/.test(body)){
    // domcontentloaded only means the JS bundle was downloaded, not that WB mounted.
-   await page.waitForFunction(()=>document.querySelector('[data-testid="app-header"],h1,h2')||/Выберите организацию|Отправить код|verify you are human|checking your browser/i.test(document.body?.innerText||''),null,{timeout:60000}).catch(()=>{});
+   await page.waitForFunction(()=>document.querySelector('[data-testid="app-header"]')?.innerText.trim()||document.querySelector('h1,h2,[role="heading"]')?.textContent.trim()||/Выберите организацию|Отправить код|verify you are human|checking your browser/i.test(document.body?.innerText||''),null,{timeout:60000}).catch(()=>{});
    body=await page.locator('body').innerText();
    if(/\/(login|auth|signin)(\/|$)/i.test(new URL(page.url()).pathname)||/Отправить код/.test(body))throw new OrganizationSelectionError('authentication_required');
    if(/verify you are human|checking your browser|unusual traffic/i.test(body))throw new OrganizationSelectionError('blocked');
   }
-  const evidence=await page.locator('body').evaluate(readOrganizationEvidence);
+  evidence=await page.locator('body').evaluate(readOrganizationEvidence);
   if(!evidence.header&&!evidence.headings.length&&!evidence.options.length&&!/Выберите организацию/.test(body))throw new OrganizationSelectionError('wb_page_not_ready',evidence);
   return evidence;
  };

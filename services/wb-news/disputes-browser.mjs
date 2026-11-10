@@ -237,7 +237,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const checkedPoints=new Set();
  if(!await page.getByTestId('app-header').count()){
   await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
-  await page.waitForFunction(()=>document.querySelector('[data-testid="app-header"]')||/Отправить код|Выберите организацию|verify you are human/.test(document.body.innerText),null,{timeout:30000}).catch(()=>{});
+  await page.waitForFunction(()=>document.querySelector('[data-testid="app-header"]')?.innerText.trim()||/Отправить код|Выберите организацию|verify you are human/.test(document.body.innerText),null,{timeout:60000}).catch(()=>{});
   const visible=await page.locator('body').innerText();
   if(/Отправить код/.test(visible)||/\/(login|auth|signin)(\/|$)/.test(new URL(page.url()).pathname))throw new WBReadError('authentication_required');
   if(/verify you are human|checking your browser|unusual traffic/i.test(visible))throw new WBReadError('blocked');
