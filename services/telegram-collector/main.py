@@ -10,6 +10,7 @@ from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, P
 import httpx
 
 logger=logging.getLogger('edpvz.collector')
+logger.setLevel(logging.INFO)
 app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
 CHANNELS=['pvz_zamena','mskpodmena','marketplacepvz','whitelistpvz','zamena_vPVZ','OZONpvzArh','rabotapvz','pvz889','OnlinePvz','rabotapvzoff','pvzrabota','pvzzamena','Rabota_Zamena_PVZ','spbpvz','rabota_v_pvz','tochka_pvz','wildberries_ozone_help','pvzworks']
 # Message links supplied by the portal owner. These are message IDs, not necessarily topic IDs.
@@ -118,7 +119,8 @@ async def collect():
     global last_run
     if time.time()-last_run<240:return {'cached':True,**state}
     c=await get_client()
-    if not await c.is_user_authorized():
+    logger.info('Telegram connection established; checking authorization')
+    if not await asyncio.wait_for(c.is_user_authorized(),timeout=20):
         state['authorized']=False
         state['error']='Telegram account authorization required'
         logger.warning('Telegram collector: account authorization required')
@@ -128,6 +130,7 @@ async def collect():
     items=[]
     statuses={}
     for name in CHANNELS:
+        source_items=[]
         try:
             logger.info('Telegram checking source %s',name)
             entity=await asyncio.wait_for(c.get_entity(name),timeout=20)
@@ -169,11 +172,11 @@ async def collect():
             topics=list(dict.fromkeys(topics+seed_topics))
             seen=set()
             async def history():
-                async for message in c.iter_messages(entity,limit=350):
+                async for message in c.iter_messages(entity,limit=150):
                     yield message
                 for topic in topics:
                     try:
-                        async for message in c.iter_messages(entity,reply_to=topic,limit=100):
+                        async for message in c.iter_messages(entity,reply_to=topic,limit=50):
                             yield message
                     except Exception:
                         continue
@@ -191,9 +194,18 @@ async def collect():
                 topic_id=getattr(getattr(msg,'reply_to',None),'reply_to_top_id',None) or getattr(getattr(msg,'reply_to',None),'reply_to_msg_id',None)
                 # Forum messages have unique message IDs; preserve the topic in the deep link.
                 link=f'https://t.me/{name}/{msg.id}' + (f'?thread={topic_id}' if topic_id else '')
-                items.append({'id':f'tg:{name}:{msg.id}','source':name,'url':link,'text':text[:2400],'published_at':msg.date.isoformat() if msg.date else None,'marketplaces':(['wb'] if re.search(r'wb|вб|wildberries|вайлдбер',text,re.I) else [])+(['ozon'] if re.search(r'ozon|озон',text,re.I) else []),'kind':'resume' if re.search(r'ищу работу|ищу смен|выйду на замен|ищу подработ',text,re.I) else 'vacancy',**author})
+                source_items.append({'id':f'tg:{name}:{msg.id}','source':name,'url':link,'text':text[:2400],'published_at':msg.date.isoformat() if msg.date else None,'marketplaces':(['wb'] if re.search(r'wb|вб|wildberries|вайлдбер',text,re.I) else [])+(['ozon'] if re.search(r'ozon|озон',text,re.I) else []),'kind':'resume' if re.search(r'ищу работу|ищу смен|выйду на замен|ищу подработ',text,re.I) else 'vacancy',**author})
                 count+=1
             statuses[name]={'ok':True,'posts':count,'topics':len(topics),'seed_links':len(seed_messages)}
+            if source_items and SUPABASE_URL and INGEST_TOKEN and ANON_KEY:
+                try:
+                    await rpc('edpvz_telegram_ingest',{'p_token':INGEST_TOKEN,'p_items':source_items})
+                    logger.info('Saved %d posts from %s',len(source_items),name)
+                except Exception as save_error:
+                    statuses[name]['save_error']=type(save_error).__name__
+                    logger.warning('Save failed for %s: %s',name,type(save_error).__name__)
+            items.extend(source_items)
+            state.update({'count':len(items),'channels':dict(statuses),'last_sync':datetime.now(timezone.utc).isoformat()})
         except Exception as e:
             statuses[name]={'ok':False,'error':type(e).__name__}
             logger.warning('Telegram source %s failed: %s',name,type(e).__name__)
@@ -203,13 +215,7 @@ async def collect():
     items.sort(key=lambda x:x['published_at'] or '',reverse=True)
     state.update({'count':len(items),'channels':statuses,'last_sync':datetime.now(timezone.utc).isoformat(),'error':None})
     logger.info('Telegram collection: posts=%d successful_sources=%d/%d',len(items),sum(bool(v.get('ok')) for v in statuses.values()),len(CHANNELS))
-    if SUPABASE_URL and INGEST_TOKEN and ANON_KEY:
-        try:
-            saved=await rpc('edpvz_telegram_ingest',{'p_token':INGEST_TOKEN,'p_items':items})
-            state['saved']=saved.get('saved',0)
-        except Exception as e:
-            state['error']='Database save failed: '+type(e).__name__+': '+str(e)[:120]
-            return {'authorized':True,**state}
+    # Each source is persisted independently, so later Telegram failures do not lose earlier results.
     last_run=time.time()
     return {'authorized':True,**state}
 
