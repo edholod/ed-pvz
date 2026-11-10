@@ -3,7 +3,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export function normalizeOrganization(value){return String(value||'').normalize('NFKC').replace(/[«»"“”„]/g,'').replace(/\s+/gu,' ').trim().toLocaleLowerCase('ru')}
 export function organizationPattern(name){
  const words=normalizeOrganization(name).split(' ').filter(Boolean);
- return new RegExp(words.map(word=>word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('[\\s«»"“”„]*'),'iu');
+ return new RegExp(words.map(word=>word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('[\\s«»"“”„]*'),'i');
 }
 export function organizationLabelMatches(value,name){
  const expected=normalizeOrganization(name);

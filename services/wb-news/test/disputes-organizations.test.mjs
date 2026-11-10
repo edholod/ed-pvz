@@ -4,6 +4,7 @@ import {parseHTML} from 'linkedom';
 import {normalizeOrganization,organizationLabelMatches,organizationPattern,readOrganizationEvidence,verifyOrganization,selectOrganization} from '../disputes-organizations.mjs';
 test('organization names handle line breaks, NBSP, quotes and role badges without matching a different entity',()=>{
  assert.equal(normalizeOrganization('  ООО «НПЦ МОНО»\n\t'),'ооо нпц моно');
+ assert.equal(organizationPattern('ИП Тест').flags,'i');
  assert.ok(organizationPattern('ООО "НПЦ МОНО"').test('ООО\u00a0«НПЦ МОНО»'));
  assert.ok(organizationLabelMatches('ИП Айрапетян Роберт Юрикович\nУправляющий','ИП Айрапетян Роберт Юрикович'));
  assert.ok(organizationLabelMatches('ООО «НПЦ МОНО» Управляющий','ООО "НПЦ МОНО"'));

@@ -43,9 +43,9 @@ async function closeTopDrawer(page){
  return true;
 }
 async function closeDrawers(page){for(let i=0;i<4;i++)if(!await closeTopDrawer(page))break}
-async function scanVirtual(page,root,extract,{maxWindows=150}={}){
- const found=new Map();let bottomPasses=0,lastSize=0;
- const scroller=root.getByTestId('virtuoso-scroller').last();
+export async function scanVirtual(page,root,extract,{maxWindows=150}={}){
+ const found=new Map();let bottomPasses=0,lastSize=0,stalledPasses=0,lastMetrics=null;
+ const scroller=root.getByTestId('virtuoso-scroller').filter({visible:true}).last();
  const has=await scroller.count();
  if(has)await scroller.evaluate(e=>{e.scrollTop=0});
  for(let window=0;window<maxWindows;window++){
@@ -57,7 +57,10 @@ async function scanVirtual(page,root,extract,{maxWindows=150}={}){
   const bottom=metrics.top+metrics.height>=metrics.total-3;
   if(bottom&&found.size===lastSize)bottomPasses++;else bottomPasses=0;
   if(bottomPasses>=3)return {rows:[...found.values()],complete:true};
-  lastSize=found.size;
+  const signature=JSON.stringify(metrics);
+  stalledPasses=!bottom&&signature===lastMetrics&&found.size===lastSize?stalledPasses+1:0;
+  if(stalledPasses>=4)return {rows:[...found.values()],complete:false,reason:'stalled_scroller'};
+  lastMetrics=signature;lastSize=found.size;
   await scroller.evaluate(e=>{e.scrollTop=Math.min(e.scrollTop+Math.max(120,e.clientHeight*.75),e.scrollHeight)});
  }
  return {rows:[...found.values()],complete:false};
@@ -204,10 +207,10 @@ export async function chooseTicketPoint(page,point){
  if(await multi.count()){
   if(await multi.getAttribute('aria-expanded')!=='true')await multi.click({timeout:5000});
   const reset=page.getByTestId('new-tickets-point-multiselect-reset');
-  if(await reset.count()&&await reset.isVisible())await reset.click({timeout:5000});
+  if(await reset.count()&&await reset.isVisible()&&await reset.isEnabled())await reset.click({timeout:5000});
   if(await multi.getAttribute('aria-expanded')!=='true')await multi.click({timeout:5000});
   await page.getByText('ID '+point,{exact:true}).last().click({timeout:5000});
-  if(await multi.getAttribute('aria-expanded')==='true')await multi.click({timeout:5000});
+  if(await multi.getAttribute('aria-expanded')==='true')await page.keyboard.press('Escape');
   if(await multi.getAttribute('aria-expanded')==='true')throw new WBReadError('ticket_point_filter_open');
   await sleep(500);return;
  }
