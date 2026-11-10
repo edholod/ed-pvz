@@ -92,3 +92,15 @@ test('new ticket filters skip disabled reset and close with an outside heading w
  const page={waitForFunction:async()=>{},keyboard:{press:async()=>calls.push('escape')},getByTestId:id=>id==='new-tickets-point-multiselect'?multi:reset,getByText:()=>({last:()=>({click:async()=>calls.push('point')})}),getByRole:(role,options)=>{assert.equal(role,'heading');assert.equal(options.name,'Тикеты');return {click:async()=>{expanded=false;calls.push('outside')}}}};
  await chooseTicketPoint(page,'50136835');assert.equal(expanded,false);assert.deepEqual(calls,['toggle','point','escape','outside']);
 });
+test('range selection supports the single WB date input and verifies both boundaries',async()=>{
+ const {selectCollectionPeriod}=await import('../disputes-browser.mjs');let value='',applied=false;
+ const input={evaluate:async()=>({type:'text',value,readOnly:false,placeholder:''}),fill:async text=>value=text,press:async()=>{},inputValue:async()=>value,getAttribute:async()=>null};
+ const inputs={evaluateAll:async()=>value,filter(){return this},count:async()=>1,nth:()=>input};
+ const trigger={first(){return this},count:async()=>1,click:async()=>{}};
+ const page={locator:()=>inputs,getByText:()=>trigger,getByRole:()=>({click:async()=>applied=true}),waitForLoadState:async()=>{},keyboard:{press:async()=>{}}};
+ const result=await selectCollectionPeriod(page,'Зависшие ШК');assert.equal(result.verified,true);assert.equal(result.start,'2026-10-01');assert.equal(applied,true);assert.match(value,/01\.10\.2026 - /);
+});
+test('calendar selection resolves the requested month rather than the same day in the adjacent month',async()=>{
+ const {calendarDayIndex}=await import('../disputes-browser.mjs');const{document}=parseHTML('<main><section><h3>Октябрь 2026</h3><button id="oct">1</button></section><section><h3>Ноябрь 2026</h3><button id="nov">1</button></section></main>');
+ for(const e of document.querySelectorAll('*'))e.getClientRects=()=>[{}];const root=document.querySelector('main'),index=calendarDayIndex(root,{day:1,month:9,year:2026});assert.equal(root.querySelectorAll('button,[role="button"],[role="gridcell"],td,span')[index].id,'oct');
+});

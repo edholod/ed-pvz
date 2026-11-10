@@ -293,16 +293,59 @@ async function ticketDetail(page,row){
  await closeDrawers(page).catch(()=>{});
  return {messages,history_complete:all.complete};
 }
+export function calendarDayIndex(root,{day,month,year}){
+ const months=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+ const nodes=[...root.querySelectorAll('button,[role="button"],[role="gridcell"],td,span')];
+ const choices=[];
+ for(let index=0;index<nodes.length;index++){
+  const element=nodes[index],text=(element.innerText||element.textContent||'').trim();
+  if(text!==String(day)||!element.getClientRects().length||element.closest('[aria-disabled="true"],[disabled],[data-disabled="true"]'))continue;
+  for(let parent=element.parentElement,depth=0;parent&&depth<9;parent=parent.parentElement,depth++){
+   const label=(parent.innerText||parent.textContent||'').toLocaleLowerCase('ru').replace(/\s+/g,' ');
+   if(label.includes(months[month])&&label.includes(String(year))&&!months.some((name,i)=>i!==month&&label.includes(name))){choices.push({index,score:element.tagName==='BUTTON'?0:element.getAttribute('role')==='button'?1:2});break}
+  }
+ }
+ choices.sort((a,b)=>a.score-b.score||a.index-b.index);return choices[0]?.index??-1;
+}
 export async function selectCollectionPeriod(page,heading){
  const start='01.10.2026',end=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date());
  try{
-  await page.getByText('Период',{exact:true}).first().click({timeout:5000});
+  const existing=await page.locator('input').evaluateAll(nodes=>nodes.map(el=>el.value).join(' '));
+  if(existing.includes(start)&&existing.includes(end))return {verified:true,start:'2026-10-01',end:end.split('.').reverse().join('-')};
+  const trigger=page.getByText('Период',{exact:true}).first();
+  if(await trigger.count())await trigger.click({timeout:5000});
+  else{const dateInput=page.locator('input').filter({visible:true});let clicked=false;for(let i=0;i<await dateInput.count();i++)if(/\d{2}\.\d{2}\.\d{4}/.test(await dateInput.nth(i).inputValue())){await dateInput.nth(i).click();clicked=true;break}if(!clicked)return {verified:false,error:'period_control_missing'}}
   const inputs=page.locator('input').filter({visible:true});const candidates=[];const evidence=[];
   for(let i=0;i<await inputs.count();i++){
    const input=inputs.nth(i),info=await input.evaluate(el=>({type:el.type,placeholder:el.placeholder,value:el.value,readOnly:el.readOnly}));evidence.push(info);
    if(!['checkbox','radio','search','button','submit','hidden'].includes(info.type)&&info.placeholder!=='Поиск'&&!info.readOnly)candidates.push({input,info});
   }
-  if(candidates.length!==2){await page.keyboard.press('Escape');return {verified:false,inputs:evidence}}
+  if(candidates.length===1){
+   const input=candidates[0].input;
+   try{
+    await input.fill(start+' - '+end);await input.press('Tab');await sleep(300);
+    const accepted=await input.inputValue();
+    if(accepted.includes(start)&&accepted.includes(end)&&await input.getAttribute('aria-invalid')!=='true'){
+     await page.getByRole('heading',{name:heading,exact:true}).click();await page.waitForLoadState('networkidle',{timeout:10000}).catch(()=>{});
+     const persisted=await page.locator('input').evaluateAll(nodes=>nodes.map(el=>el.value).join(' '));
+     if(persisted.includes(start)&&persisted.includes(end))return {verified:true,start:'2026-10-01',end:end.split('.').reverse().join('-')};
+    }
+    await input.click();
+   }catch{}
+   const calendar=[];
+   for(const date of [{day:1,month:9,year:2026},(()=>{const parts=end.split('.').map(Number);return {day:parts[0],month:parts[1]-1,year:parts[2]}})()]){
+    const index=await page.locator('body').evaluate(calendarDayIndex,date);
+    if(index<0){const detail=await page.locator('body').evaluate(readOrganizationEvidence);await page.keyboard.press('Escape');return {verified:false,inputs:evidence,calendar:detail.page}}
+    await page.locator('button,[role="button"],[role="gridcell"],td,span').nth(index).click({timeout:10000});await sleep(350);calendar.push(date);
+   }
+   const values=await page.locator('input').evaluateAll(nodes=>nodes.map(el=>el.value).join(' '));
+   const text=values+' '+await page.locator('body').innerText();
+   const verified=text.includes(start)&&text.includes(end);
+   if(!verified)return {verified:false,inputs:evidence,values,calendar,display:text.slice(-2200)};
+   await page.getByRole('heading',{name:heading,exact:true}).click();await page.waitForLoadState('networkidle',{timeout:10000}).catch(()=>{});
+   return {verified:true,start:'2026-10-01',end:end.split('.').reverse().join('-')};
+  }
+  if(candidates.length!==2){const detail=await page.locator('body').evaluate(readOrganizationEvidence);await page.keyboard.press('Escape');return {verified:false,inputs:evidence,calendar:detail.page}}
   for(const [i,item] of candidates.entries()){
    const date=i===0?start:end;await item.input.fill(item.info.type==='date'?date.split('.').reverse().join('-'):date);await item.input.press('Tab');
   }
