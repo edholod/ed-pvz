@@ -30,7 +30,7 @@
     if(target.pathname===root.pathname||target.pathname===new URL('index.html',root).pathname){
      event.preventDefault();const nested=section(target.href);
      if(isApp(nested))window.openSection(nested,'Раздел');else window.home();
-    }else if(isApp(target.href)&&target.pathname!==u.pathname){event.preventDefault();window.openSection(target.href,link.querySelector('strong,b')?.textContent||link.textContent.trim()||'Раздел')}
+    }else if(isApp(target.href)&&(target.pathname!==u.pathname||target.search!==u.search)){event.preventDefault();window.openSection(target.href,link.querySelector('strong,b')?.textContent||link.textContent.trim()||'Раздел')}
    });
   }catch{/* Cross-origin tools keep their own navigation. */}
  }

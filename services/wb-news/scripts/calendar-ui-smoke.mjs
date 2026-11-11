@@ -17,7 +17,7 @@ try{
   const p=new URL(route.request().url()).pathname;let data=[];
   if(p.endsWith('/edpvz_points'))data=[{point_id:'5000',name:'Тестовый',owner_id:uid}];
   if(p.endsWith('/edpvz_memberships'))data=[{point_id:'5000',user_id:staff,status:'approved'}];
-  if(p.endsWith('/edpvz_profiles'))data=[{user_id:staff,username:'fixture_employee',role:'employee'}];
+  if(p.endsWith('/edpvz_profiles'))data=route.request().url().includes('select=role')?[{role:'owner'}]:[{user_id:staff,username:'fixture_employee',role:'employee'}];
   if(p.endsWith('/edpvz_user_data'))data=cloudState?[{payload:cloudState}]:[];
   if(p.endsWith('/edpvz_calendar_write')){const body=route.request().postDataJSON();if(body.p_revision!==(cloudState?.revision||0))data={conflict:true,...cloudState};else{cloudState={revision:body.p_revision+1,data:body.p_data};data=cloudState}}
   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data),headers:{'access-control-allow-origin':'*'}});
@@ -26,7 +26,33 @@ try{
  await context.route(/https:\/\/(?!duerixyhzapotoeclggz\.supabase\.co)/,r=>r.abort());
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/');await page.getByRole('link',{name:'Управление моими пунктами Команда, смены, задачи и все инструменты ПВЗ'}).click();
- let frame=page.frameLocator('#viewer');await frame.getByRole('link',{name:'Календарь смен Графики сотрудников'}).click();
+ const frame=page.frameLocator('#viewer');
+ await frame.getByRole('link',{name:'Сотрудники Локальные карточки и архив'}).click();
+ await frame.getByRole('heading',{name:'Сотрудники',exact:true}).waitFor();
+ assert.equal(await frame.locator('#tasks').isVisible(),false);
+ assert.equal(await frame.locator('#management-home').isVisible(),false);
+ await frame.getByLabel('ФИО').fill('Тестовый менеджер');
+ await frame.getByLabel('ПВЗ / адрес').fill('Тестовая точка');
+ await frame.getByRole('button',{name:'Добавить сотрудника'}).click();
+ await frame.getByRole('link',{name:'К моим ПВЗ'}).click();
+ await frame.getByRole('link',{name:'Задачи Поручения и статусы'}).click();
+ await frame.getByRole('heading',{name:'Задачи менеджерам',exact:true}).waitFor();
+ assert.equal(await frame.locator('#employees').isVisible(),false);
+ assert.equal(await frame.locator('#requests').isVisible(),false);
+ assert.match(decodeURIComponent(page.url()),/section=tasks/);
+ await frame.getByLabel('Задача',{exact:true}).fill('Проверить остатки');
+ await frame.getByLabel('ПВЗ / адрес').selectOption('Тестовая точка');
+ await frame.getByLabel('Исполнитель').selectOption({label:'Тестовый менеджер'});
+ await frame.getByRole('button',{name:'Создать задачу'}).click();
+ await page.reload();
+ await frame.getByText('Проверить остатки',{exact:true}).waitFor();
+ await frame.getByRole('link',{name:'К моим ПВЗ'}).click();
+ await frame.getByRole('link',{name:'Обращения Журнал обращений'}).click();
+ await frame.getByRole('heading',{name:'Учёт обращений',exact:true}).waitFor();
+ assert.equal(await frame.locator('#tasks').isVisible(),false);
+ await page.getByRole('button',{name:'Назад',exact:true}).click();
+ await frame.getByRole('heading',{name:'Управление ПВЗ',exact:true}).waitFor();
+ await frame.getByRole('link',{name:'Календарь смен Графики сотрудников'}).click();
  await frame.getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
  assert.equal(await page.locator('.appbar:visible').count(),1);assert.equal(await frame.locator('#viewer').count(),0);
  assert.match(await page.locator('#external').getAttribute('href'),/\/apps\/control\/$/);
@@ -35,7 +61,7 @@ try{
  assert.match(await frame.locator('select[name="person"]').innerText(),/fixture_employee/);
  await frame.getByRole('button',{name:'Добавить смену',exact:true}).click();
  assert.match(await frame.locator('#sheet-root').innerText(),/fixture_employee/);
- await page.reload();frame=page.frameLocator('#viewer');await frame.getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
+ await page.reload();await frame.getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
  const current=page.frames().find(f=>f.url().includes('/apps/control/'));
  assert.equal(await current.evaluate(()=>db.shifts.length),1);
  assert.equal(await current.evaluate(()=>db.people.length),1);
@@ -54,7 +80,7 @@ try{
  await other.close();
  // Old nested portal URLs are flattened into the same outer frame.
  await page.goto(base+'/#section='+encodeURIComponent(base+'/apps/management/'));
- frame=page.frameLocator('#viewer');await frame.getByRole('heading',{name:'Управление ПВЗ',exact:true}).waitFor();
+ await frame.getByRole('heading',{name:'Управление ПВЗ',exact:true}).waitFor();
  await page.locator('#viewer').evaluate((el,url)=>{el.src=url},base+'/#section='+encodeURIComponent(base+'/apps/control/'));
  await page.frameLocator('#viewer').getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
  assert.equal(await page.frameLocator('#viewer').locator('#viewer').count(),0);
