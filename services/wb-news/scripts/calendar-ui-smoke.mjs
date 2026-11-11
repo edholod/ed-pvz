@@ -32,7 +32,7 @@ try{
  assert.equal(await frame.locator('#tasks').isVisible(),false);
  assert.equal(await frame.locator('#management-home').isVisible(),false);
  await frame.getByLabel('ФИО').fill('Тестовый менеджер');
- await frame.getByLabel('ПВЗ / адрес').fill('Тестовая точка');
+ await frame.locator('#employees').getByLabel('ПВЗ / адрес').fill('Тестовая точка');
  await frame.getByRole('button',{name:'Добавить сотрудника'}).click();
  await frame.getByRole('link',{name:'К моим ПВЗ'}).click();
  await frame.getByRole('link',{name:'Задачи Поручения и статусы'}).click();
@@ -41,7 +41,7 @@ try{
  assert.equal(await frame.locator('#requests').isVisible(),false);
  assert.match(decodeURIComponent(page.url()),/section=tasks/);
  await frame.getByLabel('Задача',{exact:true}).fill('Проверить остатки');
- await frame.getByLabel('ПВЗ / адрес').selectOption('Тестовая точка');
+ await frame.locator('#tasks').getByLabel('ПВЗ / адрес').selectOption('Тестовая точка');
  await frame.getByLabel('Исполнитель').selectOption({label:'Тестовый менеджер'});
  await frame.getByRole('button',{name:'Создать задачу'}).click();
  await page.reload();
@@ -85,6 +85,6 @@ try{
  await page.frameLocator('#viewer').getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
  assert.equal(await page.frameLocator('#viewer').locator('#viewer').count(),0);
  assert.equal(await page.locator('.appbar:visible').count(),1);
- assert.deepEqual(errors,[]);console.log('PASS mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
+ assert.deepEqual(errors,[]);console.log('PASS separate management screens and task persistence, mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
  await context.close();
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
