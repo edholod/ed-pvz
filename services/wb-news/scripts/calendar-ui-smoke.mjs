@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 const root=fileURLToPath(new URL('../../../',import.meta.url));
-const server=createServer(async(req,res)=>{try{const name=decodeURIComponent(new URL(req.url,'http://local').pathname);const resolved=path.resolve(root,'.'+name+(name.endsWith('/')?'index.html':''));if(!resolved.startsWith(root))throw Error();const data=await readFile(resolved);res.setHeader('Content-Type',resolved.endsWith('.html')?'text/html':resolved.endsWith('.js')?'text/javascript':'application/octet-stream');res.end(data)}catch{res.writeHead(404).end()}});
+const server=createServer(async(req,res)=>{try{const name=decodeURIComponent(new URL(req.url,'http://local').pathname);const resolved=path.resolve(root,'.'+name+(name.endsWith('/')?'index.html':''));if(!resolved.startsWith(root))throw Error();const data=await readFile(resolved);res.setHeader('Content-Type',resolved.endsWith('.html')?'text/html':(resolved.endsWith('.js')||resolved.endsWith('.mjs'))?'text/javascript':'application/octet-stream');res.end(data)}catch{res.writeHead(404).end()}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({executablePath:process.env.CARDS_BROWSER_EXECUTABLE||undefined,headless:true,args:['--no-sandbox']});
 try{
