@@ -13,12 +13,25 @@ try{
  const uid='11111111-1111-4111-8111-111111111111',staff='22222222-2222-4222-8222-222222222222';
  await context.addInitScript(({uid})=>{if(!sessionStorage.getItem('fixture-auth')){localStorage.setItem('edpvz-auth-v1',JSON.stringify({access_token:'synthetic-test-token',expires_at:9999999999,user:{id:uid}}));sessionStorage.setItem('fixture-auth','1')}},{uid});
  let cloudState=null;
+ let inviteActivated=false;
  const backend=route=>{
   const p=new URL(route.request().url()).pathname;let data=[];
   if(p.endsWith('/edpvz_points'))data=[{point_id:'5000',name:'Тестовый',owner_id:uid}];
   if(p.endsWith('/edpvz_memberships'))data=[{point_id:'5000',user_id:staff,status:'approved'}];
   if(p.endsWith('/edpvz_profiles'))data=route.request().url().includes('select=role')?[{role:'owner'}]:[{user_id:staff,username:'fixture_employee',role:'employee'}];
   if(p.endsWith('/edpvz_user_data'))data=cloudState?[{payload:cloudState}]:[];
+  if(p.endsWith('/edpvz_dispute_owner_access')){
+   const body=route.request().postDataJSON();
+   if(body?.p_action==='redeem'){
+    assert.equal(body.p_code,'PVZ-0123456789ABCDEF0123456789ABCDEF');
+    inviteActivated=true;data={organization_id:'org01'};
+   }
+   if(body?.p_action==='list')data=inviteActivated?[{id:'org01',name:'Тестовый собственник'}]:[];
+   if(body?.p_action==='read'){
+    assert.equal(body.p_org,'org01');
+    data={points:[{id:'5000',name:'Тестовая точка'}],rows:[{id:'case01',point_id:'5000',title:'Тестовое удержание',amount:200}]};
+   }
+  }
   if(p.endsWith('/edpvz_calendar_write')){const body=route.request().postDataJSON();if(body.p_revision!==(cloudState?.revision||0))data={conflict:true,...cloudState};else{cloudState={revision:body.p_revision+1,data:body.p_data};data=cloudState}}
   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data),headers:{'access-control-allow-origin':'*'}});
  };
@@ -85,6 +98,18 @@ try{
  await page.frameLocator('#viewer').getByText('Команда аккаунта обновлена.',{exact:false}).waitFor();
  assert.equal(await page.frameLocator('#viewer').locator('#viewer').count(),0);
  assert.equal(await page.locator('.appbar:visible').count(),1);
- assert.deepEqual(errors,[]);console.log('PASS separate management screens and task persistence, mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
+ await page.goto(base+'/');
+ assert.equal(await page.locator('#owner-disputes').isVisible(),false);
+ await page.locator('#search').fill('PVZ-0123456789ABCDEF0123456789ABCDEF');
+ await page.locator('#search').press('Enter');
+ await page.getByRole('link',{name:/Мои удержания Удержания по вашим ПВЗ/}).click();
+ await frame.getByText('Тестовое удержание',{exact:true}).waitFor();
+ await page.reload();
+ await frame.getByText('Тестовое удержание',{exact:true}).waitFor();
+ inviteActivated=false;
+ await frame.getByRole('button',{name:'Обновить',exact:true}).click();
+ await frame.getByText('Введи код доступа в поиске на главной странице.',{exact:true}).waitFor();
+ assert.equal(await frame.getByText('Тестовое удержание',{exact:true}).count(),0);
+ assert.deepEqual(errors,[]);console.log('PASS owner code activation, scoped page, reload and revocation, separate management screens and task persistence, mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
  await context.close();
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}

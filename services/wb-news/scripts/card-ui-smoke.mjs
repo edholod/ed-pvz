@@ -3,7 +3,7 @@ const root=process.env.CARDS_FIXTURE_DIR,owner='0f75065b-2b26-4a87-bf26-005f5a22
 if(!root)throw Error('CARDS_FIXTURE_DIR required');const browser=await chromium.launch({headless:true,...(process.env.CARDS_BROWSER_EXECUTABLE?{executablePath:process.env.CARDS_BROWSER_EXECUTABLE}:{}),args:['--no-sandbox','--disable-dev-shm-usage']});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844}});
- await page.route('https://edholod.github.io/**',async route=>{const path=new URL(route.request().url()).pathname;if(path.endsWith('/assets/account.js'))return route.fulfill({contentType:'text/javascript',body:`window.EdPVZAccount={signedIn:${authorized},user:{id:'${owner}'},ensure:async()=>({access_token:'synthetic'})};`});const file=path.split('/apps/disputes/')[1]||'index.html';if(file.includes('..'))throw Error('Unsafe path');return route.fulfill({contentType:file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/javascript',body:await readFile(resolve(root,file))})});
+ await page.route('https://edholod.github.io/**',async route=>{const path=new URL(route.request().url()).pathname;if(path.endsWith('/assets/account.js'))return route.fulfill({contentType:'text/javascript',body:`window.EdPVZAccount={signedIn:${authorized},user:{id:'${owner}'},ensure:async()=>({access_token:'synthetic'}),rpc:async(name,args)=>{if(name!=='edpvz_dispute_manage_access'||args.p_org!=='org01')throw Error('Unexpected invitation scope');if(args.p_action==='issue'){if(args.p_username!=='fixture_owner')throw Error('Unexpected username');return {state:'pending',username:args.p_username,expires_at:'2026-11-18T00:00:00Z',code:'PVZ-0123456789ABCDEF0123456789ABCDEF'}}return {state:'none'}}};`});const file=path.split('/apps/disputes/')[1]||'index.html';if(file.includes('..'))throw Error('Unsafe path');return route.fulfill({contentType:file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/javascript',body:await readFile(resolve(root,file))})});
  await page.route('https://raw.githubusercontent.com/**',r=>r.fulfill({contentType:r.request().url().includes('index.json')?'application/json':'image/svg+xml',body:r.request().url().includes('index.json')?JSON.stringify([asset]):'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="100"/>'}));
  await page.route('https://duerixyhzapotoeclggz.supabase.co/**',async route=>{calls++;const r=route.request(),table=new URL(r.url()).pathname.split('/').pop();let data=[];
  if(table==='edpvz_dispute_organizations')data=[{research_id:'org01',name_exact:'ИП Тест'}];
@@ -17,6 +17,15 @@ try{
  });
  const enter=async()=>{await page.getByRole('button',{name:/ИП Тест/}).click();await page.locator('.point[open]').waitFor();assert.equal(await page.locator('.card-editor').getAttribute('open'),null);assert.ok(await page.locator('.case').evaluate(el=>el.getBoundingClientRect().height<280));await page.locator('.card-editor>summary').click()};
  await page.goto('https://edholod.github.io/ed-pvz/apps/disputes/');await enter();await page.getByText('WB: обращение № 777 · В работе',{exact:false}).waitFor();assert.equal(await page.locator('[name=ticket_number]').inputValue(),'');
+ await page.locator('#owner-invite summary').click();
+ await page.getByLabel('Логин собственника в Эд ПВЗ').fill('fixture_owner');
+ await page.getByRole('button',{name:'Создать код',exact:true}).click();
+ await page.locator('#invite-code').waitFor();
+ assert.equal(await page.locator('#invite-code').inputValue(),'PVZ-0123456789ABCDEF0123456789ABCDEF');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.getByRole('button',{name:'Отменить код',exact:true}).click();
+ await page.locator('#invite-code').waitFor({state:'hidden'});
+ await page.locator('#owner-invite summary').click();
  assert.equal(await page.locator('[name=sticker]').inputValue(),'59038506501');assert.equal(await page.locator('[name=cost]').inputValue(),'2589.00');assert.equal(await page.locator('[name=withholding_date]').inputValue(),'2026-11-10');assert.equal(await page.locator('[name=comment]').inputValue(),'');
  for(const [label,color] of [['Обращение не создано','rgb(255, 255, 255)'],['Тикет в работе','rgb(249, 237, 200)'],['Оспаривание отклонено по тех. причинам','rgb(247, 214, 221)'],['Вина сотрудника','rgb(211, 229, 248)'],['Успешно оспорено','rgb(214, 237, 220)']]){await page.locator('[name=status]').selectOption({label});assert.equal(await page.locator('.case').evaluate(el=>getComputedStyle(el).backgroundColor),color)}
  await page.locator('[name=status]').selectOption({label:'Вина сотрудника'});await page.locator('[name=employee_fault]').fill('Тестовый сотрудник');await page.locator('[name=comment]').fill('Мой комментарий');await page.getByRole('button',{name:'Сохранить',exact:true}).click();await page.getByText('Сохранено',{exact:true}).waitFor();
@@ -25,5 +34,5 @@ try{
  await page.locator('[name=status]').selectOption({label:'Успешно оспорено'});await page.getByRole('button',{name:'Сохранить',exact:true}).click();await page.getByText('Сохранено',{exact:true}).waitFor();assert.equal(notes[0].status,'Успешно оспорено');
  await page.locator('[name=comment]').fill('Черновик удаляемого собственника');removedOwner=true;await page.evaluate(()=>window.dispatchEvent(new Event('edpvz-auth-changed')));await page.locator('.case').waitFor({state:'detached'});assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('edpvz-dispute-drafts-v1:0f75065b-2b26-4a87-bf26-005f5a2284d4')||'[]').length),0);
  authorized=false;calls=0;await page.reload();await page.getByText('Доступ только для владельца раздела. Войди в свой аккаунт Эд ПВЗ.',{exact:true}).waitFor();assert.equal(calls,0);
- console.log('Cards UI passed: auto fields, edits, persistence, pastel status, mobile width, private gate.');
+ console.log('Cards UI passed: auto fields, edits, persistence, pastel status, mobile width, private gate, code issue and cancellation.');
 }finally{await browser.close()}
