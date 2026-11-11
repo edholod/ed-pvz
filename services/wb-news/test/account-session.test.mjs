@@ -48,7 +48,7 @@ test('a failed refresh in one tab cannot clear a newer session saved by another 
 
 test('point creation stores the selected marketplace and authenticated owner',async()=>{
  for(const market of ['wb','ozon','ym']){
-  let body;const {api}=setup(async(url,opt)=>{body=JSON.parse(opt.body);return reply(200,[body])},fresh);
+  let body;const {api}=setup(async(url,opt)=>{assert.equal(opt.method,'POST');assert.equal(opt.headers.Prefer,'return=minimal');body=JSON.parse(opt.body);return {status:204,ok:true,text:async()=>''}},fresh);
   await api.createPoint({point_id:'5000',name:'Point',market,owner_id:'forged'});
   assert.equal(body.market,market);assert.equal(body.owner_id,'one');
  }
