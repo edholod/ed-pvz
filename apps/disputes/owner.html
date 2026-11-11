@@ -7,7 +7,7 @@
   <title>Мои удержания — Эд ПВЗ</title>
   <link rel="stylesheet" href="cards.css?v=20261110-colors">
   <script defer src="../../assets/account.js?v=dispute-access-1"></script>
-  <script type="module" src="owner.js?v=1"></script>
+  <script type="module" src="owner.js?v=2"></script>
 </head>
 <body>
 <main>
@@ -20,8 +20,19 @@
       <label>Собственник <select id="owner-organization"></select></label>
       <button id="owner-refresh" type="button">Обновить</button>
     </nav>
+    <nav class="tools" aria-label="Фильтры удержаний">
+      <input id="owner-search" type="search" aria-label="Поиск удержаний" placeholder="Товар, ШК, ПВЗ или тикет">
+      <select id="owner-point" aria-label="ПВЗ"><option value="">Все ПВЗ</option></select>
+      <select id="owner-month" aria-label="Месяц срока обращения"><option value="">Все месяцы</option></select>
+      <select id="owner-state" aria-label="Статус удержания"><option value="">Все статусы</option></select>
+      <select id="owner-wb" aria-label="Обращение в WB">
+        <option value="">WB: все обращения</option><option value="working">WB: в работе</option>
+        <option value="with">WB: обращение есть</option><option value="without">WB: без обращения</option>
+      </select>
+      <button id="owner-reset" type="button" hidden>Сбросить фильтры</button>
+    </nav>
+    <p id="owner-count" class="source-explanation" role="status"></p>
     <div id="owner-cases"></div>
-    <button id="owner-more" type="button" hidden>Показать ещё</button>
   </section>
 </main>
 </body>

@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 const root=fileURLToPath(new URL('../../../',import.meta.url));
-const server=createServer(async(req,res)=>{try{const name=decodeURIComponent(new URL(req.url,'http://local').pathname);const resolved=path.resolve(root,'.'+name+(name.endsWith('/')?'index.html':''));if(!resolved.startsWith(root))throw Error();const data=await readFile(resolved);res.setHeader('Content-Type',resolved.endsWith('.html')?'text/html':(resolved.endsWith('.js')||resolved.endsWith('.mjs'))?'text/javascript':'application/octet-stream');res.end(data)}catch{res.writeHead(404).end()}});
+const server=createServer(async(req,res)=>{try{const name=decodeURIComponent(new URL(req.url,'http://local').pathname);const resolved=path.resolve(root,'.'+name+(name.endsWith('/')?'index.html':''));if(!resolved.startsWith(root))throw Error();const data=await readFile(resolved);res.setHeader('Content-Type',resolved.endsWith('.html')?'text/html':(resolved.endsWith('.js')||resolved.endsWith('.mjs'))?'text/javascript':resolved.endsWith('.css')?'text/css':'application/octet-stream');res.end(data)}catch{res.writeHead(404).end()}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({executablePath:process.env.CARDS_BROWSER_EXECUTABLE||undefined,headless:true,args:['--no-sandbox']});
 try{
@@ -36,7 +36,10 @@ try{
    if(body?.p_action==='list')data=inviteActivated?[{id:'org01',name:'Тестовый собственник'}]:[];
    if(body?.p_action==='read'){
     assert.equal(body.p_org,'org01');
-    data={points:[{id:'5000',name:'Тестовая точка'}],rows:[{id:'case01',point_id:'5000',title:'Тестовое удержание',amount:200}]};
+    data={points:[{id:'5000',name:'Тестовая точка'}],rows:[
+     {id:'case01',point_id:'5000',title:'Тестовое удержание',amount:200,barcode:'000123',deadline:'2026-11-20',status:'Тикет в работе',wb_ticket_number:'7711',wb_ticket_status:'В работе',photo_url:'https://basket-1.wbbasket.ru/test.webp'},
+     {id:'case02',point_id:'5000',title:'Осеннее удержание',amount:400,deadline:'2026-10-15',status:'Вина сотрудника'}
+    ]};
    }
   }
   if(p.endsWith('/edpvz_calendar_write')){const body=route.request().postDataJSON();if(body.p_revision!==(cloudState?.revision||0))data={conflict:true,...cloudState};else{cloudState={revision:body.p_revision+1,data:body.p_data};data=cloudState}}
@@ -44,6 +47,8 @@ try{
  };
  await context.route('https://duerixyhzapotoeclggz.supabase.co/**',backend);
  await context.route(/https:\/\/(?!duerixyhzapotoeclggz\.supabase\.co)/,r=>r.abort());
+ await context.route('https://raw.githubusercontent.com/edholod/ed-pvz/main/assets/wb-disputes/**',route=>
+  route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="purple"/></svg>'}));
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/');await page.getByRole('link',{name:'Управление моими пунктами Команда, смены, задачи и все инструменты ПВЗ'}).click();
  const frame=page.frameLocator('#viewer');
@@ -113,12 +118,33 @@ try{
  await page.locator('#search').press('Enter');
  await page.getByRole('link',{name:/Мои удержания Удержания по вашим ПВЗ/}).click();
  await frame.getByText('Тестовое удержание',{exact:true}).waitFor();
+ const card=frame.locator('.case.working');
+ await card.getByRole('img',{name:'Фото товара'}).waitFor();
+ await card.locator('img').evaluate(img=>img.decode());
+ assert.equal(await card.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(249, 237, 200)');
+ assert.match(await frame.locator('.month-heading').first().innerText(),/ноябрь/i);
+ assert.match(await frame.locator('.month-heading').nth(1).innerText(),/октябрь/i);
+ await frame.getByLabel('Месяц срока обращения').selectOption('2026-10');
+ assert.equal(await frame.locator('.case').count(),1);
+ await frame.getByRole('button',{name:'Сбросить фильтры'}).click();
+ await frame.getByLabel('Статус удержания').selectOption('Тикет в работе');
+ assert.equal(await frame.locator('.case').count(),1);
+ await frame.getByRole('button',{name:'Сбросить фильтры'}).click();
+ await frame.getByLabel('Обращение в WB').selectOption('working');
+ assert.equal(await frame.locator('.case').count(),1);
+ await frame.getByRole('button',{name:'Сбросить фильтры'}).click();
+ await frame.getByLabel('Поиск удержаний').fill('000123');
+ assert.equal(await frame.locator('.case').count(),1);
+ await frame.getByLabel('Поиск удержаний').fill('7711');
+ assert.equal(await frame.locator('.case').count(),1);
+ assert.equal(await frame.locator('.case-form').count(),0);
+
  await page.reload();
  await frame.getByText('Тестовое удержание',{exact:true}).waitFor();
  inviteActivated=false;
  await frame.getByRole('button',{name:'Обновить',exact:true}).click();
  await frame.getByText('Введи код доступа в поиске на главной странице.',{exact:true}).waitFor();
  assert.equal(await frame.getByText('Тестовое удержание',{exact:true}).count(),0);
- assert.deepEqual(errors,[]);console.log('PASS owner password activation, scoped page, reload and revocation, separate management screens and task persistence, mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
+ assert.deepEqual(errors,[]);console.log('PASS owner photos, colors, months, filters, search, read-only cards and password activation, scoped page, reload and revocation, separate management screens and task persistence, mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
  await context.close();
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
