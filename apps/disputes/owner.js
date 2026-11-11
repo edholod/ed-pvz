@@ -14,9 +14,12 @@ let listVersion = 0;
 let pageVersion = 0;
 let points = [];
 let rows = [];
+let displayedOrganization = null;
 
 function clearCases() {
   pageVersion++;
+  displayedOrganization = null;
+  notes.clear();
   points = [];
   rows = [];
   $('owner-count').textContent = '';
@@ -161,13 +164,13 @@ function render() {
 async function loadRows() {
   const organization = picker.value;
   if (!organization) return;
-  clearCases();
-  notes.clear();
-  const version = pageVersion;
+  if (displayedOrganization !== organization) clearCases();
+  const version = ++pageVersion;
   const uid = userId;
   const collected = [];
+  let nextPoints = [];
   let cursor = null;
-  status.textContent = 'Загружаем удержания…';
+  if (displayedOrganization !== organization) status.textContent = 'Загружаем удержания…';
 
   try {
     for (;;) {
@@ -175,21 +178,25 @@ async function loadRows() {
         p_action: 'read', p_org: organization, p_after: cursor
       });
       if (version !== pageVersion || uid !== account.user?.id) return;
-      points = page.points;
+      nextPoints = page.points;
       collected.push(...page.rows);
       if (page.rows.length < 100) break;
       const next = page.rows.at(-1).id;
       if (!next || next === cursor) throw Error('Не удалось дочитать список');
       cursor = next;
     }
+    status.textContent = nextPoints.length ? '' : 'Для этого собственника пока нет подключённых ПВЗ.';
+    if (displayedOrganization === organization && JSON.stringify([points, rows]) === JSON.stringify([nextPoints, collected])) return;
+    displayedOrganization = organization;
+    points = nextPoints;
     rows = collected;
+    notes.clear();
     for (const row of rows) {
       const fallback = initialNote({ raw: { date_label: row.date_label } });
       notes.set(row.id, { status: row.status || STATUSES[0], withholding_date: row.deadline || fallback.withholding_date });
     }
     fillFilters();
     render();
-    status.textContent = points.length ? '' : 'Для этого собственника пока нет подключённых ПВЗ.';
   } catch (error) {
     if (version !== pageVersion) return;
     if (error.status === 403 || error.status === 401) {
@@ -247,7 +254,7 @@ picker.addEventListener('change', () => {
 });
 $('owner-refresh').addEventListener('click', () => loadAccess(true));
 window.addEventListener('edpvz-auth-changed', () => loadAccess());
-window.addEventListener('focus', () => loadAccess());
-window.addEventListener('pageshow', () => loadAccess());
-setInterval(() => { if (!document.hidden) void loadAccess(); }, 30000);
+window.addEventListener('focus', () => loadAccess(true));
+window.addEventListener('pageshow', () => loadAccess(true));
+setInterval(() => { if (!document.hidden) void loadAccess(true); }, 30000);
 void loadAccess();

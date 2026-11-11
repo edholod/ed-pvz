@@ -14,6 +14,7 @@ try{
  await context.addInitScript(({uid})=>{if(!sessionStorage.getItem('fixture-auth')){localStorage.setItem('edpvz-auth-v1',JSON.stringify({access_token:'synthetic-test-token',expires_at:9999999999,user:{id:uid}}));sessionStorage.setItem('fixture-auth','1')}},{uid});
  let cloudState=null;
  let inviteActivated=false;
+ let ownerComment='Проверено по записи';
  const backend=route=>{
   const p=new URL(route.request().url()).pathname;let data=[];
   if(p.endsWith('/edpvz_points'))data=[{point_id:'5000',name:'Тестовый',owner_id:uid}];
@@ -37,7 +38,7 @@ try{
    if(body?.p_action==='read'){
     assert.equal(body.p_org,'org01');
     data={points:[{id:'5000',name:'Тестовая точка'}],rows:[
-     {id:'case01',point_id:'5000',title:'Тестовое удержание',amount:200,barcode:'000123',deadline:'2026-11-20',status:'Тикет в работе',wb_ticket_number:'7711',wb_ticket_status:'В работе',employee_fault:'Вина подтверждена',comment:'Проверено по записи',photo_url:'https://basket-1.wbbasket.ru/test.webp'},
+     {id:'case01',point_id:'5000',title:'Тестовое удержание',amount:200,barcode:'000123',deadline:'2026-11-20',status:'Тикет в работе',wb_ticket_number:'7711',wb_ticket_status:'В работе',employee_fault:'Вина подтверждена',comment:ownerComment,photo_url:'https://basket-1.wbbasket.ru/test.webp'},
      {id:'case02',point_id:'5000',title:'Осеннее удержание',amount:400,deadline:'2026-10-15',status:'Вина сотрудника'}
     ]};
    }
@@ -121,6 +122,9 @@ try{
  const card=frame.locator('.case.working');
  await card.getByText('Вина подтверждена',{exact:true}).waitFor();
  await card.getByText('Проверено по записи',{exact:true}).waitFor();
+ ownerComment='Комментарий сохранён после открытия';
+ await frame.locator('body').evaluate(body=>body.ownerDocument.defaultView.dispatchEvent(new Event('focus')));
+ await card.getByText('Комментарий сохранён после открытия',{exact:true}).waitFor();
  assert.equal(await frame.locator('.case.employee .owner-annotations').count(),0);
 
  await card.getByRole('img',{name:'Фото товара'}).waitFor();
