@@ -103,6 +103,20 @@ try{
  await second.evaluate(()=>commit(()=>db.people[0].rate=2500));await second.evaluate(()=>synchronizeCalendar());
  await current.evaluate(()=>synchronizeCalendar());assert.equal(await current.evaluate(()=>db.people[0].rate),2500);
  assert.equal(await current.evaluate(()=>db.shifts.length),1);
+ await second.evaluate(()=>commit(()=>{
+  db.points.push({id:'fixture-other-point',name:'Второй ПВЗ',market:'ozon'});
+  db.people[0].points.push('fixture-other-point');
+  db.people.push({id:'fixture-manager',name:'Управляющий',role:'manager',rate:0,color:'#A6C8E7',points:['fixture-other-point']});
+  db.shifts.push({id:'fixture-manager-shift',point:'fixture-other-point',person:'fixture-manager',date:db.shifts[0].date,actual:false});
+ }));
+ await second.evaluate(()=>{setPoint('fixture-other-point');selectedDay=db.shifts[0].date;openSheet('day')});
+ assert.equal(await second.locator('.day[title="Управляющий"]').count(),1);
+ const shifts=second.locator('#sheet-root');
+ await shifts.getByText('Управляющий',{exact:true}).waitFor();
+ await shifts.getByText('Уже назначены в других ПВЗ',{exact:true}).waitFor();
+ assert.equal(await shifts.getByRole('button',{name:'Добавить смену'}).count(),0);
+ await shifts.getByRole('button',{name:/Тестовый/}).click();
+ await shifts.getByText('fixture_employee',{exact:true}).waitFor();
  await other.close();
  // Old nested portal URLs are flattened into the same outer frame.
  await page.goto(base+'/#section='+encodeURIComponent(base+'/apps/management/'));
