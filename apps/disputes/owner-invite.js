@@ -5,48 +5,59 @@ let requestNumber = 0;
 
 const messages = {
   owner_not_found: 'Аккаунт собственника с таким логином не найден.',
-  access_already_active: 'Сначала отзови действующий доступ к этому собственнику.'
+  access_already_active: 'У этого логина уже есть доступ к выбранному юрлицу.',
+  account_required: 'Обнови страницу и выбери логин, у которого нужно отозвать доступ.'
 };
 
 function render(result) {
-  const active = result.state === 'active';
-  const date = result.expires_at && new Date(result.expires_at).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' });
-  const labels = {
-    none: 'Код для этой группы ПВЗ ещё не создан.',
-    pending: 'Код для ' + result.username + ' действует до ' + date + '.',
-    active: 'Доступ активирован для ' + result.username + '.',
-    expired: 'Срок действия кода истёк.'
-  };
-  $('invite-state').textContent = labels[result.state];
-  $('invite-form').hidden = active;
-  $('invite-revoke').hidden = result.state === 'none';
-  $('invite-revoke').textContent = active ? 'Отозвать доступ' : 'Отменить код';
+  const accounts = result.accounts || [];
+  const list = $('invite-accounts');
+  list.hidden = accounts.length === 0;
+  list.replaceChildren(...accounts.map(account => {
+    const item = document.createElement('li');
+    const name = document.createElement('strong');
+    name.textContent = account.username;
+    const date = new Date(account.expires_at).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' });
+    const labels = { pending: 'Код действует до ' + date, active: 'Доступ активирован', expired: 'Код истёк' };
+    const revoke = document.createElement('button');
+    revoke.type = 'button';
+    revoke.dataset.revokeUsername = account.username;
+    revoke.textContent = account.state === 'active' ? 'Отозвать доступ' : 'Отменить код';
+    revoke.setAttribute('aria-label', revoke.textContent + ' для ' + account.username);
+    item.append(name, ' · ' + labels[account.state] + ' ', revoke);
+    return item;
+  }));
+  $('invite-state').textContent = accounts.length ? 'Аккаунты с кодом или доступом' : 'Коды для этого юрлица ещё не созданы.';
+  $('invite-form').hidden = false;
   $('invite-code-box').hidden = !result.code;
   $('invite-code').value = result.code || '';
+  $('invite-code-label').textContent = result.code ? 'Код для ' + result.username : 'Код для собственника';
 }
 
 async function manage(action, username) {
   if (!organization) return;
   const version = ++requestNumber;
   const form = $('invite-form');
-  const revoke = $('invite-revoke');
-  form.querySelector('button').disabled = true;
-  revoke.disabled = true;
+  const button = form.querySelector('button');
+  const setBusy = disabled => {
+    button.disabled = disabled;
+    $('invite-accounts').querySelectorAll('button').forEach(button => { button.disabled = disabled; });
+  };
+  setBusy(true);
   $('invite-error').textContent = '';
   try {
     const result = await window.EdPVZAccount.rpc('edpvz_dispute_manage_access', {
       p_org: organization, p_action: action, p_username: username || null
     });
-    if (version === requestNumber) render(result);
+    if (version !== requestNumber) return;
+    render(result);
+    if (action === 'issue') $('invite-username').value = '';
   } catch (error) {
     if (version === requestNumber) {
       $('invite-error').textContent = messages[error.message] || 'Операция не выполнена. Попробуй ещё раз.';
     }
   } finally {
-    if (version === requestNumber) {
-      form.querySelector('button').disabled = false;
-      revoke.disabled = false;
-    }
+    if (version === requestNumber) setBusy(false);
   }
 }
 
@@ -60,7 +71,8 @@ export function showInvite(next) {
   $('invite-code').value = '';
   $('invite-code-box').hidden = true;
   $('invite-form').hidden = true;
-  $('invite-revoke').hidden = true;
+  $('invite-accounts').hidden = true;
+  $('invite-accounts').replaceChildren();
   $('invite-error').textContent = '';
   if (next) {
     $('invite-state').textContent = 'Проверяем доступ…';
@@ -73,8 +85,9 @@ if (panel) {
     event.preventDefault();
     void manage('issue', $('invite-username').value.trim());
   });
-  $('invite-revoke').addEventListener('click', () => {
-    if (confirm('Отозвать код или доступ к этой группе ПВЗ?')) void manage('revoke');
+  $('invite-accounts').addEventListener('click', event => {
+    const username = event.target.closest('[data-revoke-username]')?.dataset.revokeUsername;
+    if (username && confirm('Отозвать код или доступ для ' + username + '?')) void manage('revoke', username);
   });
   $('invite-copy').addEventListener('click', async () => {
     const field = $('invite-code');

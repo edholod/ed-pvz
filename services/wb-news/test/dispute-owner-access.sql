@@ -42,12 +42,20 @@ declare
   login text := 'audit_'||substr(replace(current_setting('fixture.a'),'-',''),1,24);
   old_code text;
   new_code text;
+  second_code text;
 begin
   old_code := public.edpvz_dispute_manage_access(org,'issue',login)->>'code';
   new_code := public.edpvz_dispute_manage_access(org,'issue',login)->>'code';
   perform pg_temp.require(new_code ~ '^PVZ-[A-F0-9]{32}$' and old_code <> new_code,'new code rotates pending code');
   perform set_config('fixture.code',new_code,true);
   perform set_config('fixture.old_code',old_code,true);
+  second_code := public.edpvz_dispute_manage_access(
+    org,'issue','audit_'||substr(replace(current_setting('fixture.b'),'-',''),1,24)
+  )->>'code';
+  perform set_config('fixture.second_code',second_code,true);
+  perform pg_temp.require(second_code <> new_code,'each account gets its own code');
+  perform pg_temp.require(jsonb_array_length(public.edpvz_dispute_manage_access(org,'status')->'accounts')=2,
+    'both invites exist for the same legal entity');
   perform pg_temp.require(not (public.edpvz_dispute_manage_access(org,'status') ? 'code'),'status does not return plaintext');
 end $$;
 select set_config('request.jwt.claim.sub',current_setting('fixture.b'),true);
@@ -75,10 +83,25 @@ set local role anon;
 select pg_temp.denied($q$select public.edpvz_dispute_owner_access('list')$q$,'42501');
 set local role authenticated;
 select set_config('request.jwt.claim.sub',current_setting('fixture.admin'),true);
-select pg_temp.require(public.edpvz_dispute_manage_access(current_setting('fixture.tag')||'a','revoke')->>'state'='none','revocation');
+select set_config('request.jwt.claim.sub',current_setting('fixture.b'),true);
+select pg_temp.require(
+  public.edpvz_dispute_owner_access('redeem',current_setting('fixture.second_code'))->>'organization_id'=current_setting('fixture.tag')||'a',
+  'second account redeems for the same legal entity');
+select pg_temp.require(jsonb_array_length(public.edpvz_dispute_owner_access('read',null,current_setting('fixture.tag')||'a')->'rows')=2,
+  'second account sees the same scoped points');
+select pg_temp.denied($q$select public.edpvz_dispute_owner_access('read',null,current_setting('fixture.tag')||'b')$q$,'42501');
+select set_config('request.jwt.claim.sub',current_setting('fixture.admin'),true);
+select pg_temp.denied($q$select public.edpvz_dispute_manage_access(current_setting('fixture.tag')||'a','revoke')$q$,'account_required');
+select pg_temp.require(
+  jsonb_array_length(public.edpvz_dispute_manage_access(current_setting('fixture.tag')||'a','revoke',
+    'audit_'||substr(replace(current_setting('fixture.a'),'-',''),1,24))->'accounts')=1,
+  'only the selected account is revoked'
+);
 select set_config('request.jwt.claim.sub',current_setting('fixture.a'),true);
 select pg_temp.require(public.edpvz_dispute_owner_access('list')='[]'::jsonb,'revoked access is removed');
 select pg_temp.denied($q$select public.edpvz_dispute_owner_access('read',null,current_setting('fixture.tag')||'a')$q$,'42501');
+select set_config('request.jwt.claim.sub',current_setting('fixture.b'),true);
+select pg_temp.require(jsonb_array_length(public.edpvz_dispute_owner_access('list'))=1,'other account retains its access');
 reset role;
 rollback;
-select 'PASS: codes are account-bound, one-time, revocable and scoped to matching points; fixtures rolled back' as result;
+select 'PASS: two separate owner accounts access the same legal entity; foreign scope denied; independent revoke; fixtures rolled back' as result;
