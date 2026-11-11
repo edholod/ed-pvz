@@ -44,3 +44,23 @@ export function monthGroups(rows,getNote){
 export function attachSourceTickets(rows,tickets){return rows.map(row=>{const number=String(row.raw?.ticket_number||'');if(!number)return row;const matches=tickets.filter(t=>t.ticket_number===number&&t.organization_research_id===row.organization_research_id&&String(t.wb_point_id)===String(row.wb_point_id));return {...row,wb_ticket:{number,...(matches.length===1?{status:matches[0].status,checked_at:matches[0].last_checked_at}:{status:null,checked_at:null})}}})}
 export function pointCoverage(point,scopes){const required=['hanging','brak','podmena'];return required.filter(category=>scopes.some(s=>s.scope===`wb:${point.organization_research_id}:${point.wb_point_id}:${category}:to-hold`&&s.state==='ok'&&Date.parse(s.last_success)>=Date.parse('2026-11-10T11:50:36Z'))).length}
 export function sourceMatches(row,filter){const exists=Boolean(row.wb_ticket?.number||row.raw?.ticket_number);return !filter||(filter==='with'&&exists)||(filter==='without'&&!exists)||(filter==='working'&&row.wb_ticket?.status==='В работе')}
+
+export function manualHangingObservation(input, owner, organization, point, id) {
+ const barcode = String(input.barcode || '').trim();
+ if (!barcode || barcode.length > 200) throw Error('Укажи ШК или стикер.');
+ const note = validateNote({ ...blankNote(), cost: input.cost, withholding_date: input.deadline });
+ const title = String(input.title || '').trim() || 'Зависший товар';
+ const reason = String(input.reason || '').trim();
+ if (title.length > 200 || reason.length > 150) throw Error('Сократи название или причину удержания.');
+ return {
+  id, owner_id: owner, organization_research_id: organization, wb_point_id: point,
+  category: 'Зависший', source_namespace: 'manual:v1', source_event_id: id,
+  barcode, title, amount: note.cost, wb_state: 'to-hold', is_current: true,
+  provenance: 'manual_verified_import',
+  // Keep manual entries in the current dashboard without using a WB sync namespace.
+  raw: {
+   collection_since: '2026-10-01', group: 'Добавлено вручную', reason,
+   date_label: note.withholding_date ? 'до ' + note.withholding_date.split('-').reverse().join('.') : ''
+  }
+ };
+}

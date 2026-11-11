@@ -1,5 +1,5 @@
 import { showInvite } from './owner-invite.js?v=1';
-import{STATUSES,STATUS_CLASSES,FIELDS,blankNote,initialNote,eligible,visibleObservations,mapNotes,monthKey,monthGroups,attachSourceTickets,pointCoverage,sourceMatches,validateNote,photoPath,csvCell}from'./cards-model.mjs?v=20261110-source';
+import{STATUSES,STATUS_CLASSES,FIELDS,blankNote,initialNote,eligible,visibleObservations,mapNotes,monthKey,monthGroups,attachSourceTickets,pointCoverage,sourceMatches,validateNote,photoPath,csvCell,manualHangingObservation}from'./cards-model.mjs?v=manual-hanging-1';
 const BASE='https://duerixyhzapotoeclggz.supabase.co',KEY='sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV',ADMIN='0f75065b-2b26-4a87-bf26-005f5a2284d4',api=window.EdPVZAccount,$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let organizations=[],points=[],scopes=[],observations=[],notes=new Map(),drafts=new Map(),photos=new Map(),selected=null,busy=false,timer,readyPhotos=new Set();
 const opened=new Set(),openedCards=new Set(),cacheKey='edpvz-dispute-drafts-v1:'+ADMIN;
@@ -15,19 +15,100 @@ function formField(key,n){const value=n[key]??'',wide=key==='comment'?' wide':''
 function sourceBadge(row){const ticket=row.wb_ticket;if(!ticket?.number)return '';const checked=ticket.checked_at?new Date(ticket.checked_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' МСК':'время проверки неизвестно';return '<div class="wb-ticket">WB: обращение № '+esc(ticket.number)+(ticket.status?' · '+esc(ticket.status):' · статус не прочитан')+'<small>Последняя проверка статуса: '+esc(checked)+'</small></div>'}
 function card(row){const n=note(row.id),draft=drafts.get(row.id),color=STATUS_CLASSES[STATUSES.indexOf(n.status)]||'new',expected=photos.get(row.photo_url),path=readyPhotos.has(expected)?expected:null;
 const price=n.cost===null||n.cost===''?'—':Number(n.cost).toLocaleString('ru-RU')+' ₽',date=n.withholding_date?new Date(n.withholding_date+'T00:00:00Z').toLocaleDateString('ru-RU',{timeZone:'UTC'}):'Не указан WB';
-return '<article class="case '+color+'" data-case="'+esc(row.id)+'"><div class="case-summary"><div class="photo-box">'+(path?'<img loading="lazy" src="https://raw.githubusercontent.com/edholod/ed-pvz/main/'+esc(path)+'" alt="Фото товара" data-photo>':'Фото готовится')+'</div><div class="case-facts"><h3>'+esc(row.title||'Товар WB')+'</h3><dl><div><dt>ШК / Стикер</dt><dd>'+esc(n.sticker||'—')+'</dd></div><div><dt>Стоимость</dt><dd>'+esc(price)+'</dd></div><div><dt>Обращение до</dt><dd>'+esc(date)+'</dd></div></dl><p class="compact-type">'+esc(n.withholding_type||row.category)+'</p><span class="status-badge">'+esc(n.status)+'</span>'+sourceBadge(row)+'</div></div><details class="card-editor" data-card="'+esc(row.id)+'"'+(openedCards.has(row.id)?' open':'')+'><summary>Статус и анкета'+(draft?' · есть несохранённые изменения':'')+'</summary><form class="case-form" data-organization="'+esc(row.organization_research_id)+'" data-id="'+esc(row.id)+'"><div class="fields"><label class="wide">Статус обращения<select name="status" class="status-select">'+STATUSES.map(st=>'<option'+(st===n.status?' selected':'')+'>'+esc(st)+'</option>').join('')+'</select></label>'+FIELDS.map(key=>formField(key,n)).join('')+'</div><div class="save-row"><button class="primary" type="submit">Сохранить</button><span class="save-state" role="status">'+(draft?'Не сохранено':notes.has(row.id)?'Сохранено':'Поля ещё не заполнены')+'</span></div><p class="conflict" role="alert"></p><button type="button" data-reload="'+esc(row.id)+'" hidden>Загрузить сохранённую версию</button></form></details></article>'}
+return '<article class="case '+color+'" data-case="'+esc(row.id)+'"><div class="case-summary"><div class="photo-box">'+(path?'<img loading="lazy" src="https://raw.githubusercontent.com/edholod/ed-pvz/main/'+esc(path)+'" alt="Фото товара" data-photo>':row.photo_url?'Фото готовится':'Без фото')+'</div><div class="case-facts"><h3>'+esc(row.title||'Товар WB')+'</h3><dl><div><dt>ШК / Стикер</dt><dd>'+esc(n.sticker||'—')+'</dd></div><div><dt>Стоимость</dt><dd>'+esc(price)+'</dd></div><div><dt>Обращение до</dt><dd>'+esc(date)+'</dd></div></dl><p class="compact-type">'+esc(n.withholding_type||row.category)+(row.source_namespace==='manual:v1'?' · Добавлено вручную':'')+'</p><span class="status-badge">'+esc(n.status)+'</span>'+sourceBadge(row)+'</div></div><details class="card-editor" data-card="'+esc(row.id)+'"'+(openedCards.has(row.id)?' open':'')+'><summary>Статус и анкета'+(draft?' · есть несохранённые изменения':'')+'</summary><form class="case-form" data-organization="'+esc(row.organization_research_id)+'" data-id="'+esc(row.id)+'"><div class="fields"><label class="wide">Статус обращения<select name="status" class="status-select">'+STATUSES.map(st=>'<option'+(st===n.status?' selected':'')+'>'+esc(st)+'</option>').join('')+'</select></label>'+FIELDS.map(key=>formField(key,n)).join('')+'</div><div class="save-row"><button class="primary" type="submit">Сохранить</button><span class="save-state" role="status">'+(draft?'Не сохранено':notes.has(row.id)?'Сохранено':'Поля ещё не заполнены')+'</span></div><p class="conflict" role="alert"></p><button type="button" data-reload="'+esc(row.id)+'" hidden>Загрузить сохранённую версию</button></form></details></article>'}
 function monthlyCards(rows){return monthGroups(rows,note).map(group=>'<section class="month-group"><h3 class="month-heading">'+esc(group.label)+' <span>'+group.rows.length+'</span></h3><div class="cases">'+group.rows.map(card).join('')+'</div></section>').join('')}
 function updateMonths(){const select=$('month-filter'),previous=select.value;select.innerHTML='<option value="">Все месяцы</option>'+monthGroups(observations,note).map(g=>'<option value="'+esc(g.key)+'">'+esc(g.label)+'</option>').join('');select.value=[...select.options].some(o=>o.value===previous)?previous:''}
-function render(){if(selected&&!organizations.some(o=>o.research_id===selected)){selected=null;document.activeElement?.blur()}if(document.activeElement?.closest('.case-form'))return;showInvite(selected);const rows=filtered();$('filter-count').textContent='По фильтрам: '+rows.length+' из '+observations.length+' товаров';$('reset-filters').hidden=![$('search').value,$('status-filter').value,$('month-filter').value,$('wb-appeal-filter').value].some(Boolean);$('back').hidden=!selected;if(!selected){$('view').innerHTML='<div class="owners">'+organizations.map(org=>ownerCard(org,rows.filter(row=>row.organization_research_id===org.research_id))).join('')+'</div>';return}const org=organizations.find(o=>o.research_id===selected);if(!org){selected=null;render();return}const pp=points.filter(p=>p.organization_research_id===selected);$('view').innerHTML='<h2>'+esc(org.name_exact)+'</h2>'+pp.map(point=>{const rr=rows.filter(row=>row.wb_point_id===point.wb_point_id&&row.organization_research_id===selected),coverage=pointCoverage(point,scopes);return '<details class="point" data-point="'+esc(point.wb_point_id)+'"'+(opened.has(point.wb_point_id)?' open':'')+'><summary><span><span class="point-title">'+esc(point.address_observed||'ПВЗ '+point.wb_point_id)+'</span><small>ПВЗ '+esc(point.wb_point_id)+' · проверено '+coverage+'/3 разделов WB</small></span><span class="point-count">'+rr.length+' удержаний</span></summary><div class="point-months">'+(coverage<3?'<p class="coverage-warning">ПВЗ проверен не полностью. Список ещё пополняется.</p>':'')+(rr.length?monthlyCards(rr):'<p class="empty">'+(coverage<3?'Данные этого ПВЗ ещё загружаются. Это не означает отсутствие удержаний.':'Нет товаров в работе по выбранным условиям.')+'</p>')+'</div></details>'}).join('');for(const image of document.querySelectorAll('[data-photo]'))image.addEventListener('error',()=>{image.parentElement.textContent='Фото переносится в GitHub';},{once:true})}
+function render(){if(selected&&!organizations.some(o=>o.research_id===selected)){selected=null;document.activeElement?.blur()}if(document.activeElement?.closest('.case-form'))return;showInvite(selected);showManualForm();const rows=filtered();$('filter-count').textContent='По фильтрам: '+rows.length+' из '+observations.length+' товаров';$('reset-filters').hidden=![$('search').value,$('status-filter').value,$('month-filter').value,$('wb-appeal-filter').value].some(Boolean);$('back').hidden=!selected;if(!selected){$('view').innerHTML='<div class="owners">'+organizations.map(org=>ownerCard(org,rows.filter(row=>row.organization_research_id===org.research_id))).join('')+'</div>';return}const org=organizations.find(o=>o.research_id===selected);if(!org){selected=null;render();return}const pp=points.filter(p=>p.organization_research_id===selected);$('view').innerHTML='<h2>'+esc(org.name_exact)+'</h2>'+pp.map(point=>{const rr=rows.filter(row=>row.wb_point_id===point.wb_point_id&&row.organization_research_id===selected),coverage=pointCoverage(point,scopes);return '<details class="point" data-point="'+esc(point.wb_point_id)+'"'+(opened.has(point.wb_point_id)?' open':'')+'><summary><span><span class="point-title">'+esc(point.address_observed||'ПВЗ '+point.wb_point_id)+'</span><small>ПВЗ '+esc(point.wb_point_id)+' · проверено '+coverage+'/3 разделов WB</small></span><span class="point-count">'+rr.length+' удержаний</span></summary><div class="point-months">'+(coverage<3?'<p class="coverage-warning">ПВЗ проверен не полностью. Список ещё пополняется.</p>':'')+(rr.length?monthlyCards(rr):'<p class="empty">'+(coverage<3?'Данные этого ПВЗ ещё загружаются. Это не означает отсутствие удержаний.':'Нет товаров в работе по выбранным условиям.')+'</p>')+'</div></details>'}).join('');for(const image of document.querySelectorAll('[data-photo]'))image.addEventListener('error',()=>{image.parentElement.textContent='Фото переносится в GitHub';},{once:true})}
 function capture(form){if(form.dataset.organization&&!organizations.some(o=>o.research_id===form.dataset.organization))return false;const data=Object.fromEntries(new FormData(form)),id=form.dataset.id,previous=drafts.get(id),base=previous?.base??notes.get(id)?.revision??null;drafts.set(id,{value:data,base,organization:form.dataset.organization||observations.find(row=>row.id===id)?.organization_research_id||previous?.organization,target:previous?.target||notes.get(id)?.canonical_id||id});persist();const article=form.closest('.case');article.className='case '+(STATUS_CLASSES[STATUSES.indexOf(data.status)]||'new');article.querySelector('.status-badge').textContent=data.status;form.querySelector('.save-state').textContent='Не сохранено'}
 async function save(form){if(capture(form)===false)return;const id=form.dataset.id,draft=drafts.get(id),button=form.querySelector('[type=submit]'),error=form.querySelector('.conflict');button.disabled=true;error.textContent='';let value;try{value=validateNote(draft.value);const target=draft.target||id;const path='edpvz_dispute_notes'+(draft.base===null?'':'?observation_id=eq.'+encodeURIComponent(target)+'&revision=eq.'+draft.base);const result=await rest(path,{method:draft.base===null?'POST':'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(draft.base===null?{observation_id:target,owner_id:ADMIN,...value}:value)});if(!result?.length){const e=Error('Эта карточка изменена в другом окне. Твой черновик сохранён на этом устройстве.');e.status=409;throw e}notes.set(id,{...result[0],canonical_id:target});if(JSON.stringify(drafts.get(id)?.value)===JSON.stringify(draft.value)){drafts.delete(id);persist();form.querySelector('.save-state').textContent='Сохранено'}else{drafts.get(id).base=result[0].revision;persist();form.querySelector('.save-state').textContent='Есть новые изменения'} }catch(e){error.textContent=e.status===409?'Карточка уже изменена в другом окне. Черновик сохранён на этом устройстве. Сначала открой сохранённую версию и сравни данные.':e.message;form.querySelector('[data-reload]').hidden=e.status!==409;form.querySelector('.save-state').textContent='Не сохранено'}finally{button.disabled=false}}
-async function refresh(){if(busy||!permitted())return;busy=true;try{const [orgs,pp,rows,nn,control,ss]=await Promise.all([all('edpvz_dispute_organizations?select=*&order=name_exact.asc'),all('edpvz_dispute_points?select=*&order=wb_point_id.asc'),all('edpvz_dispute_observations?select=*&is_current=eq.true&wb_state=eq.to-hold&order=last_seen_at.desc,id.asc'),all('edpvz_dispute_notes?select=*,source:edpvz_dispute_observations(organization_research_id,wb_point_id,category,barcode,raw)'),rest('edpvz_dispute_sync_control?select=last_state,last_report,next_due_at,updated_at'),all('edpvz_dispute_sync_scopes?select=scope,state,last_success,last_attempt').catch(()=>[])]);const activeOwners=new Set(orgs.map(o=>o.research_id)),removedRows=new Set(observations.filter(row=>!activeOwners.has(row.organization_research_id)).map(row=>row.id));for(const [id,draft] of drafts)if(removedRows.has(id)||(draft.organization&&!activeOwners.has(draft.organization)))drafts.delete(id);persist();organizations=orgs;points=pp;scopes=ss;observations=visibleObservations(rows);
+const manualForm = $('manual-hanging-form');
+const manualPicker = $('manual-hanging-point');
+const manualStatus = $('manual-hanging-status');
+let manualContext = null;
+let manualRequest = null;
+let manualSaving = false;
+let refreshTask = null;
+
+function showManualForm() {
+ const panel = $('manual-hanging');
+ const available = points.filter(point => point.organization_research_id === selected);
+ const context = JSON.stringify([selected, available.map(point => [point.wb_point_id, point.address_observed])]);
+ panel.hidden = !selected || !available.length;
+ if (context === manualContext) return;
+ const previous = manualPicker.value;
+ const changedOwner = JSON.parse(manualContext || '[null]')[0] !== selected;
+ manualContext = context;
+ if (changedOwner) {
+  manualForm.reset();
+  manualStatus.textContent = '';
+  panel.open = false;
+  manualRequest = null;
+ }
+ manualPicker.replaceChildren(...available.map(point =>
+  new Option(point.address_observed || 'ПВЗ ' + point.wb_point_id, point.wb_point_id)));
+ if (!changedOwner && available.some(point => point.wb_point_id === previous)) manualPicker.value = previous;
+}
+
+manualForm.addEventListener('submit', async event => {
+ event.preventDefault();
+ const button = manualForm.querySelector('button[type=submit]');
+ if (button.disabled || !permitted() || !selected) return;
+ const organization = selected;
+ const input = Object.fromEntries(new FormData(manualForm));
+ const point = points.find(item => item.wb_point_id === input.point && item.organization_research_id === organization);
+ if (!point) {
+  manualStatus.textContent = 'Выбери ПВЗ этого собственника.';
+  return;
+ }
+ button.disabled = true;
+ manualSaving = true;
+ let saved = false;
+ manualStatus.textContent = '';
+ try {
+  await refreshTask;
+  if (!permitted() || selected !== organization) return;
+  const signature = JSON.stringify([organization, input]);
+  if (manualRequest?.signature !== signature) manualRequest = { signature, id: crypto.randomUUID() };
+  const record = manualHangingObservation(input, ADMIN, organization, point.wb_point_id, manualRequest.id);
+  const result = await rest('edpvz_dispute_observations?on_conflict=id', {
+   method: 'POST',
+   headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
+   body: JSON.stringify(record)
+  });
+  if (!permitted() || selected !== organization) return;
+  // An empty result means the same request was already saved before a retry.
+  const row = result?.[0] || record;
+  observations = visibleObservations([...observations.filter(item => item.id !== row.id), row]);
+  opened.add(point.wb_point_id);
+  manualForm.reset();
+  manualPicker.value = point.wb_point_id;
+  manualRequest = null;
+  manualStatus.textContent = 'Зависший товар добавлен.';
+  $('reset-filters').click();
+  updateMonths();
+  saved = true;
+ } catch (error) {
+  if (permitted() && selected === organization) manualStatus.textContent = error.message;
+ } finally {
+  manualSaving = false;
+  button.disabled = false;
+  if (saved) void refresh();
+ }
+});
+
+function refresh() {
+ if (manualSaving) return refreshTask;
+ if (!refreshTask) refreshTask = loadCases().finally(() => { refreshTask = null; });
+ return refreshTask;
+}
+
+async function loadCases(){if(busy||!permitted())return;busy=true;try{const [orgs,pp,rows,nn,control,ss]=await Promise.all([all('edpvz_dispute_organizations?select=*&order=name_exact.asc'),all('edpvz_dispute_points?select=*&order=wb_point_id.asc'),all('edpvz_dispute_observations?select=*&is_current=eq.true&wb_state=eq.to-hold&order=last_seen_at.desc,id.asc'),all('edpvz_dispute_notes?select=*,source:edpvz_dispute_observations(organization_research_id,wb_point_id,category,barcode,raw)'),rest('edpvz_dispute_sync_control?select=last_state,last_report,next_due_at,updated_at'),all('edpvz_dispute_sync_scopes?select=scope,state,last_success,last_attempt').catch(()=>[])]);const activeOwners=new Set(orgs.map(o=>o.research_id)),removedRows=new Set(observations.filter(row=>!activeOwners.has(row.organization_research_id)).map(row=>row.id));for(const [id,draft] of drafts)if(removedRows.has(id)||(draft.organization&&!activeOwners.has(draft.organization)))drafts.delete(id);persist();organizations=orgs;points=pp;scopes=ss;observations=visibleObservations(rows);
 const numbers=[...new Set(observations.map(row=>String(row.raw?.ticket_number||'')).filter(n=>/^\d+$/.test(n)))],linked=[];
 try{for(let offset=0;offset<numbers.length;offset+=100)linked.push(...await all('edpvz_dispute_tickets?select=ticket_number,status,last_checked_at,organization_research_id,wb_point_id&ticket_number=in.('+numbers.slice(offset,offset+100).join(',')+')'));}catch{/* The goods remain visible if linked-ticket metadata is unavailable. */}
 observations=attachSourceTickets(observations,linked);
 try{const photoIndex=await fetch('https://raw.githubusercontent.com/edholod/ed-pvz/main/assets/wb-disputes/index.json?v='+Math.floor(Date.now()/60000),{cache:'no-store'});if(photoIndex.ok)readyPhotos=new Set(await photoIndex.json())}catch{}
 notes=mapNotes(observations,nn);updateMonths();await Promise.all(observations.map(async row=>{if(!photos.has(row.photo_url))photos.set(row.photo_url,await photoPath(row.photo_url))}));const c=control[0],r=c?.last_report||{},labels={running:'Идёт обновление WB',ok:'Данные WB обновлены',partial:'Обновление выполнено частично',authentication_required:'Нужен вход в WB',blocked:'WB приостановил доступ',unavailable:'Проверка будет повторена',interrupted:'Проверка будет повторена'};$('sync-state').textContent=labels[c?.last_state]||'Ожидание проверки WB';const current=organizations.find(o=>o.research_id===r.current?.organization);$('sync-info').textContent=observations.length+' товаров в работе с 01.10.2026. Полностью проверено ПВЗ: '+points.filter(p=>pointCoverage(p,scopes)===3).length+'/'+points.length+'. '+(c?.last_state==='running'&&current?'Проверяется '+current.name_exact+'. ':'')+(rows.length>observations.length?'Карточки без подтверждённого периода пока не показаны. ':'')+(c?.next_due_at?'Следующая проверка: '+new Date(c.next_due_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow'})+' МСК.':'Проверка каждые 3 часа.');$('load-error').textContent='';render()}catch(e){$('load-error').textContent='Не удалось обновить данные. Сохранённые анкеты и черновики остаются на месте. '+e.message}finally{busy=false}}
-async function init(){if(!permitted()){showInvite(null);clearInterval(timer);timer=null;$('workspace').hidden=true;$('gate').hidden=false;$('gate').textContent='Доступ только для владельца раздела. Войди в свой аккаунт Эд ПВЗ.';$('view').innerHTML='';organizations=[];observations=[];notes.clear();drafts.clear();return}$('gate').hidden=true;$('workspace').hidden=false;try{drafts=new Map(JSON.parse(localStorage.getItem(cacheKey)||'[]'))}catch{drafts=new Map()}await refresh();if(!timer)timer=setInterval(()=>{if(document.visibilityState!=='hidden')refresh()},15000)}
+async function init(){if(!permitted()){showInvite(null);$('manual-hanging').hidden=true;clearInterval(timer);timer=null;$('workspace').hidden=true;$('gate').hidden=false;$('gate').textContent='Доступ только для владельца раздела. Войди в свой аккаунт Эд ПВЗ.';$('view').innerHTML='';organizations=[];observations=[];notes.clear();drafts.clear();return}$('gate').hidden=true;$('workspace').hidden=false;try{drafts=new Map(JSON.parse(localStorage.getItem(cacheKey)||'[]'))}catch{drafts=new Map()}await refresh();if(!timer)timer=setInterval(()=>{if(document.visibilityState!=='hidden')refresh()},15000)}
 $('status-filter').insertAdjacentHTML('beforeend',STATUSES.map(s=>'<option>'+esc(s)+'</option>').join(''));$('search').addEventListener('input',render);$('month-filter').addEventListener('change',render);$('wb-appeal-filter').addEventListener('change',render);$('status-filter').addEventListener('change',render);$('reset-filters').onclick=()=>{for(const id of ['search','status-filter','month-filter','wb-appeal-filter'])$(id).value='';render()};$('back').onclick=()=>{selected=null;render();window.scrollTo(0,0)};
 $('view').addEventListener('click',async event=>{const owner=event.target.closest('[data-owner]');if(owner){selected=owner.dataset.owner;const pp=points.filter(p=>p.organization_research_id===selected);if(pp.length===1)opened.add(pp[0].wb_point_id);render();window.scrollTo(0,0)}const reload=event.target.closest('[data-reload]');if(reload&&confirm('Заменить несохранённый черновик сохранённой версией?')){drafts.delete(reload.dataset.reload);persist();document.activeElement?.blur();await refresh()}});
 $('view').addEventListener('toggle',event=>{if(event.target.matches('.card-editor')){const id=event.target.dataset.card;event.target.open?openedCards.add(id):openedCards.delete(id)}if(event.target.matches('.point')){const p=event.target.dataset.point;event.target.open?opened.add(p):opened.delete(p)}},true);
