@@ -4,18 +4,17 @@ if(!root)throw Error('CARDS_FIXTURE_DIR required');const browser=await chromium.
 try{
  const page=await browser.newPage({viewport:{width:390,height:844}});
  await page.route('https://edholod.github.io/**',async route=>{const path=new URL(route.request().url()).pathname;if(path.endsWith('/assets/account.js'))return route.fulfill({contentType:'text/javascript',body:`window.EdPVZAccount={signedIn:${authorized},user:{id:'${owner}'},ensure:async()=>({access_token:'synthetic'}),rpc:async(name,args)=>{
-  if(name!=='edpvz_dispute_manage_access'||args.p_org!=='org01')throw Error('Unexpected invitation scope');
-  const accounts=window.testInviteAccounts ||= [{username:'existing_owner',state:'active',expires_at:'2026-11-18T00:00:00Z'}];
-  if(args.p_action==='issue'){
-   const row={username:args.p_username,state:'pending',expires_at:'2026-11-18T00:00:00Z'};
-   accounts.push(row);
-   return {...row,accounts,code:args.p_username==='fixture_owner'?'PVZ-0123456789ABCDEF0123456789ABCDEF':'PVZ-FEDCBA9876543210FEDCBA9876543210'};
+  if(args.p_org!=='org01')throw Error('Unexpected invitation scope');
+  const accounts=window.testInviteAccounts ||= [{username:'existing_owner',state:'active'}];
+  if(name==='edpvz_dispute_manage_password'){
+   if(args.p_action!=='save'||args.p_password!=='Synthetic-test-password-2026')throw Error('Unexpected password operation');
+   window.testPasswordSet=true;
+  }else if(name==='edpvz_dispute_manage_access'&&args.p_action==='revoke'){
+   if(args.p_username!=='existing_owner')throw Error('Unexpected revoke target');
+   accounts.splice(0,1);
+   window.testPasswordSet=false;
   }
-  if(args.p_action==='revoke'){
-   if(args.p_username!=='fixture_owner')throw Error('Unexpected revoke target');
-   accounts.splice(accounts.findIndex(row=>row.username===args.p_username),1);
-  }
-  return {accounts};
+  return {accounts,password_set:!!window.testPasswordSet};
  }};`});const file=path.split('/apps/disputes/')[1]||'index.html';if(file.includes('..'))throw Error('Unsafe path');return route.fulfill({contentType:file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'text/javascript',body:await readFile(resolve(root,file))})});
  await page.route('https://raw.githubusercontent.com/**',r=>r.fulfill({contentType:r.request().url().includes('index.json')?'application/json':'image/svg+xml',body:r.request().url().includes('index.json')?JSON.stringify([asset]):'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="100"/>'}));
  await page.route('https://duerixyhzapotoeclggz.supabase.co/**',async route=>{calls++;const r=route.request(),table=new URL(r.url()).pathname.split('/').pop();let data=[];
@@ -41,20 +40,14 @@ try{
  const enter=async()=>{await page.getByRole('button',{name:/ИП Тест/}).click();await page.locator('.point[open]').waitFor();assert.equal(await page.locator('.card-editor').getAttribute('open'),null);assert.ok(await page.locator('.case').evaluate(el=>el.getBoundingClientRect().height<280));await page.locator('.card-editor>summary').click()};
  await page.goto('https://edholod.github.io/ed-pvz/apps/disputes/');await enter();await page.getByText('WB: обращение № 777 · В работе',{exact:false}).waitFor();assert.equal(await page.locator('[name=ticket_number]').inputValue(),'');
  await page.locator('#owner-invite summary').click();
- await page.getByLabel('Логин собственника в Эд ПВЗ').fill('fixture_owner');
- await page.getByRole('button',{name:'Создать код',exact:true}).click();
- await page.locator('#invite-code').waitFor();
- assert.equal(await page.locator('#invite-code').inputValue(),'PVZ-0123456789ABCDEF0123456789ABCDEF');
- await page.getByLabel('Логин собственника в Эд ПВЗ').fill('fixture_owner_alt');
- await page.getByRole('button',{name:'Создать код',exact:true}).click();
- await page.getByRole('button',{name:'Отменить код для fixture_owner_alt',exact:true}).waitFor();
- assert.equal(await page.locator('#invite-code').inputValue(),'PVZ-FEDCBA9876543210FEDCBA9876543210');
+ await page.getByLabel('Пароль для этого юрлица').fill('Synthetic-test-password-2026');
+ await page.getByRole('button',{name:'Сохранить пароль',exact:true}).click();
+ await page.getByText('Пароль установлен. Передай его собственнику.',{exact:true}).waitFor();
+ assert.equal(await page.locator('#invite-password').inputValue(),'');
  page.once('dialog',dialog=>dialog.accept());
- await page.getByRole('button',{name:'Отменить код для fixture_owner',exact:true}).click();
- await page.locator('#invite-code').waitFor({state:'hidden'});
- assert.equal(await page.getByRole('button',{name:'Отменить код для fixture_owner',exact:true}).count(),0);
- assert.equal(await page.getByRole('button',{name:'Отменить код для fixture_owner_alt',exact:true}).count(),1);
- assert.equal(await page.getByRole('button',{name:'Отозвать доступ для existing_owner',exact:true}).count(),1);
+ await page.getByRole('button',{name:'Отозвать доступ для existing_owner',exact:true}).click();
+ await page.getByText('Пароль для этого юрлица не установлен.',{exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Отозвать доступ для existing_owner',exact:true}).count(),0);
  await page.locator('#owner-invite summary').click();
  assert.equal(await page.locator('[name=sticker]').inputValue(),'59038506501');assert.equal(await page.locator('.case-form [name=cost]').inputValue(),'2589.00');assert.equal(await page.locator('[name=withholding_date]').inputValue(),'2026-11-10');assert.equal(await page.locator('[name=comment]').inputValue(),'');
  for(const [label,color] of [['Обращение не создано','rgb(255, 255, 255)'],['Тикет в работе','rgb(249, 237, 200)'],['Оспаривание отклонено по тех. причинам','rgb(247, 214, 221)'],['Вина сотрудника','rgb(211, 229, 248)'],['Успешно оспорено','rgb(214, 237, 220)']]){await page.locator('[name=status]').selectOption({label});assert.equal(await page.locator('.case').evaluate(el=>getComputedStyle(el).backgroundColor),color)}
@@ -80,5 +73,5 @@ try{
  await page.locator('[data-case="'+currentId+'"] .card-editor>summary').click();
  await page.locator('[data-case="'+currentId+'"] [name=comment]').fill('Черновик удаляемого собственника');removedOwner=true;await page.evaluate(()=>window.dispatchEvent(new Event('edpvz-auth-changed')));await page.locator('[data-case="'+currentId+'"]').waitFor({state:'detached'});assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('edpvz-dispute-drafts-v1:0f75065b-2b26-4a87-bf26-005f5a2284d4')||'[]').length),0);
  authorized=false;calls=0;await page.reload();await page.getByText('Доступ только для владельца раздела. Войди в свой аккаунт Эд ПВЗ.',{exact:true}).waitFor();assert.equal(calls,0);
- console.log('Cards UI passed: auto fields, edits, persistence, pastel status, mobile width, private gate, multi-account code issue and independent cancellation, manual hanging item creation and reload.');
+ console.log('Cards UI passed: auto fields, edits, persistence, pastel status, mobile width, private gate, custom password setup and safe revocation, manual hanging item creation and reload.');
 }finally{await browser.close()}

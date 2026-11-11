@@ -20,6 +20,13 @@ try{
   if(p.endsWith('/edpvz_memberships'))data=[{point_id:'5000',user_id:staff,status:'approved'}];
   if(p.endsWith('/edpvz_profiles'))data=route.request().url().includes('select=role')?[{role:'owner'}]:[{user_id:staff,username:'fixture_employee',role:'employee'}];
   if(p.endsWith('/edpvz_user_data'))data=cloudState?[{payload:cloudState}]:[];
+  if(p.endsWith('/edpvz_dispute_redeem_password')){
+   const body=route.request().postDataJSON();
+   if(body){
+    assert.equal(body.p_password,'Synthetic-test-password-2026');
+    inviteActivated=true;data={organization_id:'org01'};
+   }
+  }
   if(p.endsWith('/edpvz_dispute_owner_access')){
    const body=route.request().postDataJSON();
    if(body?.p_action==='redeem'){
@@ -100,7 +107,9 @@ try{
  assert.equal(await page.locator('.appbar:visible').count(),1);
  await page.goto(base+'/');
  assert.equal(await page.locator('#owner-disputes').isVisible(),false);
- await page.locator('#search').fill('PVZ-0123456789ABCDEF0123456789ABCDEF');
+ await page.getByRole('button',{name:'Ввести пароль к удержаниям',exact:true}).click();
+ assert.equal(await page.locator('#search').getAttribute('type'),'password');
+ await page.locator('#search').fill('Synthetic-test-password-2026');
  await page.locator('#search').press('Enter');
  await page.getByRole('link',{name:/Мои удержания Удержания по вашим ПВЗ/}).click();
  await frame.getByText('Тестовое удержание',{exact:true}).waitFor();
@@ -110,6 +119,6 @@ try{
  await frame.getByRole('button',{name:'Обновить',exact:true}).click();
  await frame.getByText('Введи код доступа в поиске на главной странице.',{exact:true}).waitFor();
  assert.equal(await frame.getByText('Тестовое удержание',{exact:true}).count(),0);
- assert.deepEqual(errors,[]);console.log('PASS owner code activation, scoped page, reload and revocation, separate management screens and task persistence, mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
+ assert.deepEqual(errors,[]);console.log('PASS owner password activation, scoped page, reload and revocation, separate management screens and task persistence, mobile navigation, nested portal recovery, cloud employee picker, shift save/reload, second-device calendar and salary synchronization');
  await context.close();
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}

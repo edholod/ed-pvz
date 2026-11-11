@@ -1,4 +1,4 @@
-import { showInvite } from './owner-invite.js?v=2';
+import { showInvite } from './owner-invite.js?v=3';
 import{STATUSES,STATUS_CLASSES,FIELDS,blankNote,initialNote,eligible,visibleObservations,mapNotes,monthKey,monthGroups,attachSourceTickets,pointCoverage,sourceMatches,validateNote,photoPath,csvCell,manualHangingObservation}from'./cards-model.mjs?v=manual-hanging-1';
 const BASE='https://duerixyhzapotoeclggz.supabase.co',KEY='sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV',ADMIN='0f75065b-2b26-4a87-bf26-005f5a2284d4',api=window.EdPVZAccount,$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let organizations=[],points=[],scopes=[],observations=[],notes=new Map(),drafts=new Map(),photos=new Map(),selected=null,busy=false,timer,readyPhotos=new Set();
