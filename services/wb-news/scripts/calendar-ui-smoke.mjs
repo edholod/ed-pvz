@@ -37,7 +37,7 @@ try{
    if(body?.p_action==='read'){
     assert.equal(body.p_org,'org01');
     data={points:[{id:'5000',name:'Тестовая точка'}],rows:[
-     {id:'case01',point_id:'5000',title:'Тестовое удержание',amount:200,barcode:'000123',deadline:'2026-11-20',status:'Тикет в работе',wb_ticket_number:'7711',wb_ticket_status:'В работе',photo_url:'https://basket-1.wbbasket.ru/test.webp'},
+     {id:'case01',point_id:'5000',title:'Тестовое удержание',amount:200,barcode:'000123',deadline:'2026-11-20',status:'Тикет в работе',wb_ticket_number:'7711',wb_ticket_status:'В работе',employee_fault:'Вина подтверждена',comment:'Проверено по записи',photo_url:'https://basket-1.wbbasket.ru/test.webp'},
      {id:'case02',point_id:'5000',title:'Осеннее удержание',amount:400,deadline:'2026-10-15',status:'Вина сотрудника'}
     ]};
    }
@@ -119,6 +119,10 @@ try{
  await page.getByRole('link',{name:/Мои удержания Удержания по вашим ПВЗ/}).click();
  await frame.getByText('Тестовое удержание',{exact:true}).waitFor();
  const card=frame.locator('.case.working');
+ await card.getByText('Вина подтверждена',{exact:true}).waitFor();
+ await card.getByText('Проверено по записи',{exact:true}).waitFor();
+ assert.equal(await frame.locator('.case.employee .owner-annotations').count(),0);
+
  await card.getByRole('img',{name:'Фото товара'}).waitFor();
  await card.locator('img').evaluate(img=>img.decode());
  assert.equal(await card.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(249, 237, 200)');

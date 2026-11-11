@@ -95,6 +95,19 @@ function card(row) {
   if (row.ticket && row.ticket !== row.wb_ticket_number) facts.append(node('div', 'Тикет № ' + row.ticket, 'wb-ticket'));
   summary.append(photo(row), facts);
   article.append(summary);
+  const annotations = [
+    ['Вина сотрудника', row.employee_fault],
+    ['Комментарий', row.comment]
+  ].filter(([, value]) => value?.trim());
+  if (annotations.length) {
+    const details = node('dl', null, 'owner-annotations');
+    for (const [label, value] of annotations) {
+      const entry = node('div');
+      entry.append(node('dt', label), node('dd', value));
+      details.append(entry);
+    }
+    article.append(details);
+  }
   return article;
 }
 
