@@ -23,3 +23,26 @@
 .chat-dispute-overlay{position:fixed;inset:0;z-index:1200;background:#21162d83;display:flex;align-items:flex-end;justify-content:center;padding:12px}.chat-dispute-overlay[hidden]{display:none!important}.chat-dispute-panel{width:min(520px,100%);max-height:85dvh;display:flex;flex-direction:column;background:#fff;border-radius:22px;padding:18px;box-shadow:0 16px 48px #32213d36}.chat-dispute-panel h3{margin:0 0 12px;font-size:18px;color:#54395d}.chat-dispute-panel input{padding:12px;border:1px solid #e7d9ee;border-radius:12px;margin:0 0 12px;font:inherit;min-height:44px}.chat-dispute-list{overflow-y:auto;display:grid;gap:8px;min-height:60px}.chat-dispute-choice{padding:0;border:1px solid #e9ddee;border-radius:13px;background:#fff;text-align:left;cursor:pointer;color:inherit}.chat-dispute-choice:hover{background:#fcf6ff}.chat-dispute-card{display:grid;gap:4px;padding:11px 12px;font-size:13px;overflow:hidden}.chat-dispute-card img{float:left;max-width:76px;max-height:76px;border-radius:9px;object-fit:contain}.chat-dispute-card strong{color:#48314e}.chat-dispute-card small{font-size:11px;color:#81718b}.chat-dispute-card b{color:#8950a4}.chat-dispute-category{font-size:11px;font-weight:750;color:#8951a4}.chat-dispute-cancel{margin-top:12px;padding:12px;border:0;border-radius:12px;background:#f4ebf8;color:#75498b}.chat-dispute-empty{text-align:center;color:#887b90;font-size:13px;padding:20px}.chat-dispute-attachment{max-width:300px;min-width:180px;white-space:normal}
 .composer .chat-dispute-button{flex:0 0 40px;width:40px;height:40px;margin:0}
 @media(max-width:650px){.composer{gap:6px!important}.composer .chat-dispute-button,.composer .chat-photo-button,.composer .voice-record-button,.composer .send{flex-basis:38px;width:38px;height:38px;padding:7px}.composer textarea{min-width:0!important;padding:9px!important}}
+
+/* Dispute attachments match the withholding cards */
+.chat-dispute-card.case{--frame:#fff;--case-bg:#fff;border:3px solid var(--frame);border-radius:11px;background:var(--case-bg);padding:9px;min-width:0;color:#302936;display:block}
+.chat-dispute-card.case.working{--frame:#f2dda3;--case-bg:#f9edc8}
+.chat-dispute-card.case.technical{--frame:#efbac1;--case-bg:#f7d6dd}
+.chat-dispute-card.case.employee{--frame:#b9d4ee;--case-bg:#d3e5f8}
+.chat-dispute-card.case.success{--frame:#bce0c6;--case-bg:#d6eddc}
+.chat-dispute-card .case-summary{display:grid;grid-template-columns:68px minmax(0,1fr);gap:12px}
+.chat-dispute-card .photo-box{height:96px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:7px;font-size:10px;text-align:center;color:#9d8a99;overflow:hidden}
+.chat-dispute-card .photo-box img{max-width:100%;height:100%;object-fit:contain}
+.chat-dispute-card .case-facts{min-width:0}
+.chat-dispute-card.case h3{font-size:12px;font-weight:550;line-height:1.35;margin:0 0 6px;color:#756773;overflow-wrap:anywhere}
+.chat-dispute-card.case dl{display:grid;grid-template-columns:1.2fr .7fr 1fr;gap:8px;margin:0}
+.chat-dispute-card.case dl>div{min-width:0}
+.chat-dispute-card.case dt{font-size:10px;color:#8c7c88}
+.chat-dispute-card.case dd{font-size:13px;font-weight:650;margin:2px 0 0;overflow-wrap:anywhere}
+.chat-dispute-card .compact-type{font-size:11px;color:#857482;margin:5px 0}
+.chat-dispute-card .status-badge{display:inline-block;border:1px solid var(--frame);background:#fff9;font-size:10px;font-weight:650;padding:3px 6px;border-radius:6px}
+.chat-dispute-card .wb-ticket{font-size:11px;color:#725a6c;margin-top:5px;overflow-wrap:anywhere}
+.chat-dispute-comment{border-top:1px solid #ac92a333;margin-top:10px;padding-top:8px;font-size:12px;overflow-wrap:anywhere}
+.chat-dispute-comment strong{font-size:11px;color:#756773}.chat-dispute-comment p{margin:4px 0 0;white-space:pre-wrap;line-height:1.45}
+.chat-dispute-attachment{max-width:min(350px,80vw);min-width:min(260px,65vw)}
+@media(max-width:600px){.chat-dispute-card .case-summary{grid-template-columns:52px minmax(0,1fr);gap:8px}.chat-dispute-card .photo-box{height:80px}.chat-dispute-card.case{padding:8px}.chat-dispute-card.case dd{font-size:12px}.chat-dispute-card.case dt{font-size:9px}.chat-dispute-card.case dl{gap:5px}}
