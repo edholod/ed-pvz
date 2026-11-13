@@ -1,0 +1,6 @@
+(function(){'use strict';
+const base='https://duerixyhzapotoeclggz.supabase.co',key='sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV';
+async function api(path,options={}){const session=await window.EdPVZAccount?.ensure();if(!session?.access_token)throw Error('Необходимо войти в аккаунт');const r=await fetch(base+'/rest/v1/'+path,{...options,headers:{apikey:key,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json',...(options.headers||{})}});const data=r.status===204?null:await r.json().catch(()=>null);if(!r.ok)throw Error(data?.message||'Ошибка сохранения ('+r.status+')');return data}
+async function save(body){if(typeof body!=='string'||!body.trim())throw Error('Пустое сообщение');if(body.length>20000)throw Error('Сообщение слишком длинное');const user=window.EdPVZAccount?.user?.id;if(!user)throw Error('Необходимо войти в аккаунт');return api('edpvz_saved_messages',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:user,body})})}
+window.EdPVZSaved={save,api};
+})();
