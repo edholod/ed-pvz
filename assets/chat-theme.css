@@ -20,3 +20,5 @@ body{background:radial-gradient(circle at 10% 5%,#f9e9f7 0,transparent 36%),radi
 .voice-record-button{background:#f7effb!important;border-color:#e7d8ef!important;color:#8744a1!important}
 .voice-record-button.voice-recording{background:#fff0f4!important;color:#c03d6e!important}
 @media(max-width:650px){.chat-shortcuts{padding:10px 12px!important}.chat-shortcuts .small-btn{font-size:12px;padding:10px 6px}.inbox{padding:10px!important}.dialog{margin:6px 0!important}.layout{border-radius:0!important}}
+
+.message-delete{display:block;margin:5px 0 0 auto;padding:2px 5px;border:0;background:transparent;color:#977a98;font-size:10px;font-weight:500;opacity:.75;box-shadow:none;cursor:pointer}.message-delete:hover{color:#a23f76;opacity:1}.deleted-message{opacity:.65;font-style:italic}.deleted-message .bubble-text{color:#877d90}.bubble small{font-style:normal}.bubble .message-delete{width:auto;height:auto;border-radius:5px}.group-messenger .message-delete{background:transparent;color:#977a98;padding:3px;font-size:11px}
