@@ -34,3 +34,18 @@ body{background:radial-gradient(circle at 10% 5%,#f9e9f7 0,transparent 36%),radi
 .message-forward svg{stroke-width:1.8}
 
 .forward-chat-list{max-height:min(43vh,330px);overflow:auto;display:flex;flex-direction:column;gap:7px;padding:3px 1px;scrollbar-color:#d7c2e9 transparent}.forward-chat-row{display:flex;align-items:center;gap:11px;width:100%;padding:10px;border:1px solid #e8e0f0;border-radius:14px;background:#fff;color:#3d3048;text-align:left;cursor:pointer}.forward-chat-row.selected{border-color:#a679c7;background:linear-gradient(110deg,#f9e9fa,#edf3ff)}.forward-chat-avatar{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:13px;background:linear-gradient(140deg,#f0d0ed,#dbe7ff);color:#7d4b9a;font-weight:750}.forward-chat-info{flex:1;min-width:0}.forward-chat-info strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}.forward-chat-info small{display:block;color:#887c94;font-size:12px;margin-top:3px}.forward-chat-tick{font-weight:800;color:#8e42a4;width:16px}.forward-hint{font-size:13px;color:#897b92;padding:15px;text-align:center}
+
+/* Message selection in direct and group chats */
+.bubble[data-select-id]{position:relative;cursor:pointer;overflow:visible}
+.bubble.chat-message-selected{outline:2px solid #9b5db0;outline-offset:2px;background:#f0def6!important}
+.chat-select-marker{position:absolute;left:-30px;top:50%;transform:translateY(-50%);width:25px;height:25px;padding:4px;display:grid;place-items:center;border:1.5px solid #c8b5d0;border-radius:50%;background:#fff;color:transparent;cursor:pointer;opacity:.72;z-index:2}
+.bubble.mine .chat-select-marker{left:auto;right:-30px}
+.chat-select-marker svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.chat-message-selected .chat-select-marker{background:#9252a8;color:white;border-color:#9252a8;opacity:1}
+.chat-selection-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px;background:#f6edf9;border-bottom:1px solid #ead8ef;color:#6f437f;font-size:12px;font-weight:700}
+.chat-selection-toolbar[hidden]{display:none!important}
+.chat-selection-toolbar span{flex:1}
+.chat-selection-toolbar button{border:1px solid #e2cce9;border-radius:10px;padding:7px 10px;background:#fff;color:#79458e;font-weight:650}
+.chat-selection-toolbar button:disabled{opacity:.45}
+.bubble[data-select-id] audio,.bubble[data-select-id] img,.bubble[data-select-id] video,.bubble[data-select-id] canvas{cursor:default}
+@media(max-width:600px){.thread{padding-left:37px!important;padding-right:37px!important}.chat-select-marker{left:-29px}.bubble.mine .chat-select-marker{right:-29px}}
