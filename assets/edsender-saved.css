@@ -25,3 +25,16 @@ body{background:#f5effc!important}
 .chat-attach-overlay,.chat-photo-picker,.chat-qr-overlay,.chat-task-overlay,.chat-location-overlay,.chat-dispute-overlay{z-index:2000!important}
 .chat-attach-overlay[hidden],.chat-photo-picker[hidden],.chat-qr-overlay[hidden],.chat-task-overlay[hidden],.chat-dispute-overlay[hidden]{display:none!important}
 @media(max-width:650px){.shell .head{padding:12px 14px}.shell .head strong{font-size:16px}.shell .head small{font-size:11px}.shell .messages{padding:13px 11px 20px!important}.shell .composer{gap:6px!important;padding:8px 9px max(9px,env(safe-area-inset-bottom))!important}.shell .composer button{flex-basis:40px!important;width:40px!important;min-width:40px!important;height:40px!important}.shell .composer textarea{padding:9px 11px!important}}
+
+/* The exact attachment sheet used by direct chats */
+.chat-attach-overlay{position:fixed!important;inset:0!important;z-index:3000!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;background:rgba(29,18,42,.55)!important;padding:12px 12px calc(12px + env(safe-area-inset-bottom))!important}
+.chat-attach-overlay[hidden]{display:none!important}
+.chat-attach-sheet{width:min(520px,100%)!important;display:flex!important;flex-direction:column!important;gap:0!important}
+.chat-attach-heading{background:#fff!important;border-radius:19px 19px 0 0!important;padding:17px!important;text-align:center!important;color:#745581!important;font-weight:700!important}
+.chat-attach-option{display:flex!important;align-items:center!important;gap:14px!important;width:100%!important;min-height:69px!important;border:0!important;border-top:1px solid #f1eaf5!important;border-radius:0!important;background:#fff!important;padding:12px 18px!important;text-align:left!important;color:#38283f!important}
+.chat-attach-option[hidden]{display:none!important}
+.chat-attach-option:nth-last-child(2){border-radius:0 0 19px 19px!important}
+.chat-attach-icon{display:grid!important;place-items:center!important;flex:0 0 43px!important;width:43px!important;height:43px!important;border-radius:13px!important;background:linear-gradient(130deg,#f5e4fa,#e5efff)!important;color:#8b53a8!important}
+.chat-attach-icon svg{width:23px!important;height:23px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.chat-attach-option strong{font-size:14px!important}.chat-attach-option small{font-size:12px!important;color:#96899d!important;margin-top:3px!important}
+.chat-attach-cancel{margin-top:9px!important;border:0!important;border-radius:16px!important;background:#fff!important;padding:15px!important;color:#825199!important;font-weight:700!important}
