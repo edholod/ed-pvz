@@ -50,3 +50,23 @@ body.group-messenger{background:#f8f9ff;color:#302b43}
 .group-messenger #createPanel .muted{line-height:1.5}
 .group-messenger #createPanel #create{background:linear-gradient(120deg,#a13eb8,#4777e5)}
 @media(max-width:650px){.group-messenger .group-list-header{padding:14px}.group-messenger #groups>.group{min-height:72px}}
+
+/* Same wallpaper for group inbox and group conversations */
+.group-messenger #groupListCard,.group-messenger #groups,.group-messenger #listView{
+ background-color:#f6f1ff!important;
+ background-image:radial-gradient(ellipse at 4% 8%,rgba(223,132,228,.3),transparent 52%),radial-gradient(ellipse at 98% 88%,rgba(116,170,255,.31),transparent 54%),radial-gradient(circle,rgba(138,91,183,.12) 1px,transparent 1.4px)!important;
+ background-size:auto,auto,24px 24px!important;
+}
+.group-messenger #groups>.group,.group-messenger #groups>.group:nth-child(even){
+ background:rgba(255,255,255,.86)!important;
+ border:1px solid rgba(220,201,237,.78)!important;
+ border-radius:16px!important;
+ margin:8px 12px!important;
+ width:calc(100% - 24px)!important;
+ box-shadow:0 5px 18px rgba(92,59,140,.07);
+}
+.group-messenger .thread{
+ background-color:#f5f1ff!important;
+ background-image:radial-gradient(ellipse at 6% 7%,rgba(235,158,232,.37),transparent 52%),radial-gradient(ellipse at 94% 83%,rgba(128,177,255,.39),transparent 54%),radial-gradient(circle,rgba(143,98,183,.15) 1px,transparent 1.5px)!important;
+ background-size:auto,auto,22px 22px!important;
+}
