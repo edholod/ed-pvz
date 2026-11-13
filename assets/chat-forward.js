@@ -9,7 +9,7 @@ function show(message,done){
  const preview=document.createElement('p');preview.className='forward-preview';preview.textContent=window.EdPVZVoice?.parse(message)?'Голосовое сообщение':message.slice(0,120);
  const tabs=document.createElement('div');tabs.className='forward-tabs';
  const nickBtn=document.createElement('button');nickBtn.textContent='По нику';nickBtn.type='button';
- const chatBtn=document.createElement('button');chatBtn.textContent='В чат';chatBtn.type='button';tabs.append(nickBtn,chatBtn);
+ const chatBtn=document.createElement('button');chatBtn.textContent='В чат';chatBtn.type='button';const savedBtn=document.createElement('button');savedBtn.textContent='★ Избранное';savedBtn.type='button';tabs.append(nickBtn,chatBtn,savedBtn);
  const area=document.createElement('div');const error=document.createElement('p');error.className='forward-error';
  const actions=document.createElement('div');actions.className='forward-actions';
  const cancel=document.createElement('button');cancel.textContent='Отмена';cancel.type='button';
@@ -19,8 +19,8 @@ function show(message,done){
  const close=()=>shade.remove();cancel.onclick=close;shade.onclick=e=>{if(e.target===shade)close()};
  const input=document.createElement('input');input.placeholder='Ник пользователя без @';input.maxLength=32;input.autocomplete='off';
  function render(){
-  area.replaceChildren();nickBtn.classList.toggle('active',mode==='nick');chatBtn.classList.toggle('active',mode==='chat');
-  if(mode==='nick'){area.append(input);return}
+  area.replaceChildren();nickBtn.classList.toggle('active',mode==='nick');chatBtn.classList.toggle('active',mode==='chat');savedBtn.classList.toggle('active',mode==='saved');
+  if(mode==='nick'){area.append(input);return}if(mode==='saved'){const p=document.createElement('p');p.className='forward-hint';p.textContent='Сохранить сообщение в личное Избранное';area.append(p);return}
   const list=document.createElement('div');list.className='forward-chat-list';list.setAttribute('role','radiogroup');list.setAttribute('aria-label','Выберите чат');
   if(!loaded){const p=document.createElement('p');p.className='forward-hint';p.textContent='Загрузка ваших чатов…';list.append(p)}
   else if(!chatList.length){const p=document.createElement('p');p.className='forward-hint';p.textContent='Пока нет доступных чатов';list.append(p)}
@@ -36,7 +36,7 @@ function show(message,done){
   area.append(list);
  }
  nickBtn.onclick=()=>{mode='nick';selected=null;error.textContent='';render();input.focus()};
- chatBtn.onclick=async()=>{
+ savedBtn.onclick=()=>{mode='saved';selected=null;error.textContent='';render()};chatBtn.onclick=async()=>{
   mode='chat';selected=null;error.textContent='';render();const id=++loadId;
   try{
    const [direct,groups]=await Promise.all([rpc('edpvz_dm_inbox_v2'),rpc('edpvz_group_chat_action',{p_action:'list'})]);
@@ -49,7 +49,7 @@ function show(message,done){
  send.onclick=async()=>{
   send.disabled=true;error.textContent='';
   try{
-   if(mode==='nick'){
+   if(mode==='saved'){await window.EdPVZSaved.save(message)}else if(mode==='nick'){
     const username=input.value.trim().replace(/^@/,'');if(!/^[a-zA-Z0-9_]{2,32}$/.test(username))throw Error('Введите ник пользователя');
     await rpc('edpvz_dm_send',{target_username:username,message_body:message});
    }else{
