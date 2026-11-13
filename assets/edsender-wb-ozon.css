@@ -1,0 +1,56 @@
+/* Эдсенджер: WB × Ozon — unified light application skin */
+:root{--ed-purple:#9733b5;--ed-blue:#1469e8;--ed-ink:#28253a;--ed-line:#e9e5f1;--ed-wb-soft:#f9eaf9;--ed-oz-soft:#eaf2ff}
+body{color:var(--ed-ink);background:#f8f8fe}
+.top{background:linear-gradient(100deg,#fcf0fc 0%,#f4f0ff 50%,#edf5ff 100%);border-bottom:1px solid var(--ed-line);padding:15px 18px}
+.top h1{font-weight:800;letter-spacing:-.6px;background:linear-gradient(100deg,#9b29ae,#2868df);-webkit-background-clip:text;background-clip:text;color:transparent}
+.back{color:#793d99;font-weight:650}
+.layout{border:1px solid #e9e1f1;border-radius:22px;background:#fff;box-shadow:0 12px 38px #5a458010}
+.sidebar{background:#fff}
+.side-head{background:linear-gradient(100deg,#fff4fd,#f0f6ff);border-bottom:1px solid #e9e2f0;padding:17px}
+.side-head strong{color:#58376c;font-size:18px}
+.small-btn{background:#f4eafb;color:#743c96;border:1px solid #e9d9f1;border-radius:12px;font-weight:650}
+#refresh{background:#fff;color:#3769bb;border-color:#dbe7fb}
+.chat-shortcuts{background:#fcfaff;border-bottom:1px solid var(--ed-line)}
+.chat-shortcuts .small-btn:first-child{background:#f8eafa;color:#8534a3;border-color:#ecd7f2}
+.chat-shortcuts .small-btn:last-child{background:#eaf2ff;color:#2468d3;border-color:#d5e5ff}
+.inbox{background:#fff}
+.dialog{border:0!important;border-bottom:1px solid #f1edf5!important;border-radius:0!important;margin:0!important;box-shadow:none!important;padding:14px 16px!important;transition:background .15s ease}
+.dialog:nth-child(even){background:#fdfcff!important}
+.dialog.selected{background:linear-gradient(95deg,#f7e7fb,#eaf2ff)!important;border-left:3px solid #a24ac1!important}
+.dialog:active{background:#f1eafa!important;transform:none}
+.avatar,.forward-chat-avatar{border-radius:16px!important;background:linear-gradient(135deg,#eecdf2,#d6e6ff)!important;color:#773a99!important}
+.dialog-name{color:#342b46;font-weight:750}
+.preview{color:#817a91}
+.chat-head{background:linear-gradient(95deg,#fdf3fd,#eff5ff)!important;border-bottom:1px solid #e7e0f0!important;box-shadow:0 2px 10px #5a368008;z-index:2}
+.peer-profile-link{color:#332b48}
+.thread{background:#f9faff!important;background-image:radial-gradient(circle at 12% 16%,#f7eafa 0,transparent 34%),radial-gradient(circle at 87% 80%,#e9f1ff 0,transparent 38%)!important;background-size:auto!important;gap:11px}
+.bubble{background:#fff!important;border:1px solid #e7e4f0!important;border-radius:18px 18px 18px 6px!important;box-shadow:0 2px 8px #453b6810!important;color:#302b3c}
+.bubble.mine{background:linear-gradient(120deg,#f4dff8,#e7eaff)!important;border:1px solid #e4d6f1!important;border-radius:18px 18px 6px 18px!important}
+.bubble small{color:#81758d}
+.bubble.chat-message-selected{outline:2px solid #9564c4!important;background:#efe3fa!important}
+.chat-select-marker{opacity:0!important}
+.chat-message-selected .chat-select-marker{opacity:0!important}
+.chat-selection-toolbar{background:linear-gradient(95deg,#f7e6fa,#eaf1ff);border-color:#e6d8f0;color:#713c89}
+.chat-pins-bar{background:#f5edff;border-color:#e6d7f4}
+.chat-pin-item{border-color:#e7ddf3}
+.composer{background:#fff!important;border-top:1px solid #e7e3f0!important;box-shadow:0 -5px 20px #4938730a;gap:7px}
+.composer textarea{background:#f8f7fc!important;border:1px solid #e6dff0!important;border-radius:17px!important;color:#302a42}
+.composer textarea:focus{background:#fff!important;border-color:#9864c6!important;box-shadow:0 0 0 3px #eee4fb!important}
+.send{background:linear-gradient(135deg,#a136b9,#3972e4)!important;border-radius:15px!important;box-shadow:0 3px 10px #7454bd30}
+.composer button:not(.send){border-radius:13px}
+.new-chat-box,.forward-card{border:1px solid #eee2f4;box-shadow:0 18px 55px #3c2a6326}
+button:focus-visible,a:focus-visible{outline:2px solid #377be6;outline-offset:2px}
+@media(max-width:650px){
+ body{background:#fff}
+ .top{min-height:55px!important;padding:11px 15px!important}
+ .layout{border:0!important;border-radius:0!important;box-shadow:none!important}
+ .side-head{padding:13px 15px}
+ .chat-shortcuts{padding:10px 12px!important}
+ .inbox{padding:0!important}
+ .dialog{padding:14px 15px!important;margin:0!important}
+ .chat-head{height:60px!important;padding:10px 12px}
+ .thread{padding:15px 14px 18px!important}
+ .bubble{max-width:86%;padding:10px 13px}
+ .composer{padding:9px 10px max(9px,env(safe-area-inset-bottom))!important}
+}
+@media(prefers-reduced-motion:reduce){.dialog,.send{transition:none!important}}
