@@ -59,3 +59,10 @@ body{background:radial-gradient(circle at 10% 5%,#f9e9f7 0,transparent 36%),radi
 .chat-pin-remove{border:0;background:transparent;color:#9862a7;font-size:21px;padding:4px 11px}
 .bubble.chat-message-pinned{border-left:3px solid #a466b6}
 .bubble.chat-pin-flash{outline:3px solid #ae6bc6;outline-offset:2px}
+
+/* Selection: no empty circles beside every message */
+.bubble[data-select-id]>.chat-select-marker{display:none!important}
+.bubble.chat-message-selected>.chat-select-marker{display:grid!important;position:absolute;top:7px;right:7px;left:auto;transform:none;width:22px;height:22px;padding:3px;background:#9252a8;color:#fff;border:1px solid #9252a8;opacity:1;box-shadow:0 1px 5px #38203a22}
+.bubble.mine.chat-message-selected>.chat-select-marker{right:7px;left:auto}
+.bubble.chat-message-selected{box-shadow:0 0 0 2px #aa77bc40}
+@media(max-width:600px){.thread{padding-left:16px!important;padding-right:16px!important}}
