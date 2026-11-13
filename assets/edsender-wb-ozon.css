@@ -81,3 +81,18 @@ button:focus-visible,a:focus-visible{outline:2px solid #377be6;outline-offset:2p
  .inbox .dialog,.inbox .dialog:nth-child(even){margin:7px 11px!important;padding:13px!important}
  .thread,.layout.chat-open .thread{background-attachment:scroll!important}
 }
+
+/* Wallpaper v3: one continuous illustrated canvas, no generic dotted gradients */
+body,.sidebar,.inbox,.thread,.layout.chat-open .thread,.layout:not(.chat-open) .sidebar{
+ background-color:#f6efff!important;
+ background-image:url('./edsender-wallpaper.svg')!important;
+ background-position:center top!important;
+ background-size:420px 680px!important;
+ background-repeat:repeat!important;
+}
+.layout,.sidebar,.conversation{background-color:transparent!important}
+.side-head,.chat-head,.composer,.chat-shortcuts{background:rgba(255,255,255,.86)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.inbox .dialog,.inbox .dialog:nth-child(even){background:rgba(255,255,255,.83)!important}
+.thread .bubble:not(.mine){background:rgba(255,255,255,.94)!important}
+.thread .bubble.mine{background:linear-gradient(125deg,rgba(244,217,249,.96),rgba(220,235,255,.97))!important}
+@media(max-width:650px){body,.sidebar,.inbox,.thread,.layout.chat-open .thread,.layout:not(.chat-open) .sidebar{background-size:420px 680px!important}}
