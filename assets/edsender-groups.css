@@ -23,5 +23,4 @@ body.group-messenger{background:#f8f9ff;color:#302b43}
 .group-messenger .composer button{flex:none;margin:0!important;padding:10px;border-radius:13px}
 .group-messenger #send{background:linear-gradient(135deg,#a13dbb,#3475e8);font-size:0;min-width:43px;height:43px}
 .group-messenger #send:after{content:'➤';font-size:22px}
-.group-messenger .chat-dispute-button{display:none!important}
 @media(max-width:650px){.group-messenger .top{padding:11px 14px}.group-messenger #listView{padding:10px}.group-messenger .thread{margin:0 5px}.group-messenger .composer{gap:5px;padding-left:7px;padding-right:7px}.group-messenger .composer button{padding:9px}.group-messenger .composer textarea{padding:10px}}
