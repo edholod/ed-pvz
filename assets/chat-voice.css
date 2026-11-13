@@ -106,3 +106,30 @@
 .chat-qr-card img{display:block;width:min(230px,100%);aspect-ratio:1;object-fit:contain}
 .chat-qr-caption{width:100%;font-size:12px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;text-align:center}
 .chat-qr-save{border:0;border-radius:10px;background:#f1e7f8;color:#7a4b91;padding:9px 13px;font-size:12px;font-weight:700;width:100%}
+
+.chat-task-overlay{position:fixed;inset:0;z-index:1550;display:flex;align-items:flex-end;justify-content:center;background:#24182e80;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+.chat-task-overlay[hidden],.chat-task-form[hidden],.chat-task-toolbar[hidden],.chat-task-list[hidden]{display:none!important}
+.chat-task-panel{width:min(550px,100%);max-height:88dvh;overflow-y:auto;background:#fff;border-radius:19px;padding:17px;color:#382d40}
+.chat-task-panel h3{margin:0 0 14px;font-size:17px}
+.chat-task-toolbar{display:flex;gap:8px;margin-bottom:12px}
+.chat-task-toolbar input{flex:1;min-width:0;padding:10px;border:1px solid #e9dceb;border-radius:11px}
+.chat-task-toolbar button,.chat-task-form button,.chat-task-cancel{border:0;border-radius:11px;background:#f0e5f7;color:#815197;padding:10px;font-weight:700}
+.chat-task-list{max-height:49dvh;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.chat-task-choice{display:block;text-align:left;width:100%;border:0;padding:0;background:transparent}
+.chat-task-card{padding:12px;border:1px solid #e6d7ee;border-radius:13px;background:#fcf8ff;color:#3b3044;max-width:min(340px,78vw);min-width:min(240px,65vw)}
+.chat-task-head{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-bottom:8px}
+.chat-task-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#f0e4f8;color:#8b54a2}
+.chat-task-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chat-task-status{border-radius:8px;background:#f0e5f8;padding:5px 8px;font-size:10px;font-weight:700;color:#78518e}
+.chat-task-status.status-in_progress{background:#fff0c9;color:#896120}
+.chat-task-status.status-pending_approval{background:#e4efff;color:#38659b}
+.chat-task-status.status-done{background:#d9f0e0;color:#28784c}
+.chat-task-status.status-cancelled{background:#f8dfe5;color:#9e415a}
+.chat-task-card strong{display:block;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.chat-task-card p{font-size:12px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}
+.chat-task-card small{display:block;font-size:11px;color:#86768e;margin-top:8px}
+.chat-task-form{display:flex;flex-direction:column;gap:10px}
+.chat-task-form input,.chat-task-form select,.chat-task-form textarea{width:100%;box-sizing:border-box;border:1px solid #e5d9ed;border-radius:10px;padding:11px;font:inherit;font-size:15px}
+.chat-task-form button[type=submit]{background:#9455aa;color:#fff}
+.chat-task-notice{font-size:12px;color:#995072;white-space:pre-wrap}
+.chat-task-cancel{width:100%;margin-top:12px}
