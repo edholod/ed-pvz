@@ -54,3 +54,30 @@ button:focus-visible,a:focus-visible{outline:2px solid #377be6;outline-offset:2p
  .composer{padding:9px 10px max(9px,env(safe-area-inset-bottom))!important}
 }
 @media(prefers-reduced-motion:reduce){.dialog,.send{transition:none!important}}
+
+/* V2: visible WB × Ozon wallpaper across list and messages */
+.sidebar,.inbox,.layout:not(.chat-open) .sidebar{
+ background-color:#f6f1ff!important;
+ background-image:radial-gradient(ellipse at 4% 9%,rgba(223,132,228,.31),transparent 52%),radial-gradient(ellipse at 100% 86%,rgba(116,170,255,.32),transparent 55%),radial-gradient(circle,rgba(138,91,183,.12) 1px,transparent 1.4px)!important;
+ background-size:auto,auto,24px 24px!important;
+}
+.inbox .dialog,.inbox .dialog:nth-child(even){
+ background:rgba(255,255,255,.82)!important;
+ border:1px solid rgba(220,201,237,.75)!important;
+ border-radius:16px!important;
+ margin:7px 12px!important;
+ box-shadow:0 5px 18px rgba(92,59,140,.07)!important;
+ backdrop-filter:blur(10px);
+ -webkit-backdrop-filter:blur(10px);
+}
+.inbox .dialog.selected{background:linear-gradient(105deg,rgba(247,215,250,.94),rgba(217,234,255,.96))!important}
+.thread,.layout.chat-open .thread{
+ background-color:#f5f1ff!important;
+ background-image:radial-gradient(ellipse at 6% 7%,rgba(235,158,232,.37),transparent 52%),radial-gradient(ellipse at 94% 83%,rgba(128,177,255,.39),transparent 54%),radial-gradient(circle,rgba(143,98,183,.15) 1px,transparent 1.5px)!important;
+ background-size:auto,auto,22px 22px!important;
+}
+@media(max-width:650px){
+ .inbox{padding:5px 0 14px!important}
+ .inbox .dialog,.inbox .dialog:nth-child(even){margin:7px 11px!important;padding:13px!important}
+ .thread,.layout.chat-open .thread{background-attachment:scroll!important}
+}
