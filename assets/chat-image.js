@@ -20,10 +20,16 @@ function attach(button,context,onSent,onError){
  const camera=document.createElement('input');camera.type='file';camera.accept='image/*';camera.setAttribute('capture','environment');camera.hidden=true;
  button.parentElement.append(gallery,camera);
  const picker=document.createElement('div');picker.className='chat-photo-picker';picker.hidden=true;
- const g=document.createElement('button');g.type='button';g.textContent='Из галереи';
- const c=document.createElement('button');c.type='button';c.textContent='С камеры';
- picker.append(g,c);button.parentElement.append(picker);
- button.onclick=()=>{picker.hidden=!picker.hidden};g.onclick=()=>{picker.hidden=true;gallery.click()};c.onclick=()=>{picker.hidden=true;camera.click()};
+ const heading=document.createElement('div');heading.className='chat-photo-picker-title';heading.textContent='Добавить фотографию';
+ const g=document.createElement('button');g.type='button';g.innerHTML='<span class="chat-photo-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg></span><span><strong>Фото из галереи</strong><small>Выбрать из медиатеки</small></span>';
+ const c=document.createElement('button');c.type='button';c.innerHTML='<span class="chat-photo-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4v12H4z"/><circle cx="12" cy="13" r="3.2"/></svg></span><span><strong>Сделать фото</strong><small>Открыть камеру</small></span>';
+ const closePicker=document.createElement('button');closePicker.type='button';closePicker.className='chat-photo-picker-cancel';closePicker.textContent='Отмена';
+ picker.append(heading,g,c,closePicker);document.body.append(picker);
+ function hidePicker(){picker.hidden=true;document.body.classList.remove('chat-photo-menu-open')}
+ button.onclick=()=>{const opening=picker.hidden;picker.hidden=!opening;document.body.classList.toggle('chat-photo-menu-open',opening)};
+ picker.addEventListener('click',e=>{if(e.target===picker)hidePicker()});
+ closePicker.onclick=hidePicker;
+ g.onclick=()=>{hidePicker();gallery.click()};c.onclick=()=>{hidePicker();camera.click()};
  const preview=document.createElement('div');preview.className='chat-photo-draft';preview.hidden=true;
  const image=document.createElement('img');image.alt='Предпросмотр фотографии';
  const details=document.createElement('span');details.className='chat-photo-details';
