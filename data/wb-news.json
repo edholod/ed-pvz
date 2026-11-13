@@ -1,6 +1,70 @@
 {
-  "updated": "2026-11-13T07:12:44.739Z",
+  "updated": "2026-11-13T15:40:08.941Z",
   "items": [
+    {
+      "id": "wb-pvz-e5a326ce90c4b44c70ece3bb",
+      "title": "Разделили по странам оферту для владельцев партнёрских пунктов выдачи",
+      "content": "С 14 ноября для партнёров из России, Армении, Беларуси, Казахстана, Кыргызстана и Узбекистана будет работать своя версия Оферты об оказании услуг. Теперь в офертах не будет положений, не относящихся к стране партнёра.\n\nТакже, для партнёров из Армении, Казахстана, Кыргызстана и Узбекистана тарифы за подготовку товаров к возврату на склад будут прописаны в национальных валютах в пункте 2.5 Приложения №1 к оферте. В будущем будем вносить изменения и писать публикации об обновлении оферты для каждой страны отдельно — следите за новостями в личном кабинете.\n\nВсе оферты для стран вступают в силу 14 ноября, они уже доступны для прочтения по ссылкам:\n\n- Россия: https://point-quality.wb.ru/offer/RU/1.html\n\n- Беларусь: https://point-quality.wildberries.by/offer/BY/1.html\n\n- Армения: https://point-quality.wb.am/offer/AM/1.html\n\n- Казахстан: https://point-quality.wb.kz/offer/KZ/1.html\n\n- Кыргызстан: https://point-quality.wb.kg/offer/KG/1.html\n\n- Узбекистан: https://point-quality.wb.ru/offer/UZ/1.html\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-13T14:30:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/owners#ed-news-e5a326ce90c4b44c70ece3bb",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "owners"
+      ],
+      "links": [
+        {
+          "text": "https://point-quality.wb.ru/offer/RU/1.html",
+          "url": "https://point-quality.wb.ru/offer/RU/1.html"
+        },
+        {
+          "text": "https://point-quality.wildberries.by/offer/BY/1.html",
+          "url": "https://point-quality.wildberries.by/offer/BY/1.html"
+        },
+        {
+          "text": "https://point-quality.wb.am/offer/AM/1.html",
+          "url": "https://point-quality.wb.am/offer/AM/1.html"
+        },
+        {
+          "text": "https://point-quality.wb.kz/offer/KZ/1.html",
+          "url": "https://point-quality.wb.kz/offer/KZ/1.html"
+        },
+        {
+          "text": "https://point-quality.wb.kg/offer/KG/1.html",
+          "url": "https://point-quality.wb.kg/offer/KG/1.html"
+        },
+        {
+          "text": "https://point-quality.wb.ru/offer/UZ/1.html",
+          "url": "https://point-quality.wb.ru/offer/UZ/1.html"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/89417b3c-df6d-11f1-b551-1e1571c3484d.webp",
+      "origin": "my-pvz"
+    },
+    {
+      "id": "wb-pvz-29b60257b7f2938813380f70",
+      "title": "Вебинар «Островок безопасности»",
+      "content": "Сегодня, 13 ноября, в 14:00 мск состоится вебинар для владельцев ПВЗ Wildberries.\n\nМы расскажем о проекте «Островок безопасности» и как помочь человеку, который потерялся или нуждается в помощи. Приглашаем всех, кому актуальна эта тема.\n\nПрисоединяйтесь по ссылке: https://stream.wb.ru/room/vebinar_wb_pvz \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут». \n\nЕсли не получается зайти по ссылке, введите код встречи: vebinar_wb_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nПожалуйста, подготовьте для встречи вопросы на тему вебинара. Если у вас есть вопросы по тикетам или на другую тему, напишите в поддержку.\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-13T10:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/owners#ed-news-29b60257b7f2938813380f70",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "owners"
+      ],
+      "links": [
+        {
+          "text": "https://stream.wb.ru/room/vebinar_wb_pvz",
+          "url": "https://stream.wb.ru/room/vebinar_wb_pvz"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/1eb8b584-d9e3-11f1-959d-1abdb29bfd26.webp",
+      "origin": "my-pvz"
+    },
     {
       "id": "wb-pvz-3abd27207623746eb615ff83",
       "title": "Вебинар «Зависшие ШК»",
@@ -500,7 +564,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-13T07:12:44.753Z",
+    "checked": "2026-11-13T15:40:08.956Z",
     "intervalMinutes": 30
   }
 }
