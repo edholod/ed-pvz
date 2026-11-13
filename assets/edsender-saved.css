@@ -1,0 +1,27 @@
+/* Favorites: native Edsender composer, sheets, media previews and message wallpaper */
+html,body{height:100%;height:100dvh;overflow:hidden}
+body{background:#f5effc!important}
+.shell{height:100dvh!important;min-height:0;display:flex;flex-direction:column;background:transparent!important;overflow:hidden;box-shadow:none!important}
+.shell .head{flex:0 0 auto;background:rgba(250,242,255,.91)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);min-height:68px}
+.shell .messages{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:10px;padding:15px 13px 20px!important;background-color:#f6efff!important;background-image:url('./edsender-wallpaper.svg')!important;background-size:420px 680px!important;background-position:center top!important;background-repeat:repeat!important}
+.shell .messages .bubble{align-self:flex-end;flex:0 0 auto;max-width:min(85%,540px);width:fit-content;min-width:0;padding:10px 12px;border:1px solid #e5d7f0!important;border-radius:17px 17px 5px 17px!important;background:linear-gradient(120deg,rgba(247,222,249,.96),rgba(222,234,255,.97))!important;box-shadow:0 3px 12px #533f7b13!important;line-height:1.45}
+.shell .messages .bubble:has(.voice-player){min-width:min(250px,85%);max-width:min(330px,90%)}
+.shell .messages .bubble small{font-size:10px;color:#80728b}
+.shell .messages .actions{margin-top:5px;padding-top:5px;border-top:1px solid #b7a4d02b;gap:12px}
+.shell .messages .actions button{font-size:11px;color:#75418c;padding:5px 7px;background:transparent}
+.shell .composer{position:relative;z-index:2;flex:0 0 auto;display:flex;align-items:center!important;gap:7px!important;margin:0!important;padding:8px 10px max(10px,env(safe-area-inset-bottom))!important;background:rgba(255,255,255,.97)!important;border-top:1px solid #e7deee;box-shadow:0 -4px 18px #49346b0b}
+.shell .composer textarea{flex:1 1 auto;min-width:0!important;width:0;max-height:100px;height:42px!important;min-height:42px!important;padding:10px 12px!important;font-size:16px;border-radius:15px!important}
+.shell .composer button{flex:0 0 41px!important;width:41px!important;height:41px!important;min-width:41px!important;margin:0!important;padding:8px!important;border-radius:13px!important;display:grid;place-items:center;touch-action:manipulation}
+.shell .composer #attachMenu{display:grid!important;position:relative;z-index:3;background:#f2e8fa!important;color:#8545a2!important;border:1px solid #e5d8ef!important;cursor:pointer}
+.shell .composer #attachMenu svg{width:23px;height:23px}
+.shell .composer #recordVoice{background:#f3e9fa!important;color:#8745a4!important;border:1px solid #e7d9f0!important}
+.shell .composer #recordVoice svg{width:22px;height:22px}
+.shell .composer .send{background:linear-gradient(130deg,#a13ab7,#3975e8)!important;color:#fff!important;border:0!important;font-size:22px}
+.shell .composer #addPhoto,.shell .composer #attachDispute{display:none!important}
+.shell>.voice-draft,.shell>.chat-photo-draft{position:relative;z-index:3;flex:0 0 auto;margin:0!important;border-radius:0!important;max-height:170px;overflow:auto;background:linear-gradient(110deg,#fbecfa,#eaf2ff)!important}
+.shell>.voice-draft audio{height:34px;max-width:100%}
+.shell>.voice-draft .voice-draft-title{font-size:12px}
+.shell>.voice-draft button,.shell>.chat-photo-draft button{font-size:12px;padding:9px 12px}
+.chat-attach-overlay,.chat-photo-picker,.chat-qr-overlay,.chat-task-overlay,.chat-location-overlay,.chat-dispute-overlay{z-index:2000!important}
+.chat-attach-overlay[hidden],.chat-photo-picker[hidden],.chat-qr-overlay[hidden],.chat-task-overlay[hidden],.chat-dispute-overlay[hidden]{display:none!important}
+@media(max-width:650px){.shell .head{padding:12px 14px}.shell .head strong{font-size:16px}.shell .head small{font-size:11px}.shell .messages{padding:13px 11px 20px!important}.shell .composer{gap:6px!important;padding:8px 9px max(9px,env(safe-area-inset-bottom))!important}.shell .composer button{flex-basis:40px!important;width:40px!important;min-width:40px!important;height:40px!important}.shell .composer textarea{padding:9px 11px!important}}
