@@ -1,6 +1,34 @@
 {
-  "updated": "2026-11-13T00:11:54.257Z",
+  "updated": "2026-11-13T07:12:44.739Z",
   "items": [
+    {
+      "id": "wb-pvz-3abd27207623746eb615ff83",
+      "title": "Вебинар «Зависшие ШК»",
+      "content": "Сегодня, 13 ноября, в 11:00 мск состоится вебинар для менеджеров ПВЗ Wildberries.\n\nПрисоединяйтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».\n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nПожалуйста, подготовьте для встречи вопросы на тему вебинара и посмотрите курс: \n\n🟣про зависшие ШК: https://lnk.wb.ru/kxDkr \n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-13T07:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-3abd27207623746eb615ff83",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        },
+        {
+          "text": "https://lnk.wb.ru/kxDkr",
+          "url": "https://lnk.wb.ru/kxDkr"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/76705100-d9e3-11f1-924b-e6c8bdb1721f.webp",
+      "origin": "my-pvz"
+    },
     {
       "id": "wb-pvz-f79fe9b690fa75cdd915b9ba",
       "title": "Знак «Отличный сервис» для ПВЗ",
@@ -472,7 +500,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-13T00:11:54.273Z",
+    "checked": "2026-11-13T07:12:44.753Z",
     "intervalMinutes": 30
   }
 }
