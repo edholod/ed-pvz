@@ -78,3 +78,14 @@
 .chat-location-icon svg{width:25px;height:25px}
 .chat-location-card strong,.chat-location-card small{display:block}
 .chat-location-card strong{font-size:13px}.chat-location-card small{font-size:11px;color:#7c6b85;margin-top:4px}
+
+.chat-location-panel{max-height:calc(94dvh - env(safe-area-inset-bottom));overflow-y:auto}
+.chat-location-search-row{display:flex;gap:8px;margin:12px 0 8px}
+.chat-location-search{flex:1;min-width:0;border:1px solid #e4d7ed;border-radius:11px;padding:11px;font-size:15px}
+.chat-location-find,.chat-location-my{border:0;border-radius:11px;background:#f1e5f8;color:#79508e;font-weight:700;padding:11px;cursor:pointer}
+.chat-location-map{width:100%;height:min(42dvh,340px);min-height:190px;border-radius:13px;overflow:hidden;background:#f2edf5}
+.chat-location-my{display:block;width:100%;margin-top:9px}
+.chat-location-results{max-height:145px;overflow-y:auto;margin-bottom:8px;border:1px solid #eee2f3;border-radius:10px}
+.chat-location-results[hidden]{display:none!important}
+.chat-location-results button{display:block;width:100%;padding:10px;border:0;border-bottom:1px solid #f2eaf5;text-align:left;background:white;color:#4b3954;font-size:12px}
+.chat-location-card strong{overflow-wrap:anywhere}
