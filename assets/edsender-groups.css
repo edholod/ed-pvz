@@ -70,3 +70,15 @@ body.group-messenger{background:#f8f9ff;color:#302b43}
  background-image:radial-gradient(ellipse at 6% 7%,rgba(235,158,232,.37),transparent 52%),radial-gradient(ellipse at 94% 83%,rgba(128,177,255,.39),transparent 54%),radial-gradient(circle,rgba(143,98,183,.15) 1px,transparent 1.5px)!important;
  background-size:auto,auto,22px 22px!important;
 }
+
+/* Group chats share the same illustrated wallpaper */
+.group-messenger,.group-messenger #listView,.group-messenger #groupListCard,.group-messenger #groups,.group-messenger .thread{
+ background-color:#f6efff!important;
+ background-image:url('./edsender-wallpaper.svg')!important;
+ background-position:center top!important;
+ background-size:420px 680px!important;
+ background-repeat:repeat!important;
+}
+.group-messenger #chatView,.group-messenger #chatView>.card{background:transparent!important}
+.group-messenger .top,.group-messenger .group-list-header,.group-messenger .composer{background:rgba(255,255,255,.86)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.group-messenger #groups>.group{background:rgba(255,255,255,.86)!important}
