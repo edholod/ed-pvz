@@ -61,3 +61,20 @@
 .chat-attach-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .chat-attach-cancel{margin-top:9px;border:0;border-radius:16px;background:#fff;padding:15px;color:#825199;font-weight:700}
 @media(max-width:650px){.composer .chat-attach-button{flex-basis:38px;width:38px;height:38px;padding:7px}}
+
+.chat-attach-option svg,.chat-location-icon svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chat-location-overlay{position:fixed;inset:0;z-index:1400;background:#20152e80;display:flex;align-items:flex-end;justify-content:center;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+.chat-location-overlay[hidden]{display:none!important}
+.chat-location-panel{background:#fff;border-radius:20px;width:min(520px,100%);padding:20px;color:#493653}
+.chat-location-panel h3{font-size:17px;margin:0 0 9px}
+.chat-location-panel p{font-size:13px;color:#82708a;line-height:1.5}
+.chat-location-coordinates{padding:14px;background:#f7effa;border-radius:12px;text-align:center;font-variant-numeric:tabular-nums}
+.chat-location-actions{display:flex;gap:10px}
+.chat-location-actions button{flex:1;padding:12px;border:0;border-radius:12px;background:#f3e9f8;color:#76498b;font-weight:700}
+.chat-location-actions button:last-child{background:#9151aa;color:#fff}
+.chat-location-actions button:disabled{opacity:.45}
+.chat-location-card{display:flex;align-items:center;gap:11px;max-width:290px;min-width:180px;padding:12px;border:1px solid #e6d7ed;border-radius:14px;background:linear-gradient(115deg,#f7eaf8,#eaf2ff);color:#493354;text-decoration:none}
+.chat-location-icon{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;border-radius:12px;background:#fff;color:#8653a3}
+.chat-location-icon svg{width:25px;height:25px}
+.chat-location-card strong,.chat-location-card small{display:block}
+.chat-location-card strong{font-size:13px}.chat-location-card small{font-size:11px;color:#7c6b85;margin-top:4px}
