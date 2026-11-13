@@ -49,3 +49,13 @@ body{background:radial-gradient(circle at 10% 5%,#f9e9f7 0,transparent 36%),radi
 .chat-selection-toolbar button:disabled{opacity:.45}
 .bubble[data-select-id] audio,.bubble[data-select-id] img,.bubble[data-select-id] video,.bubble[data-select-id] canvas{cursor:default}
 @media(max-width:600px){.thread{padding-left:37px!important;padding-right:37px!important}.chat-select-marker{left:-29px}.bubble.mine .chat-select-marker{right:-29px}}
+
+.chat-pins-bar{flex-shrink:0;background:#f8f0fb;border-bottom:1px solid #ead9f0;padding:8px 12px;color:#75418a}
+.chat-pins-bar[hidden]{display:none!important}
+.chat-pins-heading{font-size:11px;font-weight:750;margin-bottom:6px}
+.chat-pins-items{display:flex;flex-direction:column;gap:5px;max-height:135px;overflow-y:auto}
+.chat-pin-item{display:flex;align-items:center;gap:6px;background:white;border:1px solid #e8d9ef;border-radius:10px;min-height:34px}
+.chat-pin-jump{flex:1;min-width:0;border:0;background:transparent;padding:7px 10px;color:#5e4569;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.chat-pin-remove{border:0;background:transparent;color:#9862a7;font-size:21px;padding:4px 11px}
+.bubble.chat-message-pinned{border-left:3px solid #a466b6}
+.bubble.chat-pin-flash{outline:3px solid #ae6bc6;outline-offset:2px}
