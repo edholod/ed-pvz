@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f8f5ff">
   <title>Личные заметки — Эд ПВЗ</title>
-  <link rel="stylesheet" href="./notes.css?v=2">
+  <link rel="stylesheet" href="./notes.css?v=3">
   <script defer src="../../assets/account.js"></script>
   <script defer src="./format.js?v=1"></script>
-  <script defer src="./notes.js?v=2"></script>
+  <script defer src="./notes.js?v=3"></script>
+  <script defer src="./export.js?v=1"></script>
 </head>
 <body>
 <main>
@@ -51,6 +52,18 @@
         <button class="primary" id="save" type="submit">Сохранить</button>
         <button id="cancel" type="button">Закрыть</button>
         <button class="danger" id="delete" type="button" hidden>Удалить</button>
+      </div>
+      <div class="export-actions">
+        <label for="export-format">Формат файла</label>
+        <select id="export-format">
+          <option value="txt">Текст (.txt)</option>
+          <option value="pdf">Документ (.pdf)</option>
+          <option value="jpg">Изображение (.jpg)</option>
+          <option value="png">Изображение (.png)</option>
+          <option value="xlsx">Таблица Excel (.xlsx)</option>
+        </select>
+        <button id="export-note" type="button">Скачать заметку</button>
+        <p id="export-status" role="status" aria-live="polite"></p>
       </div>
       <p id="editor-status" role="status" aria-live="polite"></p>
     </form>

@@ -49,3 +49,8 @@ form input{margin-bottom:14px}
 #insert-table{border:0;border-radius:18px;padding:0;color:inherit;width:min(360px,calc(100% - 28px))}
 #insert-table::backdrop{background:#251a436e}
 #insert-table h2{margin-top:0;font-size:1.2rem}
+.export-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:13px;margin-top:13px;border-top:1px solid #eee5f5}
+.export-actions label{margin:0;font-size:.88rem}
+.export-actions select{font:inherit;color:inherit;background:#fcfaff;border:1px solid #dfd3ed;border-radius:11px;padding:9px 10px}
+.export-actions p{flex-basis:100%;margin:0;font-size:.86rem}
+.export-actions p:empty{display:none}

@@ -62,6 +62,7 @@
     $('body').value = note?.body || '';
     $('delete').hidden = !note;
     $('editor-status').textContent = '';
+    $('export-status').textContent = '';
     $('editor').hidden = false;
     showPreview(false);
     render();
@@ -76,6 +77,7 @@
     $('title').value = '';
     $('body').value = '';
     $('editor-status').textContent = '';
+    $('export-status').textContent = '';
     render();
   }
 
