@@ -200,10 +200,10 @@ def same_news(a, b):
     left, right = normalized_title(a), normalized_title(b)
     if not left or not right:
         return False
-    if left == right:
-        return True
     if not within_days(a, b):
         return False
+    if left == right:
+        return len(left) >= 35
     ka, kb = keywords(left), keywords(right)
     if len(ka) < 4 or len(kb) < 4:
         return False
