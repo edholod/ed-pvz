@@ -27,3 +27,25 @@ form input{margin-bottom:14px}
 [hidden]{display:none!important}
 #editor-status:empty,#status:empty{display:none}
 @media(max-width:650px){.layout{grid-template-columns:1fr}form{grid-row:1}header{flex-wrap:wrap}}
+.editor-tools{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px}
+.editor-tools button,#preview-toggle{padding:6px 9px;font-size:.82rem}
+#preview-toggle{margin-bottom:9px}
+#preview-toggle[aria-pressed=true]{background:#f2e9ff;border-color:#9777c9}
+.formatted-note{min-height:170px;border:1px solid #dfd3ed;border-radius:11px;padding:10px 13px;overflow-wrap:anywhere}
+.formatted-note p{white-space:pre-wrap;margin:.55em 0;color:inherit}
+.formatted-note h2,.formatted-note h3,.formatted-note h4{margin:.65em 0 .35em}
+.formatted-note blockquote{border-left:3px solid #ad92d7;margin:.6em 0;padding:3px 12px;white-space:pre-wrap;color:#665979}
+.formatted-note ul,.formatted-note ol{padding-left:22px}
+.formatted-note .checks{list-style:none;padding:0}
+.formatted-note .checks label{display:flex;align-items:baseline;gap:8px;font-weight:400}
+.formatted-note input[type=checkbox]{width:auto;accent-color:#62459a}
+.formatted-note code{background:#f3edf9;border-radius:4px;padding:1px 4px}
+.formatted-note pre{overflow:auto;background:#f3edf9;border-radius:7px;padding:8px}
+.formatted-note a{color:#62459a}
+.note-table{overflow-x:auto;margin:.7em 0}
+.note-table table{border-collapse:collapse;width:100%}
+.note-table th,.note-table td{border:1px solid #ded2ec;padding:6px 9px;text-align:left;min-width:4em;vertical-align:top}
+.note-table th{background:#f3edf9}
+#insert-table{border:0;border-radius:18px;padding:0;color:inherit;width:min(360px,calc(100% - 28px))}
+#insert-table::backdrop{background:#251a436e}
+#insert-table h2{margin-top:0;font-size:1.2rem}

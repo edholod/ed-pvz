@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f8f5ff">
   <title>Личные заметки — Эд ПВЗ</title>
-  <link rel="stylesheet" href="./notes.css?v=1">
+  <link rel="stylesheet" href="./notes.css?v=2">
   <script defer src="../../assets/account.js"></script>
-  <script defer src="./notes.js?v=1"></script>
+  <script defer src="./format.js?v=1"></script>
+  <script defer src="./notes.js?v=2"></script>
 </head>
 <body>
 <main>
@@ -29,6 +30,22 @@
       <label for="title">Заголовок</label>
       <input id="title" maxlength="120" placeholder="Без названия" autocomplete="off">
       <label for="body">Заметка</label>
+      <div class="editor-tools" id="tools" role="group" aria-label="Форматирование">
+        <button data-format="heading" type="button">Заголовок</button>
+        <button data-format="bold" type="button"><strong>Жирный</strong></button>
+        <button data-format="italic" type="button"><em>Курсив</em></button>
+        <button data-format="strike" type="button"><s>Зачеркнуть</s></button>
+        <button data-format="bullets" type="button">Список</button>
+        <button data-format="numbered" type="button">Нумерация</button>
+        <button data-format="checklist" type="button">Чек-лист</button>
+        <button data-format="table" type="button">Таблица</button>
+        <button data-format="link" type="button">Ссылка</button>
+        <button data-format="quote" type="button">Цитата</button>
+        <button data-format="code" type="button">Код</button>
+        <button data-format="divider" type="button">Разделитель</button>
+      </div>
+      <button id="preview-toggle" type="button" aria-pressed="false">Предпросмотр</button>
+      <div id="preview" class="formatted-note" aria-label="Предпросмотр заметки" hidden></div>
       <textarea id="body" maxlength="20000" rows="12" placeholder="Напиши, что нужно запомнить"></textarea>
       <div class="actions">
         <button class="primary" id="save" type="submit">Сохранить</button>
@@ -38,6 +55,19 @@
       <p id="editor-status" role="status" aria-live="polite"></p>
     </form>
   </div>
+  <dialog id="insert-table">
+    <form method="dialog">
+      <h2>Вставить таблицу</h2>
+      <label for="table-cols">Столбцы</label>
+      <input id="table-cols" type="number" min="1" max="10" value="3" required>
+      <label for="table-rows">Строки без заголовка</label>
+      <input id="table-rows" type="number" min="1" max="30" value="2" required>
+      <div class="actions">
+        <button class="primary" value="insert">Вставить</button>
+        <button type="button" id="cancel-table">Отмена</button>
+      </div>
+    </form>
+  </dialog>
 </main>
 </body>
 </html>

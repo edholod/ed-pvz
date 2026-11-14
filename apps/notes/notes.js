@@ -63,12 +63,15 @@
     $('delete').hidden = !note;
     $('editor-status').textContent = '';
     $('editor').hidden = false;
+    showPreview(false);
     render();
     $(note ? 'body' : 'title').focus();
   }
 
   function close() {
     selected = null;
+    if ($('insert-table').open) $('insert-table').close();
+    showPreview(false);
     $('editor').hidden = true;
     $('title').value = '';
     $('body').value = '';
@@ -78,7 +81,8 @@
 
   function setBusy(value) {
     busy = value;
-    for (const id of ['save','delete','cancel','new-note','title','body']) $(id).disabled = value;
+    for (const id of ['save','delete','cancel','new-note','title','body','preview-toggle']) $(id).disabled = value;
+    for (const control of $('editor').querySelectorAll('[data-format],#preview input')) control.disabled = value;
   }
 
   async function load() {
@@ -146,6 +150,7 @@
         $('title').value = selected.title;
         $('body').value = selected.body;
         $('delete').hidden = false;
+        if (previewing) showPreview(true);
         $('editor-status').textContent = 'Сохранено.';
         $('status').textContent = '';
         render();
@@ -156,6 +161,121 @@
       if (run === epoch) setBusy(false);
     }
   }
+
+  const bodyInput = $('body');
+  const tableDialog = $('insert-table');
+  let previewing = false, tableSelection;
+
+  function showPreview(value) {
+    previewing = value;
+    bodyInput.hidden = value;
+    $('tools').hidden = value;
+    $('preview').hidden = !value;
+    $('preview-toggle').textContent = value ? 'Редактировать' : 'Предпросмотр';
+    $('preview-toggle').setAttribute('aria-pressed', String(value));
+    if (!value) {
+      $('preview').replaceChildren();
+      return;
+    }
+    window.EdPVZNoteFormat.render(bodyInput.value, $('preview'), (index, checked) => {
+      const lines = bodyInput.value.split('\n');
+      lines[index] = lines[index].replace(/^(\s*[-*] \[)[ xX](\] )/, (_, start, end) => start + (checked ? 'x' : ' ') + end);
+      bodyInput.value = lines.join('\n');
+      $('editor-status').textContent = 'Изменено. Нажми «Сохранить».';
+    });
+  }
+
+  function replaceText(text, start, end, selectionStart = text.length, selectionEnd = selectionStart) {
+    if (bodyInput.value.length - (end - start) + text.length > bodyInput.maxLength) {
+      $('editor-status').textContent = 'Форматирование превышает лимит заметки.';
+      return;
+    }
+    bodyInput.setRangeText(text, start, end);
+    bodyInput.setSelectionRange(start + selectionStart, start + selectionEnd);
+    bodyInput.focus();
+    $('editor-status').textContent = '';
+  }
+
+  function blocks(prefix, sample) {
+    const {value, selectionStart, selectionEnd} = bodyInput;
+    const start = selectionStart === 0 ? 0 : value.lastIndexOf('\n', selectionStart - 1) + 1;
+    const boundary = selectionEnd > selectionStart && value[selectionEnd - 1] === '\n' ? selectionEnd - 1 : selectionEnd;
+    const lineEnd = value.indexOf('\n', boundary);
+    const end = lineEnd < 0 ? value.length : lineEnd;
+    const original = value.slice(start, end);
+    const text = (original || sample).split('\n').map((line, index) => prefix(index) + line).join('\n');
+    replaceText(text, start, end, original ? text.length : prefix(0).length, text.length);
+  }
+
+  function format(action) {
+    if (busy || previewing) return;
+    const {value, selectionStart: start, selectionEnd: end} = bodyInput;
+    const selectedText = value.slice(start, end);
+    const wrappers = {bold:'**', italic:'*', strike:'~~', code:'`'};
+    if (wrappers[action]) {
+      const marker = action === 'code' && selectedText.includes('\n') ? '\n```\n' : wrappers[action];
+      const closing = marker.length > 1 && action === 'code' ? '\n```\n' : marker;
+      const text = selectedText || 'текст';
+      replaceText(marker + text + closing, start, end, marker.length, marker.length + text.length);
+      return;
+    }
+    switch (action) {
+      case 'heading': blocks(() => '## ', 'Заголовок'); break;
+      case 'bullets': blocks(() => '- ', 'Пункт списка'); break;
+      case 'numbered': blocks(index => (index + 1) + '. ', 'Пункт списка'); break;
+      case 'checklist': blocks(() => '- [ ] ', 'Новая задача'); break;
+      case 'quote': blocks(() => '> ', 'Цитата'); break;
+      case 'divider': replaceText('\n\n---\n\n', end, end); break;
+      case 'link': {
+        const input = prompt('Адрес ссылки', 'https://');
+        if (input === null) break;
+        const url = window.EdPVZNoteFormat.safeLink(input.trim());
+        if (!url) {
+          $('editor-status').textContent = 'Введи полный адрес, начинающийся с https:// или http://.';
+          break;
+        }
+        const title = (selectedText || 'Ссылка').replace(/[\[\]\n]/g, ' ');
+        replaceText('[' + title + '](' + url.replace(/\(/g, '%28').replace(/\)/g, '%29') + ')', start, end, 1, title.length + 1);
+        break;
+      }
+      case 'table':
+        tableSelection = [start, end];
+        tableDialog.returnValue = '';
+        tableDialog.showModal();
+        break;
+    }
+  }
+
+  $('tools').addEventListener('pointerdown', event => {
+    if (event.target.closest('[data-format]')) event.preventDefault();
+  });
+  $('tools').addEventListener('click', event => {
+    const button = event.target.closest('[data-format]');
+    if (button) format(button.dataset.format);
+  });
+  $('preview-toggle').onclick = () => { if (!busy) showPreview(!previewing); };
+  $('cancel-table').onclick = () => tableDialog.close();
+  tableDialog.addEventListener('close', () => {
+    if (tableDialog.returnValue !== 'insert' || !tableSelection || $('editor').hidden || busy) return;
+    const columns = Number($('table-cols').value);
+    const rows = Number($('table-rows').value);
+    if (!Number.isInteger(columns) || columns < 1 || columns > 10 || !Number.isInteger(rows) || rows < 1 || rows > 30) return;
+    const header = Array.from({length:columns}, (_, index) => 'Столбец ' + (index + 1));
+    const line = values => '| ' + values.join(' | ') + ' |';
+    const text = '\n\n' + [line(header), line(header.map(() => '---')), ...Array.from({length:rows}, () => line(header.map(() => '')))].join('\n') + '\n\n';
+    replaceText(text, ...tableSelection, 4, 4 + header[0].length);
+  });
+  $('editor').addEventListener('keydown', event => {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+    const key = event.key.toLowerCase();
+    if (key === 's') {
+      event.preventDefault();
+      if (!busy) $('editor').requestSubmit();
+    } else if (event.target === bodyInput && ['b','i'].includes(key)) {
+      event.preventDefault();
+      format(key === 'b' ? 'bold' : 'italic');
+    }
+  });
 
   $('search').addEventListener('input', render);
   $('new-note').onclick = () => { if (mayClose()) open(null); };
