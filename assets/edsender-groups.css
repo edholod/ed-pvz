@@ -1,86 +1,12 @@
-/* Unified Edsender group conversation shell */
-html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
-body.group-messenger{background:#f8f9ff;color:#302b43}
-.group-messenger main{height:100%;height:100dvh;max-width:100%!important;padding:0!important;display:flex;flex-direction:column;overflow:hidden}
-.group-messenger .top{flex:none;margin:0;padding:12px 16px;background:linear-gradient(100deg,#fbeefa,#edf4ff);border-bottom:1px solid #e9dff0}
-.group-messenger main>h1,.group-messenger main>.muted{display:none}
-.group-messenger #status{flex:none;margin:0;min-height:0;padding:0 14px;background:#fff}
-.group-messenger #status:not(:empty){padding:7px 14px}
-.group-messenger #listView{flex:1;overflow:auto;padding:14px;overscroll-behavior:contain}
-.group-messenger #chatView{flex:1;min-height:0;overflow:hidden}
-.group-messenger #chatView:not([hidden]){display:flex;flex-direction:column}
-.group-messenger #chatView>.card{flex:1;min-height:0;display:flex;flex-direction:column;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;background:#fff}
-.group-messenger #back{align-self:flex-start;flex:none;margin:9px 14px 0;padding:7px 11px;font-size:13px}
-.group-messenger #chatTitle{flex:none;margin:6px 16px 0;font-size:18px;color:#37284c}
-.group-messenger #chatCount{flex:none;margin:2px 16px 10px;font-size:12px}
-.group-messenger .thread{flex:1;min-height:0;height:auto!important;max-height:none!important;margin:0 10px;border-radius:15px!important;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:radial-gradient(circle at 10% 12%,#f7eafa,transparent 35%),radial-gradient(circle at 90% 82%,#e9f2ff,transparent 38%),#f9faff!important;padding:15px!important}
-.group-messenger .thread::-webkit-scrollbar{display:none}
-.group-messenger .bubble{max-width:min(86%,620px);border:1px solid #e8e1f0!important;border-radius:18px 18px 18px 6px!important;background:#fff!important;padding:11px 13px!important;box-shadow:0 2px 8px #41366710}
-.group-messenger .bubble.mine{background:linear-gradient(120deg,#f3def8,#e7ecff)!important;border-color:#e5d9f0!important;border-radius:18px 18px 6px 18px!important}
-.group-messenger .bubble small{color:#806f91}
-.group-messenger .composer{flex:none;min-height:62px;display:flex;align-items:center;gap:7px;padding:9px 11px max(9px,env(safe-area-inset-bottom));background:#fff!important;border-top:1px solid #eae3f0;box-shadow:0 -4px 18px #49346b0b}
-.group-messenger .composer textarea{flex:1;min-width:0;width:auto;margin:0!important;resize:none;min-height:43px;max-height:110px;font-size:16px;border-radius:15px;background:#f9f8fd}
-.group-messenger .composer button{flex:none;margin:0!important;padding:10px;border-radius:13px}
-.group-messenger #send{background:linear-gradient(135deg,#a13dbb,#3475e8);font-size:0;min-width:43px;height:43px}
-.group-messenger #send:after{content:'➤';font-size:20px;font-weight:800;color:#824aa1}
-@media(max-width:650px){.group-messenger .top{padding:11px 14px}.group-messenger #listView{padding:10px}.group-messenger .thread{margin:0 5px}.group-messenger .composer{gap:5px;padding-left:7px;padding-right:7px}.group-messenger .composer button{padding:9px}.group-messenger .composer textarea{padding:10px}}
-
-/* Group list: same compact hierarchy as personal chats */
-.group-messenger #listView{background:#fff;padding:0!important;display:flex;flex-direction:column}
-.group-messenger #listView[hidden]{display:none!important}
-.group-messenger .group-list-header{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid #eee7f3;background:linear-gradient(105deg,#fdf2fc,#eef5ff)}
-.group-messenger .group-list-header h2{font-size:19px;letter-spacing:-.3px;margin:0 0 4px;color:#392c49}
-.group-messenger .group-list-header p{font-size:12px;color:#85758d;margin:0}
-.group-messenger #toggleCreate{font-size:13px;font-weight:700;white-space:nowrap;background:linear-gradient(120deg,#a13eb8,#4777e5);border-radius:12px;padding:11px 13px}
-.group-messenger #groupListCard{border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;margin:0!important;overflow-y:auto;min-height:0;background:#fff}
-.group-messenger #groups{padding:0!important}
-.group-messenger #groups>.group{display:flex;flex-direction:column;justify-content:center;min-height:76px;width:100%;padding:13px 17px 13px 74px!important;margin:0!important;border:0!important;border-bottom:1px solid #f0ebf4!important;border-radius:0!important;background:#fff!important;color:#332a43!important;position:relative;text-align:left}
-.group-messenger #groups>.group:nth-child(even){background:#fdfcff!important}
-.group-messenger #groups>.group:before{content:'Г';position:absolute;left:15px;top:14px;width:44px;height:44px;border-radius:15px;background:linear-gradient(130deg,#f3dbf7,#dceaff);display:grid;place-items:center;font-size:22px}
-.group-messenger #groups>.group strong{font-size:15px;font-weight:750;line-height:1.4}
-.group-messenger #groups>.group small{font-size:12px;color:#82758c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-top:4px}
-.group-messenger #groups>.group:active{background:#f5eafa!important}
-.group-messenger #createPanel[hidden]{display:none!important}
-.group-messenger #createPanel{flex:1;overflow-y:auto;min-height:0;border:0!important;border-radius:0!important;box-shadow:none!important;margin:0!important;padding:17px!important;background:#fff}
-.group-messenger .create-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.group-messenger .create-heading h2{margin:0 0 15px;font-size:19px}
-.group-messenger #closeCreate{padding:8px 12px;font-size:15px}
-.group-messenger #createPanel label{display:block;font-size:14px;font-weight:650;color:#51415f;margin:10px 0}
-.group-messenger #createPanel input{margin:8px 0 6px;font-size:16px;border-color:#e4ddec;background:#fbfaff}
-.group-messenger #createPanel .muted{line-height:1.5}
-.group-messenger #createPanel #create{background:linear-gradient(120deg,#a13eb8,#4777e5)}
-@media(max-width:650px){.group-messenger .group-list-header{padding:14px}.group-messenger #groups>.group{min-height:72px}}
-
-/* Same wallpaper for group inbox and group conversations */
-.group-messenger #groupListCard,.group-messenger #groups,.group-messenger #listView{
- background-color:#f6f1ff!important;
- background-image:radial-gradient(ellipse at 4% 8%,rgba(223,132,228,.3),transparent 52%),radial-gradient(ellipse at 98% 88%,rgba(116,170,255,.31),transparent 54%),radial-gradient(circle,rgba(138,91,183,.12) 1px,transparent 1.4px)!important;
- background-size:auto,auto,24px 24px!important;
-}
-.group-messenger #groups>.group,.group-messenger #groups>.group:nth-child(even){
- background:rgba(255,255,255,.86)!important;
- border:1px solid rgba(220,201,237,.78)!important;
- border-radius:16px!important;
- margin:8px 12px!important;
- width:calc(100% - 24px)!important;
- box-shadow:0 5px 18px rgba(92,59,140,.07);
-}
-.group-messenger .thread{
- background-color:#f5f1ff!important;
- background-image:radial-gradient(ellipse at 6% 7%,rgba(235,158,232,.37),transparent 52%),radial-gradient(ellipse at 94% 83%,rgba(128,177,255,.39),transparent 54%),radial-gradient(circle,rgba(143,98,183,.15) 1px,transparent 1.5px)!important;
- background-size:auto,auto,22px 22px!important;
-}
-
-/* Calm, seamless chat surface: no repeated logo tiles or wallpaper seams. */
-.group-messenger,.group-messenger #listView,.group-messenger #groupListCard,.group-messenger #groups,.group-messenger .thread{
- background-color:#f8f7fc!important;
- background-image:linear-gradient(155deg,#fbf4fc 0%,#f7f7ff 48%,#edf5ff 100%)!important;
- background-size:100% 100%!important;
- background-position:center!important;
- background-repeat:no-repeat!important;
- background-attachment:local!important;
-}
-.group-messenger #chatView,.group-messenger #chatView>.card{background:#f8f7fc!important}
-.group-messenger .top,.group-messenger .group-list-header,.group-messenger .composer{background:rgba(255,255,255,.96)!important}
-.group-messenger .bubble{color:#302b43!important}
-.group-messenger #groups>.group{background:rgba(255,255,255,.96)!important}
+.edsender-group .new-chat-box h2{margin:0}
+.edsender-group .create-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.edsender-group .new-chat-box label{display:block;font-weight:650}
+.edsender-group .new-chat-box p{line-height:1.5}
+.member-suggestions{max-height:220px;overflow:auto;border:1px solid #ebddeb;border-radius:13px;padding:8px;background:#fff}
+.member-heading{font-size:12px;font-weight:700;color:#755781;padding:5px 7px 9px}
+.member-choice{display:flex;align-items:center;gap:7px;width:100%;border:0;background:#faf4fb;color:#3d2e45;text-align:left;margin:4px 0;padding:10px;border-radius:10px}
+.member-choice strong{font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis}
+.member-choice small{font-size:11px;color:#755781}
+.member-choice span{font-size:20px;color:#81439a}
+.member-selected{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0}
+.member-chip{border:0;padding:7px 10px;border-radius:25px;background:#eadcf5;color:#754286;font-size:12px}
