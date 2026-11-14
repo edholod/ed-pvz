@@ -27,6 +27,8 @@ CHANNELS = [
     ("offlineplus", "Offline Plus"),
     ("wbpolzapvz", "WB Польза ПВЗ"),
     ("wbpvzlearning", "WB ПВЗ Новости. Менеджеры"),
+    ("AvitoPvzLive", "Avito ПВЗ Live"),
+    ("ozonapvz", "Ozon и партнёры ПВЗ"),
 ]
 MAX_ITEMS = 200
 def parse_date(value):
@@ -136,7 +138,7 @@ def fetch_telegram(channel, source_name):
     result = []
     for msg in parser.items:
         link = msg["url"]
-        if not re.fullmatch(r"https://t\.me/" + re.escape(channel) + r"/\d+", link):
+        if not re.fullmatch(r"https://t\.me/" + re.escape(channel) + r"/\d+", link, flags=re.IGNORECASE):
             continue
         body = msg["text"]
         if not body:
