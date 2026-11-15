@@ -1,66 +1,26 @@
-/* Edsender mobile app shell — isolated from shared chat components */
-@media (max-width:650px){
- html,body{width:100%;height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
- body{position:fixed;inset:0;margin:0;-webkit-text-size-adjust:100%;touch-action:pan-y;background:#fff}
- main{position:absolute;inset:0;display:flex;flex-direction:column;max-width:none!important;width:100%;height:var(--eds-height,100dvh);padding:0!important;overflow:hidden}
- .top{flex:0 0 auto;min-height:52px;padding:8px 16px!important;background:#fff;border-bottom:1px solid #f1e6ed}
+/* Edsender mobile shell: one fixed viewport, one scrolling region.
+   Do not pin html/body to visualViewport: iOS changes it during gestures. */
+@media(max-width:650px){
+ html{width:100%;height:100%;overflow:hidden;background:#f5f3fc;overscroll-behavior:none}
+ body{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;overflow:hidden!important;background:#f5f3fc!important;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+ main{position:absolute!important;inset:0!important;top:0!important;bottom:0!important;left:0!important;right:0!important;display:flex!important;flex-direction:column!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;padding:0!important;margin:0!important;overflow:hidden!important;background:#f5f3fc!important;transform:none!important}
+ .top{flex:0 0 auto!important;min-height:52px;padding:8px 16px!important;border-bottom:1px solid #eee2f0}
  .top h1{font-size:19px;letter-spacing:-.35px}
- .layout{flex:1 1 auto;min-height:0!important;height:auto!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden;position:relative}
- .sidebar,.conversation{min-height:0!important;height:100%!important;max-height:100%;overflow:hidden;background:#fff}
- .sidebar{border-right:0!important}
- .inbox,.thread{min-height:0;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-y}
- .inbox::-webkit-scrollbar,.thread::-webkit-scrollbar{display:none}
- .chat-head,.side-head{flex-shrink:0;background:#fff}
- .thread{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;overflow-anchor:auto;scroll-behavior:auto;padding-bottom:18px}
- .composer{flex-shrink:0;position:relative;z-index:2;background:#fff;border-top:1px solid #f0e5ee;padding-bottom:max(10px,env(safe-area-inset-bottom))!important}
+ .layout{display:block!important;position:relative!important;flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#f5f3fc!important}
+ .sidebar,.conversation{position:relative!important;width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important;background:#f5f3fc!important;transform:none!important;will-change:auto!important;animation:none!important}
+ .sidebar{display:flex!important;flex-direction:column!important;border-right:0!important}
+ .layout.chat-open .sidebar{display:none!important}
+ .layout:not(.chat-open) .conversation{display:none!important}
+ .layout.chat-open .conversation{display:flex!important;flex-direction:column!important}
+ .inbox{display:block;flex:1 1 0!important;min-height:0!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;scrollbar-width:none}
+ .thread{position:relative;display:flex;flex:1 1 0!important;min-height:0!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scroll-behavior:auto;scrollbar-width:none}
+ .thread::-webkit-scrollbar,.inbox::-webkit-scrollbar{display:none}
+ .chat-head,.side-head,.chat-shortcuts{flex:0 0 auto!important}
+ .composer{position:relative!important;flex:0 0 auto!important;z-index:2;background:#fff!important;border-top:1px solid #e7e3f0!important;padding-bottom:max(9px,env(safe-area-inset-bottom))!important;transform:none!important;box-shadow:none!important}
  .composer textarea{font-size:16px!important;max-height:120px;resize:none}
+ .notice{flex:0 0 auto!important;background:#fff}
+ .notice:empty{display:none!important}
  .dialog,.small-btn,.composer button,.chat-head button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
- .dialog:active{background:#f8eef5}
- .layout.chat-open .conversation{display:flex;flex-direction:column;min-height:0}
- .layout.chat-open .sidebar{display:none}
- .layout:not(.chat-open) .sidebar{display:flex}
- .layout.chat-open .top{display:none}
- .conversation{will-change:transform}
- .layout.chat-open .conversation{animation:eds-in .18s cubic-bezier(.2,.75,.2,1) both}
- @keyframes eds-in{from{opacity:.85;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
- .new-chat-modal{height:var(--eds-height,100dvh);overscroll-behavior:contain}
+ .new-chat-modal{height:100%;overscroll-behavior:contain}
  .new-chat-box{max-height:90%;overflow-y:auto}
-}
-@media(prefers-reduced-motion:reduce){.layout.chat-open .conversation{animation:none!important}}
-
-/* iOS standalone: pin messenger to visible viewport and keep list scrollable */
-@media(max-width:650px){
- html{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
- body{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;height:var(--eds-height,100dvh)!important;overflow:hidden!important}
- main{position:fixed!important;top:var(--eds-top,0px)!important;left:0!important;right:0!important;bottom:auto!important;height:var(--eds-height,100dvh)!important;max-height:var(--eds-height,100dvh)!important;min-height:0!important;overflow:hidden!important}
- .layout{flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
- .sidebar{display:flex;flex-direction:column;min-height:0!important;overflow:hidden!important}
- .sidebar .inbox{display:block;flex:1 1 0!important;min-height:0!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;padding-bottom:max(16px,env(safe-area-inset-bottom))!important}
- .top,.side-head,.chat-shortcuts{flex-shrink:0!important}
-}
-
-/* iOS Safari/PWA: keep the composer and message area in one painted viewport.
-   Avoid an exposed black strip while browser chrome or keyboard animates. */
-@media(max-width:650px){
- html,body{background:#f8f7fc!important;overscroll-behavior:none!important}
- html{min-height:100%;min-height:100dvh}
- body{height:100dvh!important;min-height:100dvh!important;bottom:auto!important}
- main{top:0!important;height:var(--eds-height,100dvh)!important;min-height:0!important;max-height:var(--eds-height,100dvh)!important;transform:none!important;contain:layout style}
- .layout,.conversation{min-height:0!important;min-width:0!important}
- .layout.chat-open .conversation{animation:none!important;will-change:auto!important;transform:none!important}
- .thread{min-height:0!important;flex:1 1 0!important;overscroll-behavior:contain}
- .composer{flex:0 0 auto!important;transform:translateZ(0);background:#fff!important}
- 
-}
-
-/* iOS black-gap regression: paint the full shell as a single continuous layer. */
-@media(max-width:650px){
- html{background:#f3f5ff!important}
- body{background:#f3f5ff!important;isolation:isolate}
- body::before{content:"";position:fixed;inset:-80px 0;background:linear-gradient(155deg,#fbf4fc,#f7f7ff 48%,#edf5ff);z-index:-1;pointer-events:none}
- main,.layout,.conversation{background:linear-gradient(155deg,#fbf4fc,#f7f7ff 48%,#edf5ff)!important}
- .layout.chat-open .conversation{position:relative;overflow:hidden!important}
- .layout.chat-open .thread{position:relative;z-index:1;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
- .layout.chat-open .composer{position:relative;z-index:3;box-shadow:0 0 0 2px #fff!important;backface-visibility:hidden}
- .layout.chat-open .composer::before{content:"";position:absolute;left:0;right:0;top:-48px;height:48px;background:linear-gradient(to bottom,transparent,#f8f7fc);pointer-events:none;z-index:-1}
 }
