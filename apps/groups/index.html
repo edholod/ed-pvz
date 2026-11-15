@@ -9,7 +9,7 @@
     </aside>
     <section class="conversation" id="conversation" hidden>
       <div class="chat-head">
-        <button type="button" class="mobile-back" id="backChats" aria-label="К списку групп">←</button>
+        <button type="button" class="mobile-back" id="backChats" aria-label="Ко всем чатам">←</button>
         <span class="avatar" id="chatAvatar" aria-hidden="true"></span>
         <span class="peer-label"><strong id="chatTitle"></strong><small id="chatCount"></small></span>
       </div>
@@ -155,14 +155,12 @@ async function peopleSearch(query=''){const id=++searchSerial;const target=$('me
 function renderSelected(){const target=$('memberSelected');target.replaceChildren();for(const [key,username] of chosenMembers){const chip=document.createElement('button');chip.type='button';chip.className='member-chip';chip.textContent='@'+username+' ×';chip.title='Убрать участника';chip.onclick=()=>{chosenMembers.delete(key);renderSelected();peopleSearch($('memberSearch').value.trim())};target.append(chip)}}
 let memberSearchTimer;$('memberSearch').addEventListener('input',()=>{clearTimeout(memberSearchTimer);memberSearchTimer=setTimeout(()=>peopleSearch($('memberSearch').value.trim().replace(/^@/,'')),250)});
 $('create').onclick=async()=>{let title=$('title').value.trim(),users=Array.from(chosenMembers.values());$('create').disabled=true;try{let r=await rpc('create',{p_title:title,p_users:users});$('title').value='';chosenMembers.clear();$('memberSearch').value='';renderSelected();peopleSearch();const groups=await list();showCreate(false);await open(groups.find(group=>group.id===r.id)||{id:r.id,title,count:users.length+1});}catch(e){status(e.message)}finally{$('create').disabled=false}};$('backChats').onclick=()=>{
+  // Group conversations belong to the unified Edsender inbox.
+  // Back must return to all chats, not the standalone groups list.
   active=null;
   clearThread();
   unsubscribeGroup().catch(console.warn);
-  $('conversation').hidden=true;
-  $('emptyChat').hidden=false;
-  $('layout').classList.remove('chat-open');
-  history.replaceState(null,'',location.pathname);
-  updateSelected();
+  window.location.assign('../messages/');
 };
 $('refresh').onclick=()=>{list();thread()};
 function groupContext(){return active?{kind:'group',group:active.id}:null}
