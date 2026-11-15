@@ -133,3 +133,19 @@
 .chat-task-form button[type=submit]{background:#9455aa;color:#fff}
 .chat-task-notice{font-size:12px;color:#995072;white-space:pre-wrap}
 .chat-task-cancel{width:100%;margin-top:12px}
+
+/* Voice draft: compact native-feeling preview inside the conversation. */
+.voice-draft{box-sizing:border-box;position:relative;z-index:3;flex:0 0 auto!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:9px 12px;width:100%;max-width:100%;min-width:0;overflow:hidden;padding:11px 14px!important;margin:0!important;border-top:1px solid #e8e0f0;border-bottom:1px solid #eee6f5;background:linear-gradient(105deg,#fbf0fb,#edf4ff)!important}
+.voice-draft[hidden]{display:none!important}
+.voice-draft-title{grid-column:1/-1;flex:none!important;font-size:12px;font-weight:750;color:#794b91;letter-spacing:.1px}
+.voice-draft audio{grid-column:1;display:block;width:100%;max-width:100%;min-width:0;height:40px;margin:0;flex:none!important;border-radius:20px;accent-color:#9752b4}
+.voice-draft-actions{grid-column:2;display:flex;align-items:center;gap:7px;min-width:0}
+.voice-draft-actions button{flex:0 0 auto;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:700;white-space:nowrap}
+.voice-draft-discard{background:#fff!important;color:#94557d!important}
+.voice-draft-send{background:linear-gradient(125deg,#a34bb9,#4b77e1)!important;color:#fff!important}
+@media(max-width:650px){
+ .layout.chat-open .voice-draft{padding:10px 12px!important;gap:8px;grid-template-columns:minmax(0,1fr) auto}
+ .layout.chat-open .voice-draft audio{height:36px;min-width:0}
+ .layout.chat-open .voice-draft-actions{gap:5px}
+ .layout.chat-open .voice-draft-actions button{padding:9px 10px;font-size:11px}
+}
