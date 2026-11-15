@@ -52,3 +52,15 @@
  .composer{flex:0 0 auto!important;transform:translateZ(0);background:#fff!important}
  
 }
+
+/* iOS black-gap regression: paint the full shell as a single continuous layer. */
+@media(max-width:650px){
+ html{background:#f3f5ff!important}
+ body{background:#f3f5ff!important;isolation:isolate}
+ body::before{content:"";position:fixed;inset:-80px 0;background:linear-gradient(155deg,#fbf4fc,#f7f7ff 48%,#edf5ff);z-index:-1;pointer-events:none}
+ main,.layout,.conversation{background:linear-gradient(155deg,#fbf4fc,#f7f7ff 48%,#edf5ff)!important}
+ .layout.chat-open .conversation{position:relative;overflow:hidden!important}
+ .layout.chat-open .thread{position:relative;z-index:1;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+ .layout.chat-open .composer{position:relative;z-index:3;box-shadow:0 0 0 2px #fff!important;backface-visibility:hidden}
+ .layout.chat-open .composer::before{content:"";position:absolute;left:0;right:0;top:-48px;height:48px;background:linear-gradient(to bottom,transparent,#f8f7fc);pointer-events:none;z-index:-1}
+}
