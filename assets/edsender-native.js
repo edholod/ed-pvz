@@ -14,7 +14,7 @@ function resize(){
 function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(resize)}
 window.addEventListener('resize',schedule,{passive:true});
 window.visualViewport?.addEventListener('resize',schedule,{passive:true});
-window.visualViewport?.addEventListener('scroll',schedule,{passive:true});
+// Visual viewport scroll is not a layout resize; reacting to it causes iOS flicker.
 schedule();
 window.addEventListener('pageshow',()=>{if(mobile()){window.scrollTo(0,0);schedule()}},{passive:true});
 let start=null;
