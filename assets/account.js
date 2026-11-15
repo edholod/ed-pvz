@@ -1,7 +1,34 @@
 (function(){'use strict';
 if(!document.getElementById('edpvz-ios-zoom-fix')){const style=document.createElement('style');style.id='edpvz-ios-zoom-fix';style.textContent='@supports (-webkit-touch-callout:none){input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select{font-size:max(16px,1em)!important}}';(document.head||document.documentElement).appendChild(style)}
 if(window.EdPVZAccount)return;
-const URL='https://duerixyhzapotoeclggz.supabase.co',KEY='sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV',SESSION_KEY='edpvz-auth-v1';let session=null,refreshing=null,storageWriteFailed=false;try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{}const headers=(token)=>({'apikey':KEY,'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})});async function request(path,options={}){const r=await fetch(URL+path,{...options,headers:{...headers(session?.access_token),...options.headers}});const text=await r.text();let data;try{data=JSON.parse(text)}catch{data={message:text}}if(!r.ok){const error=Error(data.msg||data.error_description||data.message||('HTTP '+r.status));error.status=r.status;error.code=data.error_code||data.code;throw error}return data}function setSession(s){session=s&&s.access_token?{...s,expires_at:s.expires_at||(Math.floor(Date.now()/1000)+(s.expires_in||3600))}:null;try{if(session)localStorage.setItem(SESSION_KEY,JSON.stringify(session));else localStorage.removeItem(SESSION_KEY);storageWriteFailed=false}catch{storageWriteFailed=true}window.dispatchEvent(new CustomEvent('edpvz-auth-changed',{detail:{user:session?.user||null}}))}const endedSessionCodes=new Set(['refresh_token_not_found','refresh_token_already_used','session_not_found','session_expired','user_not_found','user_banned']);
+const URL='https://duerixyhzapotoeclggz.supabase.co',KEY='sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV',SESSION_KEY='edpvz-auth-v1';let session=null,refreshing=null,storageWriteFailed=false;try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{}const headers=(token)=>({'apikey':KEY,'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})});async function request(path,options={}){
+ const {signal:externalSignal,...rest}=options;
+ const method=String(rest.method||'GET').toUpperCase();
+ const canRetry=method==='GET'||path.startsWith('/auth/v1/token?grant_type=refresh_token');
+ let lastError;
+ for(let attempt=0;attempt<(canRetry?3:1);attempt++){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),12000);
+  const abort=()=>controller.abort();
+  externalSignal?.addEventListener('abort',abort,{once:true});
+  try{
+   const r=await fetch(URL+path,{...rest,signal:controller.signal,headers:{...headers(session?.access_token),...rest.headers}});
+   const raw=await r.text();let data;
+   try{data=JSON.parse(raw)}catch{data={message:raw}}
+   if(!r.ok){
+    const error=Error(data.msg||data.error_description||data.message||('HTTP '+r.status));
+    error.status=r.status;error.code=data.error_code||data.code;
+    if(!canRetry||![429,502,503,504].includes(r.status))throw error;
+    lastError=error;
+   }else return data;
+  }catch(e){
+   lastError=e;
+   if(!canRetry||externalSignal?.aborted||e.status&&![429,502,503,504].includes(e.status))throw e;
+  }finally{clearTimeout(timer);externalSignal?.removeEventListener('abort',abort)}
+  if(attempt<2)await new Promise(resolve=>setTimeout(resolve,400*(attempt+1)));
+ }
+ throw lastError||Error('Не удалось подключиться к серверу');
+}function setSession(s){session=s&&s.access_token?{...s,expires_at:s.expires_at||(Math.floor(Date.now()/1000)+(s.expires_in||3600))}:null;try{if(session)localStorage.setItem(SESSION_KEY,JSON.stringify(session));else localStorage.removeItem(SESSION_KEY);storageWriteFailed=false}catch{storageWriteFailed=true}window.dispatchEvent(new CustomEvent('edpvz-auth-changed',{detail:{user:session?.user||null}}))}const endedSessionCodes=new Set(['refresh_token_not_found','refresh_token_already_used','session_not_found','session_expired','user_not_found','user_banned']);
 function refresh(){
  if(refreshing)return refreshing;
  syncStoredSession();
