@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-15T07:07:28.229Z",
+  "updated": "2026-11-15T14:41:57.776Z",
   "items": [
     {
       "id": "wb-pvz-ed9d4352a46d573f0c1a36e3",
@@ -64,6 +64,54 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/89417b3c-df6d-11f1-b551-1e1571c3484d.webp",
+      "origin": "my-pvz"
+    },
+    {
+      "id": "wb-pvz-826e783f3f4c42884f0d91d6",
+      "title": "Расписание онлайн-встреч с 16 по 20 ноября",
+      "content": "Подготовили расписание вебинаров на эту неделю, чтобы вам было удобнее спланировать время для стримов.\n\n• Понедельник, 16 ноября\n\n11:00 мск — вебинар «Аудит»\n\n• Четверг, 20 ноября\n\n11:00 мск — вебинар «Тикеты на оспаривание: брак, подмены и зависшие ШК» \n\nПодключайтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-13T14:03:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-826e783f3f4c42884f0d91d6",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/0d806394-df6b-11f1-9c91-6e258f5b3570.webp",
+      "origin": "my-pvz"
+    },
+    {
+      "id": "wb-pvz-b63ba7e502102e86c92ed509",
+      "title": "Расписание онлайн-встреч с 16 по 20 ноября",
+      "content": "Подготовили расписание вебинаров на эту неделю, чтобы вам было удобнее спланировать время для стримов.\n\n• Четверг, 19 ноября\n\n14:00 мск — вебинар «Рекламные экраны в ПВЗ»\n\nПодключайтесь по ссылке: https://stream.wb.ru/room/vebinar_wb_pvz \n\nЕсли не получается зайти по ссылке, введите код встречи: vebinar_wb_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-13T13:59:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/owners#ed-news-b63ba7e502102e86c92ed509",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "owners"
+      ],
+      "links": [
+        {
+          "text": "https://stream.wb.ru/room/vebinar_wb_pvz",
+          "url": "https://stream.wb.ru/room/vebinar_wb_pvz"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/55376b49-df6a-11f1-9e01-6a1d786f9c74.webp",
       "origin": "my-pvz"
     },
     {
@@ -589,7 +637,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-15T07:07:28.243Z",
+    "checked": "2026-11-15T14:41:57.791Z",
     "intervalMinutes": 30
   }
 }
