@@ -11,7 +11,11 @@ function attach(button,context,onSent,onError){
  const preview=document.createElement('audio');preview.controls=true;preview.preload='metadata';preview.setAttribute('aria-label','Прослушать голосовое перед отправкой');
  const discard=document.createElement('button');discard.type='button';discard.className='voice-draft-discard';discard.textContent='Удалить';
  const send=document.createElement('button');send.type='button';send.className='voice-draft-send';send.textContent='Отправить';
- draftBox.append(title,preview,discard,send);composer.parentNode.insertBefore(draftBox,composer.nextSibling);
+ const controls=document.createElement('div');controls.className='voice-draft-actions';controls.append(discard,send);
+ draftBox.append(title,preview,controls);
+ // Keep draft INSIDE the conversation flex column, ABOVE the composer.
+ // Inserting after the composer pushed it outside the chat viewport on iOS.
+ composer.parentNode.insertBefore(draftBox,composer);
  function stopTracks(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
  function resetButton(){if(timer)clearInterval(timer);timer=null;button.innerHTML=label;button.classList.remove('voice-recording','voice-uploading');button.disabled=false;stopTracks()}
  function clearDraft(){preview.pause();preview.removeAttribute('src');preview.load();if(draftUrl)URL.revokeObjectURL(draftUrl);draftUrl=null;draft=null;recordContext=null;draftBox.hidden=true;button.disabled=false}
