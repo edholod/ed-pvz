@@ -1,6 +1,31 @@
 {
-  "updated": "2026-11-15T00:15:25.621Z",
+  "updated": "2026-11-15T07:07:28.229Z",
   "items": [
+    {
+      "id": "wb-pvz-ed9d4352a46d573f0c1a36e3",
+      "title": "Расписание онлайн-встреч с 16 по 20 ноября",
+      "content": "Подготовили расписание вебинаров на эту неделю, чтобы вам было удобнее спланировать время для стримов.\n\n• Понедельник, 16 ноября\n\n11:00 мск — вебинар «Аудит»\n\n• Четверг, 20 ноября\n\n11:00 мск — вебинар «Тикеты на оспаривание: брак, подмены и зависшие ШК» \n\nПодключайтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://lms.wb.ru/lms/ru/calendar \n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-15T07:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-ed9d4352a46d573f0c1a36e3",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "owners",
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://lms.wb.ru/lms/ru/calendar",
+          "url": "https://lms.wb.ru/lms/ru/calendar"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/0d806394-df6b-11f1-9c91-6e258f5b3570.webp",
+      "origin": "my-pvz"
+    },
     {
       "id": "wb-pvz-e5a326ce90c4b44c70ece3bb",
       "title": "Разделили по странам оферту для владельцев партнёрских пунктов выдачи",
@@ -564,7 +589,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-15T00:15:25.637Z",
+    "checked": "2026-11-15T07:07:28.243Z",
     "intervalMinutes": 30
   }
 }
