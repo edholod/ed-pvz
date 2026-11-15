@@ -6,8 +6,9 @@ let raf=0;
 function resize(){
  if(!mobile()){document.documentElement.style.removeProperty('--eds-height');document.documentElement.style.removeProperty('--eds-top');return}
  const vv=window.visualViewport;
- const height=vv?Math.min(window.innerHeight,vv.height):window.innerHeight;
- document.documentElement.style.setProperty('--eds-top',Math.max(0,Math.round(vv?.offsetTop||0))+'px');
+ const keyboardOpen=!!vv && vv.height < window.innerHeight-140;
+ const height=keyboardOpen?vv.height:window.innerHeight;
+ document.documentElement.style.setProperty('--eds-top',0+'px');
  document.documentElement.style.setProperty('--eds-height',Math.max(260,Math.round(height))+'px');
 }
 function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(resize)}
