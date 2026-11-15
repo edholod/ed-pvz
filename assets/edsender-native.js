@@ -11,7 +11,8 @@ function resize(){
  const keyboardOpen=!!vv && vv.height < window.innerHeight-140;
  // Resize only when the software keyboard is genuinely open.
  // VisualViewport scroll events during normal gestures must not move the shell.
- main.style.height=keyboardOpen?Math.round(vv.height)+'px':'';
+ if(keyboardOpen)main.style.setProperty('height',Math.round(vv.height)+'px','important');
+ else main.style.removeProperty('height');
 }
 function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(resize)}
 window.addEventListener('resize',schedule,{passive:true});
