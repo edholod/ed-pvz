@@ -7,16 +7,38 @@
   let userId = null, epoch = 0, notes = [], selected = null, busy = false;
 
   async function request(session, params, method = 'GET', body) {
-    const response = await fetch(api + '?' + new URLSearchParams(params), {
-      method, cache: 'no-store',
-      headers: {
-        apikey: key, Authorization: 'Bearer ' + session.access_token,
-        'Content-Type': 'application/json', Prefer: 'return=representation'
-      },
-      body: body === undefined ? undefined : JSON.stringify(body)
-    });
-    if (!response.ok) throw Error('Не удалось ' + (method === 'GET' ? 'загрузить' : 'изменить') + ' заметки. Попробуй ещё раз.');
-    return response.json();
+    const attempts = method === 'GET' ? 3 : 1;
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      try {
+        const response = await fetch(api + '?' + new URLSearchParams(params), {
+          method, cache: 'no-store', signal: controller.signal,
+          headers: {
+            apikey: key, Authorization: 'Bearer ' + session.access_token,
+            'Content-Type': 'application/json', Prefer: 'return=representation'
+          },
+          body: body === undefined ? undefined : JSON.stringify(body)
+        });
+        if (!response.ok) {
+          if (method === 'GET' && [429,502,503,504].includes(response.status) && attempt + 1 < attempts) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+            continue;
+          }
+          throw Error('Не удалось ' + (method === 'GET' ? 'загрузить' : 'изменить') + ' заметки (HTTP ' + response.status + '). Попробуй ещё раз.');
+        }
+        return response.json();
+      } catch (error) {
+        if (method !== 'GET' || attempt + 1 === attempts || !(!error.status && (error.name === 'AbortError' || error instanceof TypeError))) {
+          if (error.name === 'AbortError') throw Error('Сервер долго не отвечает. Попробуй ещё раз.');
+          if (error.message === 'Load failed' || error instanceof TypeError) throw Error('Нет соединения с сервером. Попробуй ещё раз.');
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+      } finally {
+        clearTimeout(timer);
+      }
+    }
   }
 
   const displayTitle = note => note.title || note.body.trim().split('\n')[0].slice(0, 100) || 'Без названия';
@@ -90,10 +112,11 @@
   async function load() {
     const run = ++epoch;
     userId = null;
-    notes = [];
-    close();
+    const hadNotes = notes.length > 0;
+    if (!hadNotes) close();
     setBusy(false);
-    for (const id of ['workspace','new-note','login','retry']) $(id).hidden = true;
+    for (const id of ['login','retry']) $(id).hidden = true;
+    if (!hadNotes) { $('workspace').hidden = true; $('new-note').hidden = true; }
     $('status').textContent = 'Загружаем заметки…';
     try {
       const session = await window.EdPVZAccount.ensure();
@@ -119,7 +142,7 @@
       $('workspace').hidden = $('new-note').hidden = false;
     } catch (error) {
       if (run !== epoch) return;
-      $('status').textContent = error.message;
+      $('status').textContent = hadNotes ? 'Не удалось обновить заметки: ' + error.message : error.message;
       $('retry').hidden = false;
     }
   }
