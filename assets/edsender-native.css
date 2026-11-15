@@ -24,3 +24,15 @@
  .new-chat-modal{height:100%;overscroll-behavior:contain}
  .new-chat-box{max-height:90%;overflow-y:auto}
 }
+
+/* Video-confirmed: iOS exposes a black band at the thread/composer boundary
+   during vertical rubber-band scrolling. Disable scroll chaining and give
+   the chat a persistent painted backing surface. */
+@media(max-width:650px){
+ .layout.chat-open .conversation{background:#f5f3fc!important;isolation:isolate}
+ .layout.chat-open .conversation::before{content:"";position:absolute;inset:0;background:linear-gradient(155deg,#fbf4fc,#f7f7ff 48%,#edf5ff);pointer-events:none;z-index:0}
+ .layout.chat-open .chat-head,.layout.chat-open .thread,.layout.chat-open .notice,.layout.chat-open .composer{position:relative;z-index:1}
+ .layout.chat-open .thread{overscroll-behavior: none!important;overflow-anchor:none!important;-webkit-overflow-scrolling:auto!important;touch-action:pan-y!important}
+ .layout.chat-open .composer{z-index:3!important;background:#fff!important;min-height:62px;box-shadow:0 -1px 0 #fff!important}
+ .layout.chat-open .notice:empty{display:none!important}
+}
