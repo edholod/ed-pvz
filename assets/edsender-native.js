@@ -4,19 +4,20 @@ if(!layout)return;
 const mobile=()=>matchMedia('(max-width:650px)').matches;
 let raf=0;
 function resize(){
- if(!mobile()){document.documentElement.style.removeProperty('--eds-height');document.documentElement.style.removeProperty('--eds-top');return}
+ const main=document.querySelector('main');
+ if(!main)return;
+ if(!mobile()){main.style.removeProperty('height');return}
  const vv=window.visualViewport;
  const keyboardOpen=!!vv && vv.height < window.innerHeight-140;
- const height=keyboardOpen?vv.height:window.innerHeight;
- document.documentElement.style.setProperty('--eds-top',0+'px');
- document.documentElement.style.setProperty('--eds-height',Math.max(260,Math.round(height))+'px');
+ // Resize only when the software keyboard is genuinely open.
+ // VisualViewport scroll events during normal gestures must not move the shell.
+ main.style.height=keyboardOpen?Math.round(vv.height)+'px':'';
 }
 function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(resize)}
 window.addEventListener('resize',schedule,{passive:true});
 window.visualViewport?.addEventListener('resize',schedule,{passive:true});
-// Visual viewport scroll is not a layout resize; reacting to it causes iOS flicker.
 schedule();
-window.addEventListener('pageshow',()=>{if(mobile()){window.scrollTo(0,0);schedule()}},{passive:true});
+window.addEventListener('pageshow',schedule,{passive:true});
 let start=null;
 layout.addEventListener('touchstart',e=>{
  if(!mobile()||!layout.classList.contains('chat-open')||e.touches.length!==1||e.target.closest('textarea,input,button,a,[role="button"],.composer')){start=null;return}
