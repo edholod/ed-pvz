@@ -1,6 +1,38 @@
 {
-  "updated": "2026-11-16T00:20:09.297Z",
+  "updated": "2026-11-16T07:12:42.806Z",
   "items": [
+    {
+      "id": "wb-pvz-0448c8ef7c94208d242e5bce",
+      "title": "Вебинар «Аудит»",
+      "content": "Сегодня, 16 ноября, в 11:00 мск состоится вебинар для менеджеров ПВЗ Wildberries.\n\nПрисоединяйтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».\n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nПолезные материалы на тему вебинара\n\n🟣Проведение аудита в мобильном приложении WB ПВЗ: https://clck.ru/3SyQQG \n\n🟣Стандарты оформления ПВЗ: https://linkwb.ru/TfMNn \n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-16T07:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-0448c8ef7c94208d242e5bce",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        },
+        {
+          "text": "https://clck.ru/3SyQQG",
+          "url": "https://clck.ru/3SyQQG"
+        },
+        {
+          "text": "https://linkwb.ru/TfMNn",
+          "url": "https://linkwb.ru/TfMNn"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/86c9765a-df6b-11f1-b4ac-de33cfcfc989.webp",
+      "origin": "my-pvz"
+    },
     {
       "id": "wb-pvz-ed9d4352a46d573f0c1a36e3",
       "title": "Расписание онлайн-встреч с 16 по 20 ноября",
@@ -637,7 +669,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-16T00:20:09.307Z",
+    "checked": "2026-11-16T07:12:42.820Z",
     "intervalMinutes": 30
   }
 }
