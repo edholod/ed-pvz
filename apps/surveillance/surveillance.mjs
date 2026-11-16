@@ -91,12 +91,8 @@ function start() {
     }
     if (ownerId === user) return;
     try {
-      const profiles = await account.readTable('edpvz_profiles?select=role&user_id=eq.' + encodeURIComponent(user));
-      if (version !== current || account.user?.id !== user) return;
-      if (!profiles.some(profile => profile.role === 'owner')) {
-        $('access-status').textContent = 'Подключить камеры может собственник ПВЗ.';
-        return;
-      }
+      const allowed = await account.rpc('edpvz_surveillance_allowed', {});
+      if (current !== version || account.user?.id !== user || !allowed) return;
       ownerId = user;
       try {
         cameras = JSON.parse(sessionStorage.getItem('edpvz-ipeye:' + user) || '[]')

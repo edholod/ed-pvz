@@ -74,12 +74,8 @@ function start() {
     if (id === owner) return;
     $('status').textContent = 'Проверяем доступ…';
     try {
-      const profiles = await account.readTable('edpvz_profiles?select=role&user_id=eq.' + encodeURIComponent(id));
-      if (request !== version || account.user?.id !== id) return;
-      if (!profiles.some(profile => profile.role === 'owner')) {
-        $('status').textContent = 'Ссылки на камеры может добавлять собственник ПВЗ.';
-        return;
-      }
+      const allowed = await account.rpc('edpvz_surveillance_allowed', {});
+      if (request !== version || account.user?.id !== id || !allowed) return;
       owner = id;
       try {
         cameras = JSON.parse(sessionStorage.getItem(storageKey(id)) || '[]').map(camera => ({
