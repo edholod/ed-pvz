@@ -1,0 +1,108 @@
+const sections = [
+  ['disputes', 'Оспаривание'],
+  ['paid', 'Доплачено'],
+  ['withheld', 'Удержано'],
+  ['tickets', 'Тикеты']
+];
+const archivePoint = '50034020';
+const archiveOrg = 'org01';
+const archiveQuery = 'edpvz_owner_stuck_history?wb_point_id=eq.' + archivePoint
+  + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid,payment_date'
+  + '&order=operation_date.desc,operation_time.desc,source_row.desc&limit=1000';
+const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 2 });
+
+export function renderPointSections(point, active, disputes, tickets) {
+  const hasArchive = point.organization_research_id === archiveOrg && String(point.wb_point_id) === archivePoint;
+  const archive = hasArchive ? 'Загружаем историю WB…' : 'Для этого ПВЗ история WB пока не загружена.';
+  const bodies = { disputes, tickets, paid: '<p class="empty">' + archive + '</p>', withheld: '<p class="empty">' + archive + '</p>' };
+  return `<div class="point-sections"${hasArchive ? ' data-point-archive' : ''}>
+    <div class="point-section-tabs" role="group" aria-label="Разделы ПВЗ">
+      ${sections.map(([id, label]) => `<button type="button" data-point-tab="${id}" aria-pressed="${id === active}">${label}</button>`).join('')}
+    </div>
+    ${sections.map(([id, label]) => `<section data-point-panel="${id}" aria-label="${label}"${id === active ? '' : ' hidden'}>${bodies[id]}</section>`).join('')}
+  </div>`;
+}
+
+function element(tag, text, className) {
+  const item = document.createElement(tag);
+  if (text) item.textContent = text;
+  if (className) item.className = className;
+  return item;
+}
+
+function formatDate(value) {
+  return value?.split('-').reverse().join('.') || '';
+}
+
+function paintArchive(panel, rows) {
+  const label = panel.getAttribute('aria-label');
+  const operations = rows.filter(row => row.operation_type === label);
+  if (!operations.length) {
+    panel.replaceChildren(element('p', 'Операций в загруженной истории нет.', 'empty'));
+    return;
+  }
+  const heading = element('p', operations.length + ' операций · ' + money.format(operations.reduce((sum, row) => sum + Number(row.amount), 0)), 'point-archive-total');
+  const list = element('ul', '', 'point-archive-list');
+  for (const row of operations) {
+    const item = element('li', '', 'point-archive-row');
+    const date = [formatDate(row.operation_date), row.operation_time?.slice(0, 5)].filter(Boolean).join(' ');
+    item.append(element('strong', 'ШК ' + row.shk), element('strong', money.format(Number(row.amount))), element('small', date));
+    const details = [
+      row.cell && 'Ячейка ' + row.cell,
+      row.return_box && 'Коробка возврата ' + row.return_box,
+      row.accept_box && 'Коробка приёмки ' + row.accept_box,
+      label === 'Удержано' && (row.paid ? ['Доплачено', formatDate(row.payment_date)].filter(Boolean).join(' ') : 'Доплата в истории не найдена')
+    ].filter(Boolean);
+    if (details.length) item.append(element('small', details.join(' · ')));
+    list.append(item);
+  }
+  panel.replaceChildren(heading, list);
+}
+
+export function bindPointSections(root, account, pointKey) {
+  const selected = new Map();
+  let archive;
+  let userId;
+
+  async function hydrate() {
+    const uid = account.user?.id;
+    if (uid !== userId) {
+      userId = uid;
+      archive = null;
+    }
+    const panel = root.querySelector('[data-point-archive] > [data-point-panel="paid"]:not([hidden]), [data-point-archive] > [data-point-panel="withheld"]:not([hidden])');
+    if (!uid || !panel || panel.dataset.loaded) return;
+    const request = archive ??= account.readTable(archiveQuery);
+    try {
+      const rows = await request;
+      if (uid !== account.user?.id || !panel.isConnected) return;
+      paintArchive(panel, rows);
+      panel.dataset.loaded = 'true';
+    } catch {
+      if (archive === request) archive = null;
+      if (uid === account.user?.id && panel.isConnected) {
+        panel.replaceChildren(element('p', 'Не удалось загрузить историю WB. Открой вкладку ещё раз.', 'empty'));
+      }
+    }
+  }
+
+  root.addEventListener('click', event => {
+    const button = event.target.closest('[data-point-tab]');
+    if (!button) return;
+    const group = button.closest('.point-sections');
+    const active = button.dataset.pointTab;
+    selected.set(pointKey(group.closest('[data-point]').dataset.point), active);
+    for (const item of group.querySelectorAll('[data-point-tab]')) item.setAttribute('aria-pressed', String(item === button));
+    for (const panel of group.querySelectorAll('[data-point-panel]')) panel.hidden = panel.dataset.pointPanel !== active;
+    void hydrate();
+  });
+
+  return {
+    active: point => selected.get(pointKey(point)) ?? 'disputes',
+    hydrate,
+    clear() {
+      selected.clear();
+      archive = null;
+    }
+  };
+}

@@ -38,7 +38,7 @@ try{
  return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,PATCH,OPTIONS'},body:JSON.stringify(r.method()==='OPTIONS'?{}:data)});
  });
  const enter=async()=>{await page.getByRole('button',{name:/ИП Тест/}).click();await page.locator('.point[open]').waitFor();assert.equal(await page.locator('.card-editor').getAttribute('open'),null);assert.ok(await page.locator('.case').evaluate(el=>el.getBoundingClientRect().height<280));await page.locator('.card-editor>summary').click()};
- await page.goto('https://edholod.github.io/ed-pvz/apps/disputes/?view=manage');await enter();await page.getByText('WB: обращение № 777 · В работе',{exact:false}).waitFor();assert.equal(await page.locator('[name=ticket_number]').inputValue(),'');
+ await page.goto('https://edholod.github.io/ed-pvz/apps/disputes/');await enter();await page.getByText('WB: обращение № 777 · В работе',{exact:false}).waitFor();assert.equal(await page.locator('[name=ticket_number]').inputValue(),'');
  await page.locator('#owner-invite summary').click();
  await page.getByLabel('Пароль для этого юрлица').fill('Synthetic-test-password-2026');
  await page.getByRole('button',{name:'Сохранить пароль',exact:true}).click();

@@ -34,8 +34,12 @@ export function groupPointTickets(tickets, observations) {
  return groups;
 }
 
-export function renderPointTickets(point, groups, scopes, failed, activeTab = 'withholding', esc) {
- const tickets = groups.get(pointKey(point)) ?? { withholding: [], other: [] };
+export function renderPointTickets(point, groups, scopes, failed, activeTab = 'withholding', esc, urgentAbove = false) {
+ const pointTickets = groups.get(pointKey(point)) ?? { withholding: [], other: [] };
+ const tickets = urgentAbove ? {
+  withholding: pointTickets.withholding.filter(ticket => ticket.reply_state !== 'needs_reply'),
+  other: pointTickets.other.filter(ticket => ticket.reply_state !== 'needs_reply')
+ } : pointTickets;
  const scopePrefix = `wb:${point.organization_research_id}:${point.wb_point_id}:tickets:`;
  const checks = ['legacy', 'new'].map(namespace => scopes.find(scope => scope.scope === scopePrefix + namespace));
  const checked = checks.every(scope => scope?.last_success)
@@ -80,7 +84,7 @@ function tile(ticket, esc, place = '') {
  const urgent = ticket.reply_state === 'needs_reply';
  const due = ticket.reply_due_at || '';
  return `<li${urgent ? ' class="ticket-needs-reply"' : ''}>
-  <button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}" data-ticket-org="${esc(ticket.organization_research_id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
+  <button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
   <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)}</span><span>${esc(place || (ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'))}</span><span>${esc(ticket.created_local || '')}</span></div>
   <span class="point-ticket-state">${esc(ticket.status)}</span>
   ${urgent ? `<span class="ticket-reply-clock" data-reply-due="${esc(due)}">${esc(replyCountdown(due))}</span>` : ''}
@@ -125,18 +129,4 @@ export function renderUrgentTickets(groups, points, esc, failed, scopes = []) {
   ${urgent.length ? `<ul class="point-ticket-list">${urgent.map(ticket => tile(ticket, esc, addresses.get(pointKey(ticket)) || 'ПВЗ ' + ticket.wb_point_id)).join('')}</ul>`
    : '<p>В загруженных переписках тикетов, требующих ответа, нет.</p>'}
  </section>`;
-}
-
-
-export function renderOtherOwnerTickets(tickets, points, esc) {
- const addresses = new Map(points.map(point => [pointKey(point), point.name]));
- const others = tickets.filter(ticket => ticket.reply_state !== 'needs_reply');
- if (!others.length) return '<p class="empty">Других активных тикетов нет.</p>';
- return [
-  ['Мы ответили · ждём WB', others.filter(ticket => ticket.reply_state === 'answered')],
-  ['Остальные тикеты', others.filter(ticket => ticket.reply_state !== 'answered')]
- ].filter(([, items]) => items.length).map(([title, items]) =>
-  `<section><h3>${title}</h3><ul class="point-ticket-list">${items.map(ticket =>
-   tile(ticket, esc, addresses.get(pointKey(ticket)) || 'ПВЗ ' + ticket.wb_point_id)).join('')}</ul></section>`
- ).join('');
 }
