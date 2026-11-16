@@ -29,6 +29,7 @@ function start() {
     text.textContent = 'Выбери добавленную камеру';
     $('player').replaceChildren(text);
     $('camera-actions').hidden = true;
+    $('player-note').hidden = true;
     $('external-player').removeAttribute('href');
     $('archive-link').removeAttribute('href');
     picker.value = '';
@@ -51,17 +52,20 @@ function start() {
     const camera = cameras[Number(value)];
     const iframe = document.createElement('iframe');
     iframe.title = 'IPEYE · ' + camera.name;
-    iframe.referrerPolicy = 'no-referrer';
+    // IPEYE receives the embedding site's origin without the page path or query.
+    iframe.referrerPolicy = 'strict-origin';
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-downloads allow-presentation');
     iframe.setAttribute('allow', 'autoplay; fullscreen');
     iframe.allowFullscreen = true;
     iframe.src = camera.url;
     $('player').replaceChildren(iframe);
-    $('external-player').href = camera.url;
-    const archive = new URL('https://ipeye.ru/ipeye_service/index.php');
-    archive.searchParams.set('route', 'page_device_archive');
-    archive.searchParams.set('devcode', deviceCode(new URL(camera.url)));
-    $('archive-link').href = archive.href;
+    const cabinet = new URL('https://ipeye.ru/ipeye_service/index.php');
+    cabinet.searchParams.set('devcode', deviceCode(new URL(camera.url)));
+    cabinet.searchParams.set('route', 'page_play');
+    $('external-player').href = cabinet.href;
+    cabinet.searchParams.set('route', 'page_device_archive');
+    $('archive-link').href = cabinet.href;
+    $('player-note').hidden = false;
     $('camera-actions').hidden = false;
     picker.value = value;
     status.textContent = '';

@@ -7,7 +7,7 @@
   <title>Видеонаблюдение — Эд ПВЗ</title>
   <link rel="stylesheet" href="surveillance.css?v=1">
   <script defer src="../../assets/account.js?v=dispute-access-1"></script>
-  <script type="module" src="surveillance.mjs?v=1"></script>
+  <script type="module" src="surveillance.mjs?v=2"></script>
 </head>
 <body>
 <main>
@@ -47,13 +47,16 @@
           <label for="camera-picker">Камера</label>
           <select id="camera-picker" disabled></select>
           <div class="actions" id="camera-actions" hidden>
-            <a id="external-player" class="secondary" target="_blank" rel="noopener noreferrer">Открыть плеер ↗</a>
+            <a id="external-player" class="secondary" target="_blank" rel="noopener noreferrer">Смотреть в IPEYE ↗</a>
             <a id="archive-link" class="secondary" target="_blank" rel="noopener noreferrer">Архив и скачивание ↗</a>
             <button type="button" id="stop-camera" class="secondary">Остановить</button>
             <button type="button" id="remove-camera" class="text-button">Убрать</button>
           </div>
         </div>
-        <div id="player" class="player"><p>Выбери добавленную камеру</p></div>
+        <div>
+          <div id="player" class="player"><p>Выбери добавленную камеру</p></div>
+          <p id="player-note" class="note" hidden>Если IPEYE показывает «Встраивание видео запрещено сервисом», нажми «Смотреть в IPEYE». Откроется эфир выбранной камеры в кабинете.</p>
+        </div>
       </div>
       <details id="add-camera">
         <summary>Добавить камеру IPEYE</summary>
