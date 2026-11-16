@@ -1,3 +1,5 @@
+import { monthLabel } from './cards-model.mjs?v=manual-hanging-1';
+
 const sections = [
   ['disputes', 'Оспаривание'],
   ['tickets', 'Тикеты'],
@@ -43,8 +45,10 @@ function paintArchive(panel, rows) {
     return;
   }
   const heading = element('p', operations.length + ' операций · ' + money.format(operations.reduce((sum, row) => sum + Number(row.amount), 0)), 'point-archive-total');
-  const list = element('ul', '', 'point-archive-list');
+  const lists = new Map();
   for (const row of operations) {
+    const month = row.operation_date?.slice(0, 7) || '';
+    if (!lists.has(month)) lists.set(month, element('ul', '', 'point-archive-list'));
     const item = element('li', '', 'point-archive-row');
     const date = [formatDate(row.operation_date), row.operation_time?.slice(0, 5)].filter(Boolean).join(' ');
     item.append(element('strong', 'ШК ' + row.shk), element('strong', money.format(Number(row.amount))), element('small', date));
@@ -54,9 +58,14 @@ function paintArchive(panel, rows) {
       row.accept_box && 'Коробка приёмки ' + row.accept_box
     ].filter(Boolean);
     if (details.length) item.append(element('small', details.join(' · ')));
-    list.append(item);
+    lists.get(month).append(item);
   }
-  panel.replaceChildren(heading, list);
+  const months = [...lists.keys()].sort((a, b) => b.localeCompare(a)).map(month => {
+    const group = element('section', '', 'point-archive-month');
+    group.append(element('h3', month ? monthLabel(month) : 'Без даты операции', 'month-heading'), lists.get(month));
+    return group;
+  });
+  panel.replaceChildren(heading, ...months);
 }
 
 export function bindPointSections(root, account, pointKey) {

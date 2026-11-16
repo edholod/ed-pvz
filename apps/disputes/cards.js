@@ -1,4 +1,4 @@
-import { bindPointSections, renderPointSections } from './point-sections.mjs?v=3';
+import { bindPointSections, renderPointSections } from './point-sections.mjs?v=4';
 import { createTicketHistory } from './ticket-history.mjs';
 import { groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=point-sections-1';
 import { showInvite } from './owner-invite.js?v=3';

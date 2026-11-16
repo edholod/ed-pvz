@@ -42,6 +42,7 @@
 .point-section-tabs button { min-height: 42px; padding: 6px; }
 .point-section-tabs button[aria-pressed="true"] { background: #f4e6f0; color: #713354; border-color: #dfb6d1; }
 .point-sections [data-point-panel="tickets"] > .ticket-urgent { margin: 4px 12px 10px; }
+.point-archive-month > .month-heading { margin-inline: 12px; }
 .point-archive-total { margin: 12px; font-weight: 700; }
 .point-archive-list { display: grid; gap: 6px; padding: 0 12px 12px; margin: 0; list-style: none; }
 .point-archive-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 9px 12px; border: 1px solid #e8dae7; background: #fff; border-radius: 10px; }
