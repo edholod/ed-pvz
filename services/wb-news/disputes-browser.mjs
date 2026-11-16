@@ -391,7 +391,7 @@ export async function selectCollectionPeriod(page,heading){
  }catch(error){await page.keyboard.press('Escape').catch(()=>{});return {verified:false,error:String(error.message).slice(0,120)}}
 }
 
-export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},renewPage=async current=>current,categories=['hanging','brak','podmena'],budgetMs=100*60000}={}){
+export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},renewPage=async current=>current,categories=['hanging','brak','podmena','tickets'],budgetMs=100*60000}={}){
  const started=Date.now(),report={started_at:stamp(),state:'running',checked_points:0,rows:0,tickets:0,sections:[]};
  const checkedPoints=new Set(),detailQueue=[];
  const openScope=async(url,heading,org)=>{
@@ -424,7 +424,8 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
- for(const phase of ['inventory'])for(const org of ordered){
+ const phases=categories.includes('tickets')?['inventory','tickets']:['inventory'];
+ for(const phase of phases)for(const org of ordered){
   report.phase=phase;
   if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
   if(Date.now()-started>budgetMs){report.sections.push({key:'budget',state:'partial'});break}
@@ -485,9 +486,9 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
    }
   }
-  if(phase==='inventory'&&categories.includes('tickets'))for(const namespace of ['legacy','new'])for(const point of org.points){
+  if(phase==='tickets')for(const namespace of ['legacy','new'])for(const point of org.points){
    report.current={organization:org.research_id,point:point.wb_point_id,section:'tickets',namespace,step:'reading_tickets'};onProgress(report);
-   if(Date.now()-started>budgetMs)break;
+   if(Date.now()-started>budgetMs){report.sections.push({key:'budget:tickets',state:'partial'});break}
    const scope=`wb:${org.research_id}:${point.wb_point_id}:tickets:${namespace}`;
    try{
     await openScope(ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org);
