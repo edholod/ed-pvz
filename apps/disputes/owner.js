@@ -238,7 +238,7 @@ async function loadRows() {
 
 function adminLink(label) {
   const link = node('a', label, 'primary');
-  link.href = './';
+  link.href = './?view=manage';
   return link;
 }
 
@@ -249,7 +249,7 @@ function updateTab() {
   historyPanel.hidden = !['paid', 'withheld'].includes(currentTab);
   ticketsPanel.hidden = currentTab !== 'tickets';
   for (const button of tabButtons) button.setAttribute('aria-pressed', String(button.dataset.ownerTab === currentTab));
-  $('owner-admin-entry').hidden = userId !== admin || canReadDisputes || currentTab !== 'dispute';
+  $('owner-admin-entry').hidden = userId !== admin || currentTab !== 'dispute';
 }
 
 function renderHistory() {

@@ -68,7 +68,7 @@
       setPasswordMode(false);
       panel.hidden = false;
       const link = document.createElement('a');
-      link.href = './apps/disputes/owner.html?view=owner-tabs-1';
+      link.href = './apps/disputes/owner.html?view=owner-tabs-3';
       link.textContent = 'Открыть «Мои удержания»';
       status.replaceChildren('Доступ открыт. ', link);
       window.dispatchEvent(new Event('edpvz-owner-access-changed'));

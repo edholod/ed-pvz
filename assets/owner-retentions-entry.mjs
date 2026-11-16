@@ -1,4 +1,5 @@
 const entry = document.getElementById('owner-disputes');
+const stats = document.getElementById('owner-registration-stats');
 const account = window.EdPVZAccount;
 const adminId = '0f75065b-2b26-4a87-bf26-005f5a2284d4';
 let version = 0;
@@ -8,6 +9,7 @@ async function refresh() {
   const current = ++version;
   const user = account?.user?.id;
   if (user !== lastUser) entry.hidden = true;
+  if (stats) stats.hidden = user !== adminId;
   lastUser = user;
   if (!user) return;
   if (user === adminId) {
