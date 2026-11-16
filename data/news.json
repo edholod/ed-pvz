@@ -1,13 +1,6 @@
 {
-  "updated": "2026-11-16T21:01:12.076572+00:00",
+  "updated": "2026-11-16T23:14:53.056584+00:00",
   "items": [
-    {
-      "title": "Банковские счета и баланс на маркетплейсе объединили в одном приложении",
-      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE9FZUt0MUFpNW8xTE83QUFOWGdNUTJhTVhxa2FDUHR5cFhxeWJSdWQzLVhUQ3BUb3ZMWkE5V2N2WTIwOGZORUFUcVRwRzk0VDgz?oc=5",
-      "source": "voronezhnews.ru",
-      "category": "API",
-      "date": "2026-11-16T14:30:36+00:00"
-    },
     {
       "title": "🎂 Почему перед днём рождения бывает грустно — и как с этим справиться\n\nСкоро праздник, но вместо радости — тревога и мысли об упущенных возможностях? Так проявляется синдром…",
       "url": "https://t.me/ozonapvz/2373",
@@ -22,28 +15,16 @@
           "text": "Подробный разбор читайте в «Бестселлере»"
         }
       ],
-      "image": ""
-    },
-    {
-      "title": "Финансовая жизнь в одном приложении: новая эра мобильного банкинга",
-      "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxQVEU1X0xlOHdhTzBJQlhzSGFlLXNiNTFtdFRVeTZ1bU1NWm43ZlU3QkFqN2M3T1dtdzVrRHdZaE40WF9CQXExMUZESE9RZkUwb3YxbHJ3REdsZHVwV1lPRDlYSGFjb1o3SHVQeHdjNDhqOGp4b0t3TmloXzFGcVBKR3dvajFEUDI4am9EZ2NNZFRYRks1eWYzbkx5MWJUcl8x?oc=5",
-      "source": "Izhlife.ru",
-      "category": "API",
-      "date": "2026-11-16T13:00:00+00:00"
+      "images": []
     },
     {
       "title": "Татьяна Ким под санкциями ЕС: что известно об ограничениях против главы Wildberries",
       "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxQZnYxa2FKREZYS1VfTWQxenZDLU5yN1BzSy0tcUsyNzF5Vzh4Z3dyYTlfLU5Jb25TVjR1WlNzMkNEVXg0R3VuSldWQ19LSDVJeU1BeWt0SzBCeEkzdGo2THdKMG5kdU42dTllNmprYTVXamhwSlMwcjBXX2tVaWtDbnNRSzVZVzJ3ODM0UEVEM3I1NmMzSnNWaEE5WEd1RzhuU2lN?oc=5",
       "source": "Финансы Mail",
+      "publisher": "https://finance.mail.ru",
       "category": "Компания",
-      "date": "2026-11-16T10:32:22+00:00"
-    },
-    {
-      "title": "ВТБ и Wildberries запустили мультибанкинг – Новости ритейла и розничной торговли",
-      "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxQZUo2Y28weTlmQXRvWUR0aHVmWmhNTkpqaWx1NUdFS1YxdlR4LTFHWkdQOGVseVk1WGxoTWZHSXYwd1Fna21vTk9nZEhfWVVlYjdnOFdhWF9MRGxIVnJOTkFfcmd3djRhTFRiWWhUeDRxekpuamhjbl83ejJFcGdnaTk4RnAzeFlYZ2pQYkxiLVdiRWJ0Q2pB?oc=5",
-      "source": "Retail.ru",
-      "category": "API",
-      "date": "2026-11-16T09:47:52+00:00"
+      "date": "2026-11-16T10:32:22+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.002318+00:00"
     },
     {
       "title": "Вебинар «Аудит» Сегодня, 16 ноября, в 12:00 мск состоится вебинар по работе в WB ПВЗ. Присоединяйтесь по ссылке: h ps://s ream.wb.ru/room/obucheniye_fpvz Во время подключения…",
@@ -54,7 +35,7 @@
       "channel": "offlineplus",
       "content": "Вебинар «Аудит» Сегодня, 16 ноября, в 12:00 мск состоится вебинар по работе в WB ПВЗ. Присоединяйтесь по ссылке: h ps://s ream.wb.ru/room/obucheniye_fpvz Во время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».…UPD. Переносим вебинар «Аудит»\n\nПо техническим причинам вебинар, запланированный на сегодня, в 12:00 мск, переносится.\nНовую дату и время сообщим в новостях. Пожалуйста, следите за обновлениями.\n\nКоманда WB ПВЗ 🟣",
       "links": [],
-      "image": ""
+      "images": []
     },
     {
       "title": "Вебинар «Аудит»\n\nСегодня, 16 ноября, в 11:00 мск состоится вебинар для менеджеров ПВЗ Wildberries.\n\nПрисоединяйтесь по ссылке: h ps://lnk.wb.ru/j3nO9 \n\nВо время подключения…",
@@ -82,14 +63,19 @@
           "text": "https://linkwb.ru/TfMNn"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/XX2JBufJsPqHDAOq0EblMlkty8HKRW5fu2x8CuFTpmN8J7HUtqAnG-plNg1A5BrPP1_WVvmJWevKKuUnhcSYaMvXfjtD0aVceKLZrFpLs2V4ypTavoNSxleG0xpvoz9KN5THaMz6Je_AJPuWEPI7O6-Y08mSbHNnM90wR7EeB3dd0f8x5KcOoSXDPoumY8SgRdYJLnqeyT8SWkKnZDVHJvd7bwv823ruSzaEvzsTKho5uk5wB-9uZmdJnR3bhQ8PPagmv-TLGDKC4FvpxSljN5rDCRNLWkMmt20O194DbznhAUaoRbK4r0DJL1QKJ2P22obYXe9JK3gF-wM5U25Qlw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/XX2JBufJsPqHDAOq0EblMlkty8HKRW5fu2x8CuFTpmN8J7HUtqAnG-plNg1A5BrPP1_WVvmJWevKKuUnhcSYaMvXfjtD0aVceKLZrFpLs2V4ypTavoNSxleG0xpvoz9KN5THaMz6Je_AJPuWEPI7O6-Y08mSbHNnM90wR7EeB3dd0f8x5KcOoSXDPoumY8SgRdYJLnqeyT8SWkKnZDVHJvd7bwv823ruSzaEvzsTKho5uk5wB-9uZmdJnR3bhQ8PPagmv-TLGDKC4FvpxSljN5rDCRNLWkMmt20O194DbznhAUaoRbK4r0DJL1QKJ2P22obYXe9JK3gF-wM5U25Qlw.jpg"
     },
     {
       "title": "Новые правила Ozon с 19 ноября могут привести к росту цен до 5%",
       "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNWDdpeUVQTWNxMEVZRzJDWXp3N2U0QzlqYktDVjBsRkdNcUxkdVNIUmtMTWJYVnAwR1hRMDJmWVJZU09UNEl5ZVZiYnJrTkNsdzhTZHlzYW9nWUpBYktFSWIybkZ1b0ZHMUZucmVaSW5xd25DOUhqZmtoS2dha3ZrQUdYR0MybUd5Mmc0cnNXcw?oc=5",
       "source": "PNZ.RU",
+      "publisher": "https://pnz.ru",
       "category": "Продавцы",
-      "date": "2026-11-15T15:00:00+00:00"
+      "date": "2026-11-15T15:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.002495+00:00"
     },
     {
       "title": "Расписание онлайн-встреч с 16 по 20 ноября\n\nПодготовили расписание вебинаров на эту неделю, чтобы вам было удобнее спланировать время для стримов.\n\n• Четверг, 19 ноября\n14:00 мск…",
@@ -108,6 +94,9 @@
           "url": "https://edtech.rwb.ru/pvz/ru/pvz-events",
           "text": "https://edtech.rwb.ru/pvz/ru/pvz-events"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/HNY7U5_QRZ9iHLROpy9_Hh5triRv6yNqttSElA5JQyY0MC6eNNBh-g1RA1gpl3HEulYTNGnAAlZkAHS5sb3DMqNs3s2KuMnjxaq3q-P24DZKchmoAQi-0T6deVkYIGW87Ia59pFHuV2_UUYrjJulGolQsu5hEZK6AgwTNpCV4zsB5-EvttdzBGt1VgIOKGwVdog8nIEBZ7x8MEQa4YM6etd7CCXI6hdzCh7oWcSRt__yPuZ_YWmFQ5T_oMjzY_S9hgC1V5FK3iCkR4nZCUS4mc4-u24WuWTnqIPpYY5SvgQJNNwc_qAMo4QXA3bdd3YhlGMoACOjjz3YzOqaSnm5eA.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/HNY7U5_QRZ9iHLROpy9_Hh5triRv6yNqttSElA5JQyY0MC6eNNBh-g1RA1gpl3HEulYTNGnAAlZkAHS5sb3DMqNs3s2KuMnjxaq3q-P24DZKchmoAQi-0T6deVkYIGW87Ia59pFHuV2_UUYrjJulGolQsu5hEZK6AgwTNpCV4zsB5-EvttdzBGt1VgIOKGwVdog8nIEBZ7x8MEQa4YM6etd7CCXI6hdzCh7oWcSRt__yPuZ_YWmFQ5T_oMjzY_S9hgC1V5FK3iCkR4nZCUS4mc4-u24WuWTnqIPpYY5SvgQJNNwc_qAMo4QXA3bdd3YhlGMoACOjjz3YzOqaSnm5eA.jpg"
     },
@@ -133,6 +122,9 @@
           "text": "Наши проекты"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/o1097gJcKGDXZjiGRn_FbB0xKRzWObr1mbKee3WxM9Yu3E3-NUaiXQ8kLJ-ay6skxc6x-tAnNS4IMAZShZ2TSGGvzk_cd1BLDQRpeNDy8Zc-scY57RoTYANliV2yguS-B0i2X4Z0aOR_-zSRn4RdOPs9GsYn6gjhL4_e7d19kLXGEuCG3qmXQXKKMYmrHPALz7z__uoD031XLe7rJ2r6qCTOl7rYX5rfaHCf5lcxdOkDgX97O9W4Av1E4TNBd9VmeW7QZVw3YR4zOzJqfO6q-S1C0mRFQxeYCvvMu_ZGAExXwGJSTgpNc7tx2DJgW1awTtDU06li4rUQF71-6tOzJQ.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/o1097gJcKGDXZjiGRn_FbB0xKRzWObr1mbKee3WxM9Yu3E3-NUaiXQ8kLJ-ay6skxc6x-tAnNS4IMAZShZ2TSGGvzk_cd1BLDQRpeNDy8Zc-scY57RoTYANliV2yguS-B0i2X4Z0aOR_-zSRn4RdOPs9GsYn6gjhL4_e7d19kLXGEuCG3qmXQXKKMYmrHPALz7z__uoD031XLe7rJ2r6qCTOl7rYX5rfaHCf5lcxdOkDgX97O9W4Av1E4TNBd9VmeW7QZVw3YR4zOzJqfO6q-S1C0mRFQxeYCvvMu_ZGAExXwGJSTgpNc7tx2DJgW1awTtDU06li4rUQF71-6tOzJQ.jpg"
     },
     {
@@ -157,6 +149,9 @@
           "text": "Наши проекты"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/lXghvwx34p0HfVbqoSOZe-6YZ8m2C9HLojEDo06QxRjUYdhxWPaaZ88iWQiagW7PYNLaTpbSXTOYLAp86IddiyY3hblMyaou2AGq102aJ01MNUH6XcwH4Fjvof3GGRp00pls6-j5O2fmDwPuGI0dIfKpcR1tarWjpUyFHgLwsyRiCzuLbus-jkIQ506T7LquOt97YX1OCnXc74Bso2nt1CPnxd_gyqGTWcPyl0jgYugLhETzQZ5-C47pnKYZm0ET-sdAVQJUB9ANKpInz77l11gnsnb4lgUs-ePupFyfFYabooS4G_ugaQ6VwoZbsZ0wD5QloSGseBPKsfQX8d602g.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/lXghvwx34p0HfVbqoSOZe-6YZ8m2C9HLojEDo06QxRjUYdhxWPaaZ88iWQiagW7PYNLaTpbSXTOYLAp86IddiyY3hblMyaou2AGq102aJ01MNUH6XcwH4Fjvof3GGRp00pls6-j5O2fmDwPuGI0dIfKpcR1tarWjpUyFHgLwsyRiCzuLbus-jkIQ506T7LquOt97YX1OCnXc74Bso2nt1CPnxd_gyqGTWcPyl0jgYugLhETzQZ5-C47pnKYZm0ET-sdAVQJUB9ANKpInz77l11gnsnb4lgUs-ePupFyfFYabooS4G_ugaQ6VwoZbsZ0wD5QloSGseBPKsfQX8d602g.jpg"
     },
     {
@@ -173,7 +168,7 @@
           "text": "https://linkwb.ru/15Cb5g"
         }
       ],
-      "image": ""
+      "images": []
     },
     {
       "title": "Вопрос 3\n\nКлиент хочет получить доставку WB Track, но вместо QR-кода показывает фото паспорта на телефоне и называет мобильный номер. Как поступите?\n\n👍 Откажу в выдаче: получить…",
@@ -184,7 +179,7 @@
       "channel": "offlineplus",
       "content": "Вопрос 3\n\nКлиент хочет получить доставку WB Track, но вместо QR-кода показывает фото паспорта на телефоне и называет мобильный номер. Как поступите?\n\n👍 Откажу в выдаче: получить доставку WB Track можно только по QR-коду из личного кабинета\n\n❤️ Выдам доставку: личность клиента понятна\n\n⚡️ Попрошу показать оригиналы документов для подтверждения личности\n\n🔥 Напишу в поддержку и уточню, можно ли выдать доставку по паспорту\n\nВыберите вариант и поставьте соответствующий эмодзи.",
       "links": [],
-      "image": ""
+      "images": []
     },
     {
       "title": "Вопрос 2\n\nКлиентка хочет отправить мужу водительские права, которые он забыл дома перед командировкой. Как поступите?\n\n👍 Приму права, упакую в сейф-пакет и оформлю доставку\n\n❤️…",
@@ -195,7 +190,7 @@
       "channel": "offlineplus",
       "content": "Вопрос 2\n\nКлиентка хочет отправить мужу водительские права, которые он забыл дома перед командировкой. Как поступите?\n\n👍 Приму права, упакую в сейф-пакет и оформлю доставку\n\n❤️ Попрошу клиентку дополнительно упаковать права, чтобы они не повредились в пути\n\n⚡️ Приму права, если клиентка подпишет отказ от претензий в случае утери\n\n🔥 Объясню, что документы, удостоверяющие личность, нельзя отправлять через WB Track\n\nВыберите вариант и поставьте соответствующий эмодзи.",
       "links": [],
-      "image": ""
+      "images": []
     },
     {
       "title": "Как хорошо вы знаете WB Track?\n\nWB Track продолжает развиваться и всё больше клиентов пользуются сервисом. Чтобы принимать и выдавать доставки без ошибок, важно знать правила и…",
@@ -206,7 +201,7 @@
       "channel": "offlineplus",
       "content": "Как хорошо вы знаете WB Track?\n\nWB Track продолжает развиваться и всё больше клиентов пользуются сервисом. Чтобы принимать и выдавать доставки без ошибок, важно знать правила и ограничения.\n\nПодготовили небольшую викторину с вопросами и ситуациями из практики. Проверьте себя 👇🏻\n\nВопрос 1\n\nКлиент хочет отправить через WB Track коробку с набором для приготовления настоек. В составе набора есть спирт. Примете такую доставку?\n\n👍 Да, если клиент подпишет отказ от претензий\n\n❤️ Да, но наклею на коробку стикер «Осторожно, жидкость»\n\n⚡️ Нет, спиртосодержащие жидкости нельзя отправлять через WB Track\n\n🔥 Да, если на наборе есть заводская маркировка и чек\n\nВыберите вариант и поставьте соответствующий эмодзи.",
       "links": [],
-      "image": ""
+      "images": []
     },
     {
       "title": "Разделили по странам оферту для владельцев партнёрских пунктов выдачи\n\nС 14 ноября для партнёров из России, Армении, Беларуси, Казахстана, Кыргызстана и Узбекистана будет работать…",
@@ -242,14 +237,19 @@
           "text": "https://point-quality.wb.ru/offer/UZ/1.html"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/r_HGm6YKPgzuyDhxqH1dKy2wN8Zlcr1sZVa9VpntBXX5_RJt-EzBe84rkTI_bslOVwfrW6wHkTUe6D0vGpwWgI891V7GK7tpCDAJvKovoWr1liFu7WtHMFV2bfoyVewr1tIbJsPkmk0kmjoCEYZP12OBN617lPvyYzeMHLTK-l8zsJeFBKB4ANVdCjX_6u3iUvFcpmleNESnEG28r_RKeYejpo_W-XwcCdtVdgpPCiOU67lGwz5NUEaaamjKlg8QEb8igdgV0KEDR0whmbDwz2tR3UKZQ9rH3HjwGluPUCB-CZ_E2f0ODfUuJ12Y-lRTb-Kf0z_2Po3kU9o4dNglbw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/r_HGm6YKPgzuyDhxqH1dKy2wN8Zlcr1sZVa9VpntBXX5_RJt-EzBe84rkTI_bslOVwfrW6wHkTUe6D0vGpwWgI891V7GK7tpCDAJvKovoWr1liFu7WtHMFV2bfoyVewr1tIbJsPkmk0kmjoCEYZP12OBN617lPvyYzeMHLTK-l8zsJeFBKB4ANVdCjX_6u3iUvFcpmleNESnEG28r_RKeYejpo_W-XwcCdtVdgpPCiOU67lGwz5NUEaaamjKlg8QEb8igdgV0KEDR0whmbDwz2tR3UKZQ9rH3HjwGluPUCB-CZ_E2f0ODfUuJ12Y-lRTb-Kf0z_2Po3kU9o4dNglbw.jpg"
     },
     {
       "title": "Правила госзакупок предложили изменить в пользу малого бизнеса",
       "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOUFZ4aG1rZ21SOWg1b05iTFh3bGVGc1JlZHk4a3M4ZW5lb2dibkpfbkpXWDZDYVprRTkxWTd1M2M3WXYwVTU2SXlrS3BRMlNoZlMxQVg1d0c4c0djQ2VHM1JaVG5HSlZGQXRlSzRnYVNxS1hvMWhaU29FbWpYeHhWNlY1WGhaekZJby1KTEFDc3VFaUZjR1JyY3c1bElPd0hXbWNYSA?oc=5",
       "source": "prospect.com.ru",
+      "publisher": "https://prospect.com.ru",
       "category": "Продавцы",
-      "date": "2026-11-14T03:41:35+00:00"
+      "date": "2026-11-14T03:41:35+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.002590+00:00"
     },
     {
       "title": "🏣 Разместите неоновые ленты в ваших пунктах\n\nЧтобы о вашем пункте знали все жители района, его должно быть хорошо видно в любое время суток. Неоновая лента — яркий элемент…",
@@ -269,6 +269,9 @@
           "text": "Подробная инструкция по установке"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/KbktebYo-YUqxrRIkLctI6qu13WqSZSJiP4FxuEz5E8DjXxc2x2kEJRXPdMAzcNLhl2VeDyXAlAFkR1w0Eg96lG45r-zKU6TwRk_FDRnmFmdBVxIQv4TxQKhUJpyiu1oBmtWWxx5HHNotbpLoFm9IesX1GE9QyHhD7kClL7AifgOrCEBxUOrlHG1GZ9jgntFPrCZL75gdRdcn88l-nWSWe3Y53Q5HKtNyzVP4ykV9cfzoe5aTCegx9UXdHE6P6rxt2ctDhRdLX6vC_n1dX8dDj5IlFFSmmqAqU8afEnoWdoyeRMT_no1mfbpWazDvs6HViXPk30EpWFFxlrE3MCCTA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/KbktebYo-YUqxrRIkLctI6qu13WqSZSJiP4FxuEz5E8DjXxc2x2kEJRXPdMAzcNLhl2VeDyXAlAFkR1w0Eg96lG45r-zKU6TwRk_FDRnmFmdBVxIQv4TxQKhUJpyiu1oBmtWWxx5HHNotbpLoFm9IesX1GE9QyHhD7kClL7AifgOrCEBxUOrlHG1GZ9jgntFPrCZL75gdRdcn88l-nWSWe3Y53Q5HKtNyzVP4ykV9cfzoe5aTCegx9UXdHE6P6rxt2ctDhRdLX6vC_n1dX8dDj5IlFFSmmqAqU8afEnoWdoyeRMT_no1mfbpWazDvs6HViXPk30EpWFFxlrE3MCCTA.jpg"
     },
     {
@@ -285,6 +288,10 @@
           "text": "https://linkwb.ru/181K5h"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/X4YIvFAyOBb6E-jraeZ5RC0gJqhfAs_0lHwOJp0PUDEMZXdmOiPO2-uM4tymlkRhxqz26iLNFjbp5YP1vtl_ckn642h-f6KXrqAK2B_LHHXE_O5fJHu4kL2T_W9quP7-KLoCd02W9ddqpNS49vBVFelsf6KIt3_txPbMngswjVQHXcoZhAFJIYuJVgBcamHr28UPURwg9o3Py9RKVXhGMq5NYDJ-QeNR10iX0_0y03MRfGig0CpWuZQEAmEOPFlJHWDmrorN1Vv4CpUIXQY7YITf5sxsF34KKipKH3NLRNqkWgNnfOqJH8PfXD8rCWHXsLVhc8ZZuFwhv64C-ggQ9Q.jpg",
+        "https://cdn4.telesco.pe/file/r3Yanhxhle1gNrCZZ5xM7ZEUH0IRpYAtiRifaYaNixPWOEpQ-RDy_OJuMG7PowuB4TVyH0NGkwNn05-ooOrqEeUFMu5TlN64nw1hCxaQ5BJExDSc3ZReJ4awiE1qymcHbYfZRgjk2xg-AW1PY7_thkJ80p3PsRoRT2ta3i1EgKyg9OCu1NdHkylenkDG-lZkHmrayYLWr9jpz-OzHcJx1w_xQfvbMGyUfFnPkCcdGczNNu5zwtZArNTk55ydBARADc34TqRBdPN_NlQzxFYr6gAHYAc6OL5D8JqGToTHNtgCxj1QkC107WckzwafenNz9attzmgIYzq8i3vfYL-KXg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/X4YIvFAyOBb6E-jraeZ5RC0gJqhfAs_0lHwOJp0PUDEMZXdmOiPO2-uM4tymlkRhxqz26iLNFjbp5YP1vtl_ckn642h-f6KXrqAK2B_LHHXE_O5fJHu4kL2T_W9quP7-KLoCd02W9ddqpNS49vBVFelsf6KIt3_txPbMngswjVQHXcoZhAFJIYuJVgBcamHr28UPURwg9o3Py9RKVXhGMq5NYDJ-QeNR10iX0_0y03MRfGig0CpWuZQEAmEOPFlJHWDmrorN1Vv4CpUIXQY7YITf5sxsF34KKipKH3NLRNqkWgNnfOqJH8PfXD8rCWHXsLVhc8ZZuFwhv64C-ggQ9Q.jpg"
     },
     {
@@ -296,21 +303,28 @@
       "channel": "wbpolzapvz",
       "content": "Знак «Отличный сервис» для ПВЗ\n\n12 ноября, во Всемирный день качества, запускаем новый проект для наших отличников. Если ваш ПВЗ сохраняет рейтинг 5 звёзд, работает без штрафов и предупреждений — присвоим ему знак «Отличный сервис». \n\nТак клиенты будут знать, что в вашем ПВЗ можно получить не только заказы, но и внимательное отношение с высоким уровнем сервиса. \n\nКоманда WB ПВЗ 🟣",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/YEhh5iPBG7K-QmD6M7vskkxvSSBAvRj3fjk5rVBY_xTXHE8C30XIGH5oCRGsb-Kpqt8NP-Khk0ec27KEhczqGnkfdjp8zCguPK57HMjIxV-c1wdeTPqS4IkSiKo4Qf3tPtVBKLHEQ1hZs5jKS6lyONQOUadRYFbRvTq4IqSYJZbpkeIq5Z3p1dhTLZdcNwtY0AfqHSVCjYdUtdqZptIERieqtC8KbqfXI2McE2toaNyE2p2ET2u4_RN1slezD6DUuDGwPJithf5dU8xODZNyRdIQXluWp40DIMGPNkWQcwm_10cziH1y5EHHS5Kx68JvkeS0QS4Ujbo0c5TVmXeWJA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/YEhh5iPBG7K-QmD6M7vskkxvSSBAvRj3fjk5rVBY_xTXHE8C30XIGH5oCRGsb-Kpqt8NP-Khk0ec27KEhczqGnkfdjp8zCguPK57HMjIxV-c1wdeTPqS4IkSiKo4Qf3tPtVBKLHEQ1hZs5jKS6lyONQOUadRYFbRvTq4IqSYJZbpkeIq5Z3p1dhTLZdcNwtY0AfqHSVCjYdUtdqZptIERieqtC8KbqfXI2McE2toaNyE2p2ET2u4_RN1slezD6DUuDGwPJithf5dU8xODZNyRdIQXluWp40DIMGPNkWQcwm_10cziH1y5EHHS5Kx68JvkeS0QS4Ujbo0c5TVmXeWJA.jpg"
     },
     {
       "title": "Новые правила Ozon приведут к увеличению расходов продавцов и цен на маркетплейсах",
       "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxOcGh6Qmh2VmdBQy1URkJ5UUF2UkhSRE1GbW1zdXhzdmduVnJwWUk1V2tRTE1VU0lPQjMyRTlGMVlVUWkwdzNNRDRmNmFsQi1FNFA5cWF5Ml9jX2tfSmlsZzN1Ni1VNldSSW1wSGxWU3dNSGUwX3VSdnBuSW1YMzZUVGtlZVZ2WUVaN1QxMlRjLXVzUVUxM0V0UWt6R2x2akN2aUtCcl84MDJlYVgtOWsxaTdYREhJc21LYmc?oc=5",
       "source": "New-Retail.ru",
+      "publisher": "https://new-retail.ru",
       "category": "Продавцы",
-      "date": "2026-11-12T21:00:00+00:00"
+      "date": "2026-11-12T21:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.002870+00:00"
     },
     {
       "title": "Кабмин уточнил меры поддержки бизнеса, пострадавшего от атак ВСУ на Wildberries и Ozon",
       "url": "https://news.google.com/rss/articles/CBMiR0FVX3lxTFA5N1haRnNuQm5VM2gxdVZNT3prRW5Ka0RnZ19ObTF0bi0wLS1uTVhBSWx6RW81a05KUE9palNCRnBrdzc2SmxJ0gFGQVVfeXFMT0xiOHhYU3JGeDhENmNQTWl0OEc1OUd4VDNkZ25JT2pLV3JJZ0oxbE5PTERJaWtlanROQlRXaGdXc0VTODF4QQ?oc=5",
       "source": "V102.ru",
+      "publisher": "https://v102.ru",
       "category": "Компания",
-      "date": "2026-11-12T10:53:56+00:00"
+      "date": "2026-11-12T10:53:56+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.002955+00:00"
     },
     {
       "title": "#Ozon, у нас тут возник вопрос…\n\n#ачетакможнобыло\n\nФотография, кстати, из вашего чата партнеров владельцев. 😉\n\nНе грузятся фото и видео? Читайте нас в MAX. h…",
@@ -334,6 +348,9 @@
           "text": "Наши проекты"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/p1I5P62ZvGDcQMs5JbqRcqSQr7KIpak8VOrxrALHO90kBGhWBtFE9gAEU3lumaVPMiGBWs7nPDOnpdMye60-_K7TUZ65JhNv3cGjumjdLeKYtaSGJA-xbe_TMblqboFsd-HNWsaNUoP3EbOoNT17MKFPlZaun2ukQS2BkEE9SVt5hll0ZLVQd5HqRkG820slNvKxdiRXJDxbKhE-OSIwCvgO6nPAoLKvc3GUp8JkzjWkpQ3UwvijUTGye-CuK7b000p33O937Tnx83BZlux4z2dmYmJHahmZoKkVB2zlNN4koPGlYJkbTRjKb0kfE3yhjrT1-fm2vsQh89cZzi1aaA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/p1I5P62ZvGDcQMs5JbqRcqSQr7KIpak8VOrxrALHO90kBGhWBtFE9gAEU3lumaVPMiGBWs7nPDOnpdMye60-_K7TUZ65JhNv3cGjumjdLeKYtaSGJA-xbe_TMblqboFsd-HNWsaNUoP3EbOoNT17MKFPlZaun2ukQS2BkEE9SVt5hll0ZLVQd5HqRkG820slNvKxdiRXJDxbKhE-OSIwCvgO6nPAoLKvc3GUp8JkzjWkpQ3UwvijUTGye-CuK7b000p33O937Tnx83BZlux4z2dmYmJHahmZoKkVB2zlNN4koPGlYJkbTRjKb0kfE3yhjrT1-fm2vsQh89cZzi1aaA.jpg"
     },
     {
@@ -350,6 +367,9 @@
           "text": "Узнать о премии и подать заявку"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/hMhHDgQ1h0s1hGWmuXhavB3T-wE4dEf1MWb9zVescCHlZBhf3mevULddV4qOyIBWGTqCaRwLOuldpYf5ORU55YZHKNxrbs8EWE5KlcjFmfLUF1LwWVwGy_Y-kjK9a2NHjyRLUXpSELE4pFFFA77gY2vdNHZVPrIiTYP-I6Mkx634CMrQr-QXd0Q-UgwTtcLi_-sTnhIy24zvcYTsdgdtI_f1KFV9o4x_WpHBMYhdDnFNUeiGrxfrPe284R1gFvE50yCzpgNgnBkR1Bpy8SVWmJgS37F_igW36tuAlrZ6ggqFYCtbdytqdQA4nac24ePmNvop96ISsPGZKyyCwuh2PQ.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/hMhHDgQ1h0s1hGWmuXhavB3T-wE4dEf1MWb9zVescCHlZBhf3mevULddV4qOyIBWGTqCaRwLOuldpYf5ORU55YZHKNxrbs8EWE5KlcjFmfLUF1LwWVwGy_Y-kjK9a2NHjyRLUXpSELE4pFFFA77gY2vdNHZVPrIiTYP-I6Mkx634CMrQr-QXd0Q-UgwTtcLi_-sTnhIy24zvcYTsdgdtI_f1KFV9o4x_WpHBMYhdDnFNUeiGrxfrPe284R1gFvE50yCzpgNgnBkR1Bpy8SVWmJgS37F_igW36tuAlrZ6ggqFYCtbdytqdQA4nac24ePmNvop96ISsPGZKyyCwuh2PQ.jpg"
     },
     {
@@ -365,6 +385,9 @@
           "url": "https://linkwb.ru/kX2ha",
           "text": "https://linkwb.ru/kX2ha"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/CSHquYKtiqXOtFJxHSfl6Eig9NXl7tImqIOmxWT6Wzd39mEHKoLpjzgBSGvyFE1uxD6MJeO-OihVOEI0JsbEszCJUcc4hgfQ7RgpTyvN9RLTK6W6UJ3JRyQDrIzFZrMtVKs2E0A22Z1mh-SzIBotCYYJkkcj3oc_QVvu5mUK9EEK_cNgdfayARi8azLCNNb4FSRQsIYNGdxGhpkhKnmhe3nzQK36bJu6PU7ZSdlfuunySBZA1R8YnlrfuH--sfsejA39CrQ0p1h150hWIQiFjTXhlJxJyCjQTQQNxVQhNSm1lf12tTqxlCmaSCXIqeHj6PxCE1EVgDdEq3SSbmed1Q.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/CSHquYKtiqXOtFJxHSfl6Eig9NXl7tImqIOmxWT6Wzd39mEHKoLpjzgBSGvyFE1uxD6MJeO-OihVOEI0JsbEszCJUcc4hgfQ7RgpTyvN9RLTK6W6UJ3JRyQDrIzFZrMtVKs2E0A22Z1mh-SzIBotCYYJkkcj3oc_QVvu5mUK9EEK_cNgdfayARi8azLCNNb4FSRQsIYNGdxGhpkhKnmhe3nzQK36bJu6PU7ZSdlfuunySBZA1R8YnlrfuH--sfsejA39CrQ0p1h150hWIQiFjTXhlJxJyCjQTQQNxVQhNSm1lf12tTqxlCmaSCXIqeHj6PxCE1EVgDdEq3SSbmed1Q.jpg"
     },
@@ -390,6 +413,9 @@
           "text": "https://linkwb.ru/Wrtzf"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/n7ir3uMq7yJJIeTRH84pt0xLBBwBlhhKyZxFItIiTkXCfDFttfq0TLJEKt9dzghQgoFqt2ELryVhGOqnccyKCDwcMdUmJ1y4iM07lHqMNBfVeuOTz-FAv7zfIRPCGtHl09WWHCqzwpR_Cb8fgMjaTO-G7OOKvJJzbP4zTvKB3jXY_NGBbJ3MYfaYil1j9bOVB5m_3_zOLsoJz228nR1Ivem_B4Q-8XHC7ndq66fbqw18r4Mg7NOzr38j1drrYJh53X_QWUKoFoq_GGBwKMTfh2jCL-CPZxO6i4umLVYm736eEYxww6IXRhgv1ENR0FMUfKBkkHbev-nsw-hYDgWtdg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/n7ir3uMq7yJJIeTRH84pt0xLBBwBlhhKyZxFItIiTkXCfDFttfq0TLJEKt9dzghQgoFqt2ELryVhGOqnccyKCDwcMdUmJ1y4iM07lHqMNBfVeuOTz-FAv7zfIRPCGtHl09WWHCqzwpR_Cb8fgMjaTO-G7OOKvJJzbP4zTvKB3jXY_NGBbJ3MYfaYil1j9bOVB5m_3_zOLsoJz228nR1Ivem_B4Q-8XHC7ndq66fbqw18r4Mg7NOzr38j1drrYJh53X_QWUKoFoq_GGBwKMTfh2jCL-CPZxO6i4umLVYm736eEYxww6IXRhgv1ENR0FMUfKBkkHbev-nsw-hYDgWtdg.jpg"
     },
     {
@@ -414,6 +440,9 @@
           "text": "https://linkwb.ru/PDXq"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/RSoXHVR0TKRinLALqh-E3eGsgD1e5AYeUS3XJal1Wkad4OsyLCVj_4ZYWy0kjFogOSJRL6KpB89-_HzVWW8Qfatn736ujjRsp_HbD8U9HkEvj7tWrPs2etzKPglpWgKCfpoQlH8v16SGzkRbmS4QB7p0gaC6dJZDlvYDaT4oXQvxUuEK_pNoNO3osABTFTSAjUg6BBAhx_bEn889UBAtMcd5YWbMWU0ywNcENI3otxO-5V6dYpXimTgMMxea66faMYBrgG7BT8ARxJn0QzAj1zILnymY8QqCUt0KiQhOlzWQ7oYjalBwWE47pXvmv2zakCdSDuQvMU6Tco-bxba8nw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/RSoXHVR0TKRinLALqh-E3eGsgD1e5AYeUS3XJal1Wkad4OsyLCVj_4ZYWy0kjFogOSJRL6KpB89-_HzVWW8Qfatn736ujjRsp_HbD8U9HkEvj7tWrPs2etzKPglpWgKCfpoQlH8v16SGzkRbmS4QB7p0gaC6dJZDlvYDaT4oXQvxUuEK_pNoNO3osABTFTSAjUg6BBAhx_bEn889UBAtMcd5YWbMWU0ywNcENI3otxO-5V6dYpXimTgMMxea66faMYBrgG7BT8ARxJn0QzAj1zILnymY8QqCUt0KiQhOlzWQ7oYjalBwWE47pXvmv2zakCdSDuQvMU6Tco-bxba8nw.jpg"
     },
     {
@@ -429,6 +458,9 @@
           "url": "https://www.ozon.ru/edinstvo/?utm_source=telegram&amp;utm_medium=smm&amp;utm_campaign=edintstvo_day&amp;utm_content=ozonpartners",
           "text": "Заходите вдохновиться"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/BjPhcgvIwJwC4GuC1QvR83nmdOQOxRcGHloWUDcATVZ_X5D1xtbBRVDDbm1CC0vlJOF9JmMynMBEc3vqzz8DCR6mT_Vd7qyL1aRuNlq5nP6iuOLIwpRwBT_vsA8LRPr925kM6vglhGRwfguGYH6aiWY0MvzsrDi075EvBe-vORfo4yWTqA-b1BttDK_PVxxT8Ef55fQYHHuA_tYNXIdEbO7oLpO4tgJA_1ykQjkXIP0lLjJtK6rBIxY5N5Mn73KOgp5PP9-KF1OQDEa8UHrfae6u8b5h2Bm-0wNUTL2RQYa9RjFgRN5Qhlz5NWWrFccfM-Ec1cJbZHIORm-nCHc57w.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/BjPhcgvIwJwC4GuC1QvR83nmdOQOxRcGHloWUDcATVZ_X5D1xtbBRVDDbm1CC0vlJOF9JmMynMBEc3vqzz8DCR6mT_Vd7qyL1aRuNlq5nP6iuOLIwpRwBT_vsA8LRPr925kM6vglhGRwfguGYH6aiWY0MvzsrDi075EvBe-vORfo4yWTqA-b1BttDK_PVxxT8Ef55fQYHHuA_tYNXIdEbO7oLpO4tgJA_1ykQjkXIP0lLjJtK6rBIxY5N5Mn73KOgp5PP9-KF1OQDEa8UHrfae6u8b5h2Bm-0wNUTL2RQYa9RjFgRN5Qhlz5NWWrFccfM-Ec1cJbZHIORm-nCHc57w.jpg"
     },
@@ -446,6 +478,9 @@
           "text": "https://linkwb.ru/181K5h"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/txrJ6t_eo0EBuGq1UCjxxrrOI0Z4gFiB6rUCJc0Tg5qIuAG46VoPZKEMH5deR3vJFdIOpuupny9v-uZtCKOSQ8B0ACy8X4Yv_OrIRKRYNL3vjB5y9CHp7OaBQmQ5nXi6VajOzI6iZsEaiCZtli7GW7bGuS8p-TFqWFCUCY_Hc-bXn3V1GvtCXFf_1taXgA2Uki-eOryGImZ29XA8QuM3zVoqg2BEpKcoxuPgjn753WuilqHu_Jywsi5HBK-PexoA6c1NA2LWZ-Yq7IctpkJyWpn_mwVjcQ-WoBfzmZnhPBYiO3mwQzBd1ThneJWJMwSbDqC7bHKdz3CqWt47WVc_aA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/txrJ6t_eo0EBuGq1UCjxxrrOI0Z4gFiB6rUCJc0Tg5qIuAG46VoPZKEMH5deR3vJFdIOpuupny9v-uZtCKOSQ8B0ACy8X4Yv_OrIRKRYNL3vjB5y9CHp7OaBQmQ5nXi6VajOzI6iZsEaiCZtli7GW7bGuS8p-TFqWFCUCY_Hc-bXn3V1GvtCXFf_1taXgA2Uki-eOryGImZ29XA8QuM3zVoqg2BEpKcoxuPgjn753WuilqHu_Jywsi5HBK-PexoA6c1NA2LWZ-Yq7IctpkJyWpn_mwVjcQ-WoBfzmZnhPBYiO3mwQzBd1ThneJWJMwSbDqC7bHKdz3CqWt47WVc_aA.jpg"
     },
     {
@@ -457,6 +492,9 @@
       "channel": "wbpvzlearning",
       "content": "Сканируйте доставки WB Track сразу в возвратные коробки\n\nПосле того как примете доставку от клиента, пожалуйста, отсканируйте её в возвратную коробку и отправьте с ближайшим перевозчиком. Если отложить сканирование, доставка может потеряться среди других заказов или уехать позже.\n\nЧтобы этого избежать:\n\n1. Наклейте ШК на сейф-пакет и отсканируйте его.\n\n2. Положите доставку в указанную возвратную коробку.\n\n3. Если открытой коробки нет, создайте новую.\n\nТак доставка не будет задерживаться, а клиенты смогут видеть актуальный статус заказа и получить его в срок.\n\nКоманда WB ПВЗ 🟣",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/BLNV1xnenmJTEzkMB5jgp6VcRpTC0wQvj5Xx4LGxlq7RRZ6afjzRhGYg703xY-EhSmms_RAwsLqvOx9teDUJ8gyR4KIitHGFY3Gci8JBFOVOStUCOO7PxoYAJ806i-QMrWv9HNlsZaD40ujtbFXaCRVv-noyRbBL1F8CgYKWueDr_sG2UU8dQkNixoKwfv3uU4G3DZmsAuh6JPjPGklZ4DVesfYZmm-m-F4US61Gcbfuz_bvVIfFeSpfVJd4vk9-Ttk6HzWAIhdwURcmyQ6Vp4fg0_n2EYWINURm0RbT9V-l_XAPx6MqAH0LX_IIi5apBgAvnYPh0pxrGxzgi_OaKA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/BLNV1xnenmJTEzkMB5jgp6VcRpTC0wQvj5Xx4LGxlq7RRZ6afjzRhGYg703xY-EhSmms_RAwsLqvOx9teDUJ8gyR4KIitHGFY3Gci8JBFOVOStUCOO7PxoYAJ806i-QMrWv9HNlsZaD40ujtbFXaCRVv-noyRbBL1F8CgYKWueDr_sG2UU8dQkNixoKwfv3uU4G3DZmsAuh6JPjPGklZ4DVesfYZmm-m-F4US61Gcbfuz_bvVIfFeSpfVJd4vk9-Ttk6HzWAIhdwURcmyQ6Vp4fg0_n2EYWINURm0RbT9V-l_XAPx6MqAH0LX_IIi5apBgAvnYPh0pxrGxzgi_OaKA.jpg"
     },
     {
@@ -481,7 +519,7 @@
           "text": "Подробнее про работу с Ozon Полкой"
         }
       ],
-      "image": ""
+      "images": []
     },
     {
       "title": "🌟 Подключение к сети ПВЗ Авито\n\nВ этом году заказов оказалось немного больше, чем мы прогнозировали. Поэтому продолжаем рассматривать заявки от владельцев действующих ПВЗ и…",
@@ -496,6 +534,9 @@
           "url": "https://m.avito.ru/logistics/abd/application/form",
           "text": "Оставить заявку"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/lfGAumCbAjxnRvPSF-1QgF08OVpw6t5SerV_xwBrJ1I3ay2lJ1t-0UJbgZSC1B5KVkBpz6KKIbuGqSdZ7f9TsNB6oNSNU5ohG81ynuIfRt6uDym1SPi2O8A-V-5XHWAJPPN5iy6od2-b2hVb20FDxFM-Zx2F5h7h9c95sH0tUcU-LmbIQFNqU6N7lFKDuGKy81jN8AZV8n1BacINFzfLd9Wpgvyq1JtDYZJ-b-kpctArulYHldx0hFJDpMvK3IFKSaLFoX3kX83uq-qaVrg6jegrWHjXahnz1B4NJTpecQTtRlC7KxCGlFc-IZG-XSalywQZzlT81i28Hp5BE8M8Ag.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/lfGAumCbAjxnRvPSF-1QgF08OVpw6t5SerV_xwBrJ1I3ay2lJ1t-0UJbgZSC1B5KVkBpz6KKIbuGqSdZ7f9TsNB6oNSNU5ohG81ynuIfRt6uDym1SPi2O8A-V-5XHWAJPPN5iy6od2-b2hVb20FDxFM-Zx2F5h7h9c95sH0tUcU-LmbIQFNqU6N7lFKDuGKy81jN8AZV8n1BacINFzfLd9Wpgvyq1JtDYZJ-b-kpctArulYHldx0hFJDpMvK3IFKSaLFoX3kX83uq-qaVrg6jegrWHjXahnz1B4NJTpecQTtRlC7KxCGlFc-IZG-XSalywQZzlT81i28Hp5BE8M8Ag.jpg"
     },
@@ -516,6 +557,9 @@
           "url": "https://edtech.rwb.ru/pvz/ru/pvz-events",
           "text": "https://edtech.rwb.ru/pvz/ru/pvz-events"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/oxrV_gjm_69lrRlyPWtl5jLY8t4204pIQL68cMXj_i9P7TApLKioC4ugpVOwY5Zn7f8zjcZnpnkIq9PeA3vuvql8B4zeF1GJl8dZB1Kl9LHI9vOBXWC8rLajIL9SpXfYnRpbbP5phkRBj1pQly9SVEotsjC_dHRZoQBZbpNYYNc9vUnOa1MGP-30E0Bkb49aa8I-5ycfem1Tsh4H4Cp23nFPD8hwe69MlEUTPy1E9aIe-oWTUzPLJEXokPiMUxFr0RX1hTNK3Z9-p8CnqzvAIhyUUstn3XC8qSrEjcvQfh5qy2pJUIIFhpup8EFySZqdUfn-p2bCZ6c94iLkoy9Mrw.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/oxrV_gjm_69lrRlyPWtl5jLY8t4204pIQL68cMXj_i9P7TApLKioC4ugpVOwY5Zn7f8zjcZnpnkIq9PeA3vuvql8B4zeF1GJl8dZB1Kl9LHI9vOBXWC8rLajIL9SpXfYnRpbbP5phkRBj1pQly9SVEotsjC_dHRZoQBZbpNYYNc9vUnOa1MGP-30E0Bkb49aa8I-5ycfem1Tsh4H4Cp23nFPD8hwe69MlEUTPy1E9aIe-oWTUzPLJEXokPiMUxFr0RX1hTNK3Z9-p8CnqzvAIhyUUstn3XC8qSrEjcvQfh5qy2pJUIIFhpup8EFySZqdUfn-p2bCZ6c94iLkoy9Mrw.jpg"
     },
@@ -541,6 +585,9 @@
           "text": "https://lnk.wb.ru/PafC3"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/bBC_0VZDyX7CL9wp4qFImAKWi55qIu98w9xyDHz6MHK6PORx0eoRPjsPYTbgW9WFZtoaFQQ92endcri3cozEMoyGgi6HdhWJpqmLsvk-m-g1tlY94I2rFeORNcn5xMwBQib3IUNNa75AlSA0UhoAqF8MvCoMUOc69trwKqK_Z38BtdRuvCG96Pz5VxFW6gpFOq8lw40Y4FCcn7HhFzS0Ni1Qe6MNJAKG75x8du-F3qk3O1V6QIwrck9QVxS9z8tb-OtAIyX0QpwtHmIfiZObJ8A2AFlVwAIkATF1-8kqsgTDUR0PhlvqcsCDtAJ31uzVyIO5tBoCvmd3g0bINnPXlA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/bBC_0VZDyX7CL9wp4qFImAKWi55qIu98w9xyDHz6MHK6PORx0eoRPjsPYTbgW9WFZtoaFQQ92endcri3cozEMoyGgi6HdhWJpqmLsvk-m-g1tlY94I2rFeORNcn5xMwBQib3IUNNa75AlSA0UhoAqF8MvCoMUOc69trwKqK_Z38BtdRuvCG96Pz5VxFW6gpFOq8lw40Y4FCcn7HhFzS0Ni1Qe6MNJAKG75x8du-F3qk3O1V6QIwrck9QVxS9z8tb-OtAIyX0QpwtHmIfiZObJ8A2AFlVwAIkATF1-8kqsgTDUR0PhlvqcsCDtAJ31uzVyIO5tBoCvmd3g0bINnPXlA.jpg"
     },
     {
@@ -560,6 +607,9 @@
           "url": "https://lms.wb.ru/lms/ru/calendar",
           "text": "https://lms.wb.ru/lms/ru/calendar"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/qJt5Gt0XgzASUfN0Lqk72I2NSwFv7ygnbw_JgFX1GVrauPyPfhZZf8LOJ9Z36GhMybIwGDKnL1z100A75K9NM6zIzjjSx8RfVNigMkhUofZiBfmA9O5FqqjYxSfRCG-LiQAkayvNtCG2G75kvU02A7UvV-myM6wDrppDXTzxWgRSFi5FpKeDw39_3o71h8NfSHwJ_BwaM-VV4QvUDtIb9vdUB8IYjbl9UB2h_eVxah_FmXtLQPTeHWiEV3-G084b86Mj4xYl2pvAsUnC5ORD_ks7LhK47FfYLAGQ5MraUAdGUOqq5qnhsz2OkLnEClZDeksHSLCGZHjcPRnBzXvMHg.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/qJt5Gt0XgzASUfN0Lqk72I2NSwFv7ygnbw_JgFX1GVrauPyPfhZZf8LOJ9Z36GhMybIwGDKnL1z100A75K9NM6zIzjjSx8RfVNigMkhUofZiBfmA9O5FqqjYxSfRCG-LiQAkayvNtCG2G75kvU02A7UvV-myM6wDrppDXTzxWgRSFi5FpKeDw39_3o71h8NfSHwJ_BwaM-VV4QvUDtIb9vdUB8IYjbl9UB2h_eVxah_FmXtLQPTeHWiEV3-G084b86Mj4xYl2pvAsUnC5ORD_ks7LhK47FfYLAGQ5MraUAdGUOqq5qnhsz2OkLnEClZDeksHSLCGZHjcPRnBzXvMHg.jpg"
     },
@@ -584,6 +634,9 @@
           "url": "https://t.me/addlist/Ca0Kht58sYs2N2Yy",
           "text": "Наши проекты"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/P0K8kMnqstBU_9SY-NlN9Brv0C1Hin1gNy4EohycziQlG9oDCec_IitAW3utGEHQJn5--7cXI8H2ZilnwE5UdPisNSvGkgpTbkINCaR7rh-RIJYzZE9JpVnD50aBKk9eMMa0BnQqBrhv9tdGOEnQIG9GAjgt9VtLJXleo1dlCy4oojbhbvp3cKoSPZn3jWZBXVr8i__pPyi28ELBROxNqB8U1xPrzOu6pBGSkMUGlY4Cz3345I-d3kkuzQ7SA6sOIOgo85MyvP9N6zxIzlMQYENtNs9L1eBIGHeoERpdE_-014He_yEbVNM21vl84hV2y5gMlYWQQZIjNQWPL-wO1w.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/P0K8kMnqstBU_9SY-NlN9Brv0C1Hin1gNy4EohycziQlG9oDCec_IitAW3utGEHQJn5--7cXI8H2ZilnwE5UdPisNSvGkgpTbkINCaR7rh-RIJYzZE9JpVnD50aBKk9eMMa0BnQqBrhv9tdGOEnQIG9GAjgt9VtLJXleo1dlCy4oojbhbvp3cKoSPZn3jWZBXVr8i__pPyi28ELBROxNqB8U1xPrzOu6pBGSkMUGlY4Cz3345I-d3kkuzQ7SA6sOIOgo85MyvP9N6zxIzlMQYENtNs9L1eBIGHeoERpdE_-014He_yEbVNM21vl84hV2y5gMlYWQQZIjNQWPL-wO1w.jpg"
     },
@@ -617,6 +670,9 @@
           "text": "Наши проекты"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/RyHcqvcUOFK2zRiDJ9dtwlV-8ybLBlLC6tWMpg10uH8kqyZAoifzRA6Kn-t9nPqiWnyM6kGsInoCrs595UTR6ps_lrnsTlYBh5FVOREBXjijjoP3edHn9xdKYLX10r7AoygWyUoC917g3ONB8UPQpCCsTpqUg6j_yaZX4w58FSw4QwXjmCEVi1H6VyIOba7N6WUi-MCE8uqaWibrzttBD9KvwEsqR0gRuy5z2lh8rTkFIaEII34B_yy7LbvlhkZ2bmbfMDeTHRRZYm6DG_xM5kchyPic7bA2Yu2sCIvjksd0MPj0_8u4kNO-NtmMmUDEcjWJ4jOR4rZLmDoXqZ8nFg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/RyHcqvcUOFK2zRiDJ9dtwlV-8ybLBlLC6tWMpg10uH8kqyZAoifzRA6Kn-t9nPqiWnyM6kGsInoCrs595UTR6ps_lrnsTlYBh5FVOREBXjijjoP3edHn9xdKYLX10r7AoygWyUoC917g3ONB8UPQpCCsTpqUg6j_yaZX4w58FSw4QwXjmCEVi1H6VyIOba7N6WUi-MCE8uqaWibrzttBD9KvwEsqR0gRuy5z2lh8rTkFIaEII34B_yy7LbvlhkZ2bmbfMDeTHRRZYm6DG_xM5kchyPic7bA2Yu2sCIvjksd0MPj0_8u4kNO-NtmMmUDEcjWJ4jOR4rZLmDoXqZ8nFg.jpg"
     },
     {
@@ -628,6 +684,9 @@
       "channel": "offlineplus",
       "content": "Переносим начало вебинаров с 9:00 на 12:00 мск\n\nНовое расписание будет работать с 9 ноября. Пожалуйста, учитывайте перенос, если уже запланировали участие.\n\nПодробным расписанием по-прежнему будем делиться каждое воскресенье. В нём найдёте темы на неделю и ссылку для подключения.\n\nВыбирайте темы, готовьте вопросы и присоединяйтесь. До встречи!\n\nКоманда WB ПВЗ 🟣",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/nW50UrN4Fh-ldtCv653I08QDLO42quPOnN0FIn3EgD_b1AETk1ejtvnEFioxt6d68ONo8pfFvVGEbiNdg99oF2hQ-Cufr59bv7y4i6yjHSlRu-lMf401fHP6dW0HyB7skylwfinfEsZSID3pI-l_z_v9cChsq0wXgtxxQ5mTtnyV01Fzezm3shnf43eJhJysaKo6x3Hn1nGpwvE2m_aoFrhRY8xgNUaJiGnFp7EDbg9Obqz_yApF0DCAX-zY5WLzy038M_MGDvvBALnd_AismYZ5eYojqOkBBZsJM6MTiWeUL1st1Q-EfeWGNt5LZz1KaNg-n-3UQ-I1ghgxUgqmNQ.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/nW50UrN4Fh-ldtCv653I08QDLO42quPOnN0FIn3EgD_b1AETk1ejtvnEFioxt6d68ONo8pfFvVGEbiNdg99oF2hQ-Cufr59bv7y4i6yjHSlRu-lMf401fHP6dW0HyB7skylwfinfEsZSID3pI-l_z_v9cChsq0wXgtxxQ5mTtnyV01Fzezm3shnf43eJhJysaKo6x3Hn1nGpwvE2m_aoFrhRY8xgNUaJiGnFp7EDbg9Obqz_yApF0DCAX-zY5WLzy038M_MGDvvBALnd_AismYZ5eYojqOkBBZsJM6MTiWeUL1st1Q-EfeWGNt5LZz1KaNg-n-3UQ-I1ghgxUgqmNQ.jpg"
     },
     {
@@ -647,6 +706,9 @@
           "url": "https://univer.ozon.ru/knowledge-base/material/longread/1021122?node=258&amp;page=2&amp;utm_source=telegram_op&amp;utm_medium=instruktsia&amp;utm_campaign=tarif_23.10.2026",
           "text": "Подробнее о стандартах и надбавках"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/N6n6Fa0sxZrVlT5fGO2czDlB-0bMzgSxG8QyWDiuj_yWLS05xx_ueZTVhnVJW68eTlvY5qRR_Ade_oVnvVKDVbP2eT83r1lCFWjTB2sUWjfrwU1yHGVILL7HwkCTbmi_RBJCgLEs1fyj-mKQRUopWTziFAQu5Lfk0thscJGQV3a4iB9vrrzbcDanDn3eBBTe2r1FIPWI8oPPy4DeFWVOEzEdlPYdG9RMJ5wjoiFXot12r3ll4373lrAxAuSew2Jt5cyRozm5fEVDaSFqiErAxgkZisZKS4JXrAeSlYzZ6SBymdTVkbT10wypJNHhfnvlJHeJLQZB9XapGuqh01BOTg.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/N6n6Fa0sxZrVlT5fGO2czDlB-0bMzgSxG8QyWDiuj_yWLS05xx_ueZTVhnVJW68eTlvY5qRR_Ade_oVnvVKDVbP2eT83r1lCFWjTB2sUWjfrwU1yHGVILL7HwkCTbmi_RBJCgLEs1fyj-mKQRUopWTziFAQu5Lfk0thscJGQV3a4iB9vrrzbcDanDn3eBBTe2r1FIPWI8oPPy4DeFWVOEzEdlPYdG9RMJ5wjoiFXot12r3ll4373lrAxAuSew2Jt5cyRozm5fEVDaSFqiErAxgkZisZKS4JXrAeSlYzZ6SBymdTVkbT10wypJNHhfnvlJHeJLQZB9XapGuqh01BOTg.jpg"
     },
@@ -672,6 +734,9 @@
           "text": "Наши проекты"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/tKb6cHqxa-3B1wHLxUGI-idGeqlQzQNiCVtsmDHkbGBjRb4SXLY-f4iwPOKVDIypz4nCKeejvoXyKRrgv7mQg6kR_nBrxN1CjgB9mtGDYFKhj--0dy4CG_oPeZf5KBFbDtKP62AW6B49l3uHMnqYByJCBQzEsFYUY7l013xZs7RiwgKT60JCTSOvODsja-ry2CFhnuilap_PZmat-gT_QHb9_q0byb5Zz6bA6xEfq3cblhYp5lBFeXymVeWeTBlt7kddgE0m5GNOJKCn6hCt5Sj0DcQhES6Ej170nMYWbyz9G7aNEywDGpUsN4sgy0Mw5fgh_TGxOXpEr24gxWumvg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/tKb6cHqxa-3B1wHLxUGI-idGeqlQzQNiCVtsmDHkbGBjRb4SXLY-f4iwPOKVDIypz4nCKeejvoXyKRrgv7mQg6kR_nBrxN1CjgB9mtGDYFKhj--0dy4CG_oPeZf5KBFbDtKP62AW6B49l3uHMnqYByJCBQzEsFYUY7l013xZs7RiwgKT60JCTSOvODsja-ry2CFhnuilap_PZmat-gT_QHb9_q0byb5Zz6bA6xEfq3cblhYp5lBFeXymVeWeTBlt7kddgE0m5GNOJKCn6hCt5Sj0DcQhES6Ej170nMYWbyz9G7aNEywDGpUsN4sgy0Mw5fgh_TGxOXpEr24gxWumvg.jpg"
     },
     {
@@ -683,6 +748,9 @@
       "channel": "wbpolzapvz",
       "content": "Заказы партнёров Wildberries: что проверить перед выдачей\n\nВыдача товаров партнёров, например с РИВ ГОШ или AliExpress, немного отличается от выдачи заказов с Wildberries. Например, в одной ячейке могут лежать товары разных покупателей, а для каждого заказа у клиента отдельный QR-код.\n\nКак выдавать такие заказы\n\n— После сканирования QR-кода выдавайте только те товары, которые отобразились в списке на экране. \n— Если в ячейке лежат другие товары, но их нет в списке после сканирования QR-кода, не выдавайте их — они относятся к другому заказу. \n— Если у покупателя несколько заказов, отсканируйте каждый QR-код по очереди и выдайте товары отдельно. \n— В приложении WB ПВЗ есть проверка товаров на выдаче — обязательно проверьте заказы от партнёров Wildberries.\n\nДля обычных заказов Wildberries ничего не поменялось: в одной ячейке хранятся товары одного покупателя.\n\nКлиенты оплачивают заказы партнёров заранее\n\nПВЗ Wildberries только выдаёт товары партнёров — все вопросы о браке или возврате клиент должен решать на площадке, где сделал заказ. Поэтому отказаться от них во время получения в ПВЗ или вернуть товар из дома не получится, даже если клиент найдёт дефект.\n\nНужно ли готовить к возврату товары от партнёров\n\nЕсли товар попал в автоотмену, поменяйте стикер и отправьте его на склад в возвратной коробке.\n\nКоманда WB ПВЗ 🟣",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/kUGJG-ImPOERsqP9VmSXaQCTIY94Z0nMsMHtQs2VmjVXk_m0e2InstX_h_LoWEyjMAfXYYhfBxGIdGG6vobhzP40HHyt7aZKxchfeXAzjEgjJuVEKYiGvnYH3HoWGzAANXlMg7Duh06y7UF8r3SLrfVidu5B8ORJPdwWhIqx0BNd-oiCrfU3M-iA1e_2ltngrHiRZkJ01Emb0z1LUHVYxjReEjQX_c8p875DFF51ZgwXL3ldo1xlh7siT_Kjfl7vboHBIRgNMBpDAi30PqF7hRSpZjV3NmpWsEuMtdC3ZBMTdWK3qr5Cei8a8m7rRvi7B0mHHqSCQUoVGN3oKA77Gg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/kUGJG-ImPOERsqP9VmSXaQCTIY94Z0nMsMHtQs2VmjVXk_m0e2InstX_h_LoWEyjMAfXYYhfBxGIdGG6vobhzP40HHyt7aZKxchfeXAzjEgjJuVEKYiGvnYH3HoWGzAANXlMg7Duh06y7UF8r3SLrfVidu5B8ORJPdwWhIqx0BNd-oiCrfU3M-iA1e_2ltngrHiRZkJ01Emb0z1LUHVYxjReEjQX_c8p875DFF51ZgwXL3ldo1xlh7siT_Kjfl7vboHBIRgNMBpDAi30PqF7hRSpZjV3NmpWsEuMtdC3ZBMTdWK3qr5Cei8a8m7rRvi7B0mHHqSCQUoVGN3oKA77Gg.jpg"
     },
     {
@@ -703,7 +771,7 @@
           "text": "Мы в MAX"
         }
       ],
-      "image": ""
+      "images": []
     },
     {
       "title": "Грустная история о том, как клиентка пыталась получить в ПВЗ #ЯндексМаркет посылку. Сначала её не нашли, а потом и курьер по-клику испарился. Сентиментальным лучше приготовить…",
@@ -727,6 +795,16 @@
           "text": "Наши проекты"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/UZra7DAoQIODleCj1iHwICAFJXcnype1GxJLmfeYL5xjV3VnqTCFkBZRuIzjDbRcG3NnvnyVfAGb_WVuqqM2pOQVRngXGoJXDh_a6UGtIXOfn7hbS2izkH5SaYUP3YdLMta7k1JfNirKBV_JxIP1efbuSZspYdJPOl8zzvrpgXF-31fOxlKK6q-efh0aTlQJiu1AdqomHwEOrv9ME6pDzIrtHX2-cgJW9WEoUuZB263H1-hytrsBBDjHTkD5GYITPprqsycKf6dyEj9bWEqREhIcTGcajpOzAnwvhoW5F1DmIkYTbqHZTMNB57hBOCCMYsZ_5ttHCAA0fTxIknEh3w.jpg",
+        "https://cdn4.telesco.pe/file/WcaMTauQJ49kES0F9l-YkiaOPvqpduI-XPoOOoXIqnypvKUCPXz79i_rz1tkLquipO0LBgEPiFggAX-l8Bxigz4neH3vwKYEBY6Jyx70EnVyQ3kszQBPRWYoba3JgUTrHqd71rUQ1ADxC5Kuaz5echz8CIl_k2XUGWcH3NT1lZveZA2sGuk4emT_Tgg2UUB4yDbHlY1XGuVz6CCSwnsIaDHSsJS2mWxnJi_kavrg1vTKIiDOOdScHSZPqrA3Vm0_2CuGg4TK2nMTglQShLxHXKskLoQ7ThUSWBesDd9RrYC817h4vA-mvTIbLAT1wMQNsgvbde6BKumij8FGEFBB3g.jpg",
+        "https://cdn4.telesco.pe/file/E-ttf-XQnanGq3RUokGqOCRwZbhpHYm5zP-5iEQma389f5BUukvEyIexaA2c2bn0gCDhMIxfqHOOG2aGPVQE8fa3NbayNb9xZSog3GO04ZU22P8VDkcF9MWh9CuSTCd4VBFvOJiITIvcLlfIpG_1jpK9xcK58UW1o7mj76_E-Ymswv5fZFkqwKwt3P_B_aO2GzgweXzKYE_dYf8YfOg4lks6XE8SS1R7o3MigrRJIvAHiQszfGzYr_wyvClzU446ySM_LV7P1WxmNTmwkfv1yNz9nq9M2FvTgjKOKYGjOj55U_Qy28Kcdv6TsvNYzf49EWJ1HOb4v3oIiz_yfZrCag.jpg",
+        "https://cdn4.telesco.pe/file/ZIYVcrdEaIMMGHvJSJyBj8L7talepBxQCFXXYNxXWRWE_FJT5Wo5_TT7D8T4g_xn_m-WZwIxD5tNVPhZZteX9MYkuxayhzyFHqzkQs8gBszrkj8s7MSwkBY7gJrV4JgGjAmyuqgP0TvkOBMO-A1KldefAim9pOsUqwxGoagP4xaWWnVPVKYK-n9Ag9TCvcKhhrzI3-69Hwh9usgCUq9CoGamnz-yFiculUjBBvLSriRtMjJ5kcdC7dUiL2BuPe7jPNvor_009NkB0J8tYRrBLboQ8JQq9fG6IUh93kP7nAHP5l8MAJrYdmFQMWhFtnudXJxYcLNyQwHVt7s6ivK7VA.jpg",
+        "https://cdn4.telesco.pe/file/MucwBSfrwv7B3PJZjvnLEEQRHI2ogk_9XoeiEZRk_NkUw0okbzoQaDcedYClbGQMwQFoMkjK_ReioQmJL1OqJBtrdOCKG7pIIqTN1oaZ9GDo0BcLUqKoqKufEnYrj1GT65fqe86spzu7rATJthX47rJcN8yNizd3Qt12YX4FAirHE3SIKfzR3Zyk84EFTJMD0r4zIAiG9HVp423DkOXSKRHBFrXfj1Be-ULmoj4RThFGTjeasdcsvlwzkmaPl1MoAPFVBNtSycR-knYsQbr0PdgPvn1zEG_nOWHEaUo-N308UQHOLFCMhqjKx6NUw40iHnvc2gnrxshbY9V4Pi_1sA.jpg",
+        "https://cdn4.telesco.pe/file/JkS1ajZVrm-jhpRzlZQ6JszK2vHFAl1DRjhEU4pwLC8QijbRWL6YfvhESU-q-EiT7cLWOXASbIf-yIDA117sSBIu1xuvOoSWl0UJeT7umIow67E3mGaZGFxaFkP_SBOnAv__17dYErjrCfislmg_iY8iltahZ85FZeozfDcI-hM8DMuYS2RsxraYd9T_oWSs_L2_LQidfDD-fXwK23Un_W3nCCUF3qXGYgo3yetUuMQ4ZCGIvgaqQpifXd2-fZGmXeXae9DpS-5CeHAKmHdjiHkk9mH3lqo2RzcXjD04zTTyUNmL5ih0wuCtqMGvPntw9t_KVFuQZZde3_Swar8nXg.jpg",
+        "https://cdn4.telesco.pe/file/TzeYSOlcL19jbhExVnpZbj48N6WtsxUVOD_nZ_Gz4_xK61FRrENCJC7ZKhsKnZQd6qWN-MCv5eUIWjlQUUqZtmfvs7GkmrN97cw8UqmOZ3DH5cEi8ccymJtQkAe3Mz1yXaUWFQE6asasoElv6_KTjny1mJn9jKugN4gsQ9FvhCwJP-Qzt9gtbcWNbm5LfsaFvXXRDHG-BaXA01K5oROfqzJf8ekckNHp7CYtF-Tpn5KUBl7a9LHVSwI60Srak6SFjnlGJNHBIHWEja7UoXZ3CJbMm0xBVxt1nNfbh79QrXpQ1NuPu5g3-PJxlFr-7zHnNVylb7wLZWMP5fIYl41H9w.jpg",
+        "https://cdn4.telesco.pe/file/vqDqtSW_wkRchd4YaFNn-75zJg6B_itdqb-by8emBdmVxyq3r5eYxBNAt5ZzOA7cZe3a8UUQtMD3DjKjqMEsulQa4vjukuooVAECer-OCe_PtQsBr9KeT5umsKsB-Sat4nOCY1beyViKGsMquKQojL7Z2zlgEfuYF1_kbC5gewyHtuLQOSy48rx8Yy2lUwcsbqpQ7K2DK_OJweKq_ZJhlMSQ7d00jSn_B6f5h2KodLvL2CWP9aC51sfUQ-raSU5ONxFcfRMS_bmUFkoBhToSRl2cNO0h9dbJnWHZR6uWG-_Gj4_8OwKDK_N02w_t1U6w7zpjnrll311AS1ewf1mXNA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/UZra7DAoQIODleCj1iHwICAFJXcnype1GxJLmfeYL5xjV3VnqTCFkBZRuIzjDbRcG3NnvnyVfAGb_WVuqqM2pOQVRngXGoJXDh_a6UGtIXOfn7hbS2izkH5SaYUP3YdLMta7k1JfNirKBV_JxIP1efbuSZspYdJPOl8zzvrpgXF-31fOxlKK6q-efh0aTlQJiu1AdqomHwEOrv9ME6pDzIrtHX2-cgJW9WEoUuZB263H1-hytrsBBDjHTkD5GYITPprqsycKf6dyEj9bWEqREhIcTGcajpOzAnwvhoW5F1DmIkYTbqHZTMNB57hBOCCMYsZ_5ttHCAA0fTxIknEh3w.jpg"
     },
     {
@@ -747,14 +825,19 @@
           "text": "https://stream.wb.ru/room/vebinar_wb_pvz"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/shMdlTIcXzD9yiS4heMkwByU9ebvdUI3sOOlRi77Nb8OqxD5sJyheJhW_FP_jjaanq6huA9s7k6YwVfJsn1hzriUdtD_VZY7cLRiPMBkOg7f4iXxSDLi_yu7RFYKkS2HczMuOMSehW6oPXP-jFCH-jgzs0WqenD8Z-IR3kdzQLMunVFnpS4ulq8KcNaeXbzAIskaeKWNqX-vlDPxh6wLwduMjKlHkyzc45OE14EoyAc5PuFCU-LXseHmoPDDi3ymgcplWDyqHUSLfu-1Csr0CM1mtz-I8CZdYqpHra3TvdD0gpAKgiiybc4X0tJp5F9dqxz4Q3eabAXMZtZk6bZlOg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/shMdlTIcXzD9yiS4heMkwByU9ebvdUI3sOOlRi77Nb8OqxD5sJyheJhW_FP_jjaanq6huA9s7k6YwVfJsn1hzriUdtD_VZY7cLRiPMBkOg7f4iXxSDLi_yu7RFYKkS2HczMuOMSehW6oPXP-jFCH-jgzs0WqenD8Z-IR3kdzQLMunVFnpS4ulq8KcNaeXbzAIskaeKWNqX-vlDPxh6wLwduMjKlHkyzc45OE14EoyAc5PuFCU-LXseHmoPDDi3ymgcplWDyqHUSLfu-1Csr0CM1mtz-I8CZdYqpHra3TvdD0gpAKgiiybc4X0tJp5F9dqxz4Q3eabAXMZtZk6bZlOg.jpg"
     },
     {
       "title": "Wildberries, Ozon и «Яндекс Маркет» меняют условия возврата товаров: за что покупателям придётся платить",
       "url": "https://news.google.com/rss/articles/CBMiTEFVX3lxTFBhVlZIbWxWc19lZlhkV21IRkJ2Ykc5andpQmtCSFpOS3FXT0RNMk5iTHgwZ0haS1ZzSVpYemUySTkwdDJlMTYydVVUb1DSAVJBVV95cUxQOU5vRDBjbG1GMk5LdGdJbnV6X3dxTUtKSVh4NjlfMWhqOEtNQVRnZ1BJZExYTkJWZ0dCcm5lMVdCdkpSQ0dFVFJrZ3E0N0tUbDFn?oc=5",
       "source": "Банки Юга.ру",
+      "publisher": "https://bank.yuga.ru",
       "category": "Продавцы",
-      "date": "2026-11-05T08:00:00+00:00"
+      "date": "2026-11-05T08:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.003040+00:00"
     },
     {
       "title": "🫂 Ближе, чем кажется: что объединяет нас в разных уголках России?\n\nЕсли проехать страну насквозь, пейзажи, погода и даже языки сменятся десятки раз. Может показаться, что мы живём…",
@@ -769,6 +852,9 @@
           "url": "https://www.ozon.ru/edinstvo/?utm_source=telegram&amp;utm_medium=smm&amp;utm_campaign=edintstvo_day&amp;utm_content=ozonpartners",
           "text": "Отправиться в путешествие"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/WirdLWwSYbXCF5Q_UneRyu4E1vTAsa35eMGWPXF7hLxyfRtIOSUPfLFgmNrUtWa01Zzh9k8fH6rSDrRjQSeo7CcxH9K9PemuD08IZ8E9WeSqBBu-QmaZ65PTIcAbLigUhOwKDb47X2VRLelMw_6Q635w218jUxglTzCH-78uhykGohov_5gdSW0nOA1_Fi0Iq5QTy2pgrIv_4MaiQ4Yvawv3IArPd-pNdOlOYx_XXKQpAWKnikXwiRTLCnmi9dNXp59nTxmclP_LC0PqFOAapQqhvURlIAWroTwgkQtXZlENLIKo910CVPx_dWF8835oaz6a-mu0JKSTfvBl-dI58Q.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/WirdLWwSYbXCF5Q_UneRyu4E1vTAsa35eMGWPXF7hLxyfRtIOSUPfLFgmNrUtWa01Zzh9k8fH6rSDrRjQSeo7CcxH9K9PemuD08IZ8E9WeSqBBu-QmaZ65PTIcAbLigUhOwKDb47X2VRLelMw_6Q635w218jUxglTzCH-78uhykGohov_5gdSW0nOA1_Fi0Iq5QTy2pgrIv_4MaiQ4Yvawv3IArPd-pNdOlOYx_XXKQpAWKnikXwiRTLCnmi9dNXp59nTxmclP_LC0PqFOAapQqhvURlIAWroTwgkQtXZlENLIKo910CVPx_dWF8835oaz6a-mu0JKSTfvBl-dI58Q.jpg"
     },
@@ -794,7 +880,7 @@
           "text": "Наши проекты"
         }
       ],
-      "image": ""
+      "images": []
     },
     {
       "title": "🏣 Открывайте новые пункты и получайте повышенные выплаты\n\nСтараемся сделать так, чтобы клиентам было комфортно в ваших ПВЗ и они чаще делали заказы — а вы могли зарабатывать…",
@@ -809,6 +895,9 @@
           "url": "https://pvz-map.ozon.ru/?utm_source=pvzozon_landing&amp;perehod=landing_ru&amp;__rr=1&amp;z=12.356&amp;lat=55.755814&amp;lon=37.618171",
           "text": "Выбрать локацию на карте"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/rdcd6tkVfI-_mhO2qwXRf5X4dSu6RA8M0yFxrhZ6nu4YsxG3FQ6aF2J8ibL8uH_z4j8tXQ8VnOspoHyHdrCmyyG2kli9ypmhFn5t0_FmSf2jcJwQ2Ueq-9dUqI3v6QD9zB76XX50l9kr-YUMscvXH29uAhQofYzq7r_yXYFBLynh5L8yCGStsa6ivY6L_T5yK2XY4AkAxFJjNFieo2x7EoWSOQoQsR6Wtvj1YIFP5bOHns9p7VsHsxVNZNw8F-80u_PXG-MYt4k19d_wv3RCRhRjTwG1c02AGwOd-YwBJ5DHAbp77njv9TNwOKA8xAQ3ZHq67Y9MbVJjyJxJlG71dQ.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/rdcd6tkVfI-_mhO2qwXRf5X4dSu6RA8M0yFxrhZ6nu4YsxG3FQ6aF2J8ibL8uH_z4j8tXQ8VnOspoHyHdrCmyyG2kli9ypmhFn5t0_FmSf2jcJwQ2Ueq-9dUqI3v6QD9zB76XX50l9kr-YUMscvXH29uAhQofYzq7r_yXYFBLynh5L8yCGStsa6ivY6L_T5yK2XY4AkAxFJjNFieo2x7EoWSOQoQsR6Wtvj1YIFP5bOHns9p7VsHsxVNZNw8F-80u_PXG-MYt4k19d_wv3RCRhRjTwG1c02AGwOd-YwBJ5DHAbp77njv9TNwOKA8xAQ3ZHq67Y9MbVJjyJxJlG71dQ.jpg"
     },
@@ -829,6 +918,9 @@
           "url": "https://linkwb.ru/16hB94",
           "text": "https://linkwb.ru/16hB94"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/vG-STxr-auw4--xp8L6rpOssXWVGRAQntAywUju7XzXvjqHUdWMe3GAoxzkv_in2abRtr_xBTfEh_t_tqa_3EYxtRZry99TjS_6MGSgGi8AcC9WUueJNI4xmTFdJDA6zbBdTmjCOtggl3vPdV0_Bh2hEeT_64Smgc-GbXGl60S7-WUx2i3iBx05MsYxgEs5p4OpuNoW73vxSy1ttcxLbufz7ipVC44r653xVIg9MUpiQCupCzmfs81G8dHtOuPkhv4WhRWxN5XwzcHK30wfP4qaq1Q2HGFtOoBN9Qh1NQGFMPIx92H98AjCTcNtvpdwy0Ux6z2Jv6VI2cPdgSN2K5A.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/vG-STxr-auw4--xp8L6rpOssXWVGRAQntAywUju7XzXvjqHUdWMe3GAoxzkv_in2abRtr_xBTfEh_t_tqa_3EYxtRZry99TjS_6MGSgGi8AcC9WUueJNI4xmTFdJDA6zbBdTmjCOtggl3vPdV0_Bh2hEeT_64Smgc-GbXGl60S7-WUx2i3iBx05MsYxgEs5p4OpuNoW73vxSy1ttcxLbufz7ipVC44r653xVIg9MUpiQCupCzmfs81G8dHtOuPkhv4WhRWxN5XwzcHK30wfP4qaq1Q2HGFtOoBN9Qh1NQGFMPIx92H98AjCTcNtvpdwy0Ux6z2Jv6VI2cPdgSN2K5A.jpg"
     },
@@ -854,6 +946,9 @@
           "text": "Наши проекты"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/VgNYMVz1lCEOrP5gN53ZLRUtuTFYDXta9WBRhB8yNhTU8_vibFMDXv6n-uAbeXm9DF4D36___xCOZN61yfRkkABShJvrq1HqkOnIu3dXchXAwGHx2K2v7s8F-zl8zvi1qufebLs_QSgwI16pA4CRdh1F5aJTAto38JPNqg7Az1jVbU0q9khfl5MZ0h0B8Bvamd_pxue6iGNJfyvA4aDN3Foc6Q2Uf-YY6-iTeH04T0bh1hkXlRBvs3WJvG0GZqOD2HH6RFZdR03lvYfd2NJ_dmroadhn_ZgTiV6E2qxS-PgaQZNVewOUP4zQaLoXjJ6zESx1a3MhMrSH7-8GRu_AtQ.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/VgNYMVz1lCEOrP5gN53ZLRUtuTFYDXta9WBRhB8yNhTU8_vibFMDXv6n-uAbeXm9DF4D36___xCOZN61yfRkkABShJvrq1HqkOnIu3dXchXAwGHx2K2v7s8F-zl8zvi1qufebLs_QSgwI16pA4CRdh1F5aJTAto38JPNqg7Az1jVbU0q9khfl5MZ0h0B8Bvamd_pxue6iGNJfyvA4aDN3Foc6Q2Uf-YY6-iTeH04T0bh1hkXlRBvs3WJvG0GZqOD2HH6RFZdR03lvYfd2NJ_dmroadhn_ZgTiV6E2qxS-PgaQZNVewOUP4zQaLoXjJ6zESx1a3MhMrSH7-8GRu_AtQ.jpg"
     },
     {
@@ -870,7 +965,16 @@
           "text": "Как работать с заявками «Контроля качества»"
         }
       ],
-      "image": ""
+      "images": []
+    },
+    {
+      "title": "платформа для предпринимателей Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMiSkFVX3lxTE5KcVV5ZDRZMUpqczF2eUdzWVhDbWtuTjBLVVhsVUZudUhqWHlnYWpNQ295a2NKWlNqWEphdnVpWFNweU1GZjlXVV9R?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-11-02T10:13:58+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.003216+00:00"
     },
     {
       "title": "#Ozon, пора допить утренний смузи и убрать эту плашку. Сегодня уже 2-е число, бесит, мешает работать. В веб-версии уж точно. 😉\n\n#всякоепвзьеное\n\nНе грузятся фото и видео? Читайте…",
@@ -893,6 +997,9 @@
           "url": "https://t.me/addlist/Ca0Kht58sYs2N2Yy",
           "text": "Наши проекты"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/YgQ5adHLYwjlrxXhTEIrgQqgyuTS4DYc-inYXQC1nQKyUCXBngY6XTwnrGBjDdqLVwAzDsgkxqXcu11hIbzjXDrXg73jbskA5I58aBi6DGShCBuLV1os1nOeSG1uuUVWGQJTIyFFF8i9Ob820w1_3n4k0GTlOlj4pdERCOJ4Beuu2bHFsNwKaz-lne3BZzDcfa9ULeZyn4fZ7wgSXxtLtilhJFREhC145DGzSiUzg0TJzSKi0cNb4JaTonNmXXE7V2xUjwCMT6pfCdL1yzcp333UP_NzE5eWWhWb7UM1d-2go6TryiXK4qzHDXIQEVmWc8Rgmiu8ANKCPWnhj8k02w.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/YgQ5adHLYwjlrxXhTEIrgQqgyuTS4DYc-inYXQC1nQKyUCXBngY6XTwnrGBjDdqLVwAzDsgkxqXcu11hIbzjXDrXg73jbskA5I58aBi6DGShCBuLV1os1nOeSG1uuUVWGQJTIyFFF8i9Ob820w1_3n4k0GTlOlj4pdERCOJ4Beuu2bHFsNwKaz-lne3BZzDcfa9ULeZyn4fZ7wgSXxtLtilhJFREhC145DGzSiUzg0TJzSKi0cNb4JaTonNmXXE7V2xUjwCMT6pfCdL1yzcp333UP_NzE5eWWhWb7UM1d-2go6TryiXK4qzHDXIQEVmWc8Rgmiu8ANKCPWnhj8k02w.jpg"
     },
@@ -918,6 +1025,9 @@
           "text": "Наши проекты"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/RURYrMKoTDYsidXHL7gF0z-lezKvR0KtH6CqGedztp_CIMkMh36K16RnIeDh62Rd_9ENOvXsaokQuU_5J-3yEcSv1m1DnBkMYQl6yeDBeruxqwCy3fGsc9CAeT38NZDydQPhwf3xU3MYNTEFxM-wtNg4PZTdUr3arRZVpIfvJUXTxSnchxJJS5jJl4-JgU6zF614YgJtuan8IV3cPpNU99tIH2kRC74rbkMIi6Zzjy4luGAi19snAm69BvfXLd0wGdJNi_qR8Eju9fEvlATaTIm4mQ82xIqgCRDqfkfdXhZyEo-PLoilRVAk_1Dwuod5PsHGEE1cNj4yCv0WbIZQnA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/RURYrMKoTDYsidXHL7gF0z-lezKvR0KtH6CqGedztp_CIMkMh36K16RnIeDh62Rd_9ENOvXsaokQuU_5J-3yEcSv1m1DnBkMYQl6yeDBeruxqwCy3fGsc9CAeT38NZDydQPhwf3xU3MYNTEFxM-wtNg4PZTdUr3arRZVpIfvJUXTxSnchxJJS5jJl4-JgU6zF614YgJtuan8IV3cPpNU99tIH2kRC74rbkMIi6Zzjy4luGAi19snAm69BvfXLd0wGdJNi_qR8Eju9fEvlATaTIm4mQ82xIqgCRDqfkfdXhZyEo-PLoilRVAk_1Dwuod5PsHGEE1cNj4yCv0WbIZQnA.jpg"
     },
     {
@@ -942,7 +1052,16 @@
           "text": "Наши проекты"
         }
       ],
-      "image": ""
+      "images": []
+    },
+    {
+      "title": "ML & Data Meetup",
+      "url": "https://news.google.com/rss/articles/CBMiTEFVX3lxTE1BTDNlZmtlTV8xbkxNWFllUWM2Z09LSmtTZVIwaGZxdGZiUjhITDV3MmpXRHdLczRvaGozWUY1QlVEaWxpMy1iMnZWQkw?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://meetup.rwb.ru",
+      "category": "Компания",
+      "date": "2026-10-31T22:15:50+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.003389+00:00"
     },
     {
       "title": "🤝 Как заводить полезные знакомства для бизнеса\n\nКогда нужен подрядчик или партнёр, а подходящих кандидатов нет, поиск в одиночку отнимает много времени. Нетворкинг сокращает путь:…",
@@ -962,6 +1081,12 @@
           "text": "Мы в MAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/gTprL9cUXQh7vKYfciq-uLmQdlNw3r-Z6fagy-K981BlpSJDwpfyceAFlF9DdVbQhiQZgbspChzohZLrjGytCp1vuL_DddTw9XC2unvDSVeS-wUz5Vw0ZDPe0MpLN3mu3NdcMD0gU0UXsD2adJrRT8c9lE8v97FLbwCHAXGRiP4aeE9JgSZrAoJxm_emXoP0teekQ4GlP9Dct4Nf5q5mQ0-yxh8blPektperM2-MHqxfGn44xXI4GNDmzbVezcPsHQrHpALz30ylMGVSLAIeomkhLNzvrpum7h_W0bUhUqL30-jpJEYSStv9Ry0Qdki8mooe6C2SUpqpf28G-7wfNw.jpg",
+        "https://cdn4.telesco.pe/file/jkDs8wqauSmwPlSXcEE9HcGAkcSiikENXXuFDQ_WP6Mi_aYn9c7AKi65vJIDgG5qAd34UMDsFh2OB-WnENy75hyLOmUE372N-LjvF6LJAiXXKgpx-5nEdcJ549QOGpCAjzdoDlIFLFngkQPUk1Si0T2bKW2PPZN-98D7gYTOvZ1MB_knWqrA3Kg7ZOYp-oVMnKAwDTynxcZI4PJLi8IzVJySXUUR01pLriAo_ALYYeYxpG9tMfP7l3TNSY0R0yKNDo2SqNfDSTnal8QQ_zKV6ahZqjnjgBxRAFcxJyKaobzovswuSQztP0jlUtFKcwkcWwa9j81b1ienvoIYbTZWBQ.jpg",
+        "https://cdn4.telesco.pe/file/j7DwDAKN6ctHWoBw5_b8Xj8oG-JEl1cnzcO6djDtR_AqhvHgJt5kjmRQvEf4ogDrHxWwpmCcgZ37Ylc2sLhfEfXvscJz95m_v6quetPXIf9WedSLNjfZOzgqv0VNhuK33TmtfMVoAHs6D4URQ8TrAMf6ETsXSCDjabI4whmzlv3aSnt_SV7MLJ5FFa_k2w4Zw3LnST8-s5d9YwUyDcgtpOOtppHG8Q-vHdTCe_wnLfw7qjSvG5x8CJi0YXSO8ton61SPWfY40IPjAf7n6tJ7tpL6F7tlfUcEq_4K34PQ5x6uaap8pThc7I9SOvKMjhY6DKsMUHNOITW_kpx7VXHqVA.jpg",
+        "https://cdn4.telesco.pe/file/e32JFfkc_xxU8jGAYgL2oh4lWAtB2yxabBZHK5nMOoXRBCf6-p6h8flTjquu86Gvs7H52YSUy6N4KsxBqVebi4vEZtZvE11G7vN4TrMdvUA_3FffbMrL5aBNtrRM2lnXfCrvME10vIBKNxHBrH9zH-5zJn7fWjPaqHTKd4DEC5OQloZP0TLV4Es-TU_RJUHnK_mDgginqwu4DKUgUHhTqFzZZsIc9H7laUlwPl2JvprnFCXor2ZWsEp4R3w6yoOHOI8GgqZSouYgrSi-oUcx3F63dn8U8-et2QHVBXBDxCLDb5ZHps_lzrozNwyCUaSy9FChBGUiowJo2SvWa-6uiQ.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/gTprL9cUXQh7vKYfciq-uLmQdlNw3r-Z6fagy-K981BlpSJDwpfyceAFlF9DdVbQhiQZgbspChzohZLrjGytCp1vuL_DddTw9XC2unvDSVeS-wUz5Vw0ZDPe0MpLN3mu3NdcMD0gU0UXsD2adJrRT8c9lE8v97FLbwCHAXGRiP4aeE9JgSZrAoJxm_emXoP0teekQ4GlP9Dct4Nf5q5mQ0-yxh8blPektperM2-MHqxfGn44xXI4GNDmzbVezcPsHQrHpALz30ylMGVSLAIeomkhLNzvrpum7h_W0bUhUqL30-jpJEYSStv9Ry0Qdki8mooe6C2SUpqpf28G-7wfNw.jpg"
     },
     {
@@ -978,21 +1103,10 @@
           "text": "Узнать больше"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/ZwXu7Yg3IXpL27BienHY5AoqLMBLcGEdaUcxAsEZ0WjdZSSLOwLzWhC_kDpdDR5Z-lrocA0YdfeDtCYW_nMHAqzVHnpHYGET2xnJqdZsuaPGQ8TMp36YxndFnnMefxl8pG54vCq2SogKxRzMLVaL6ajNVivN6HIXZ8amIhLl6e3NOmtnStnuNJPL7KccSbM8iGdJF0yL6fAV8zdCwU1nqMjEu4EolitZmIaIYCMEHTYNi3qZ0af8owO2gqTzYCiWrjYQ1sIPub8diz-FTdrBsS7kUqqMMsYC7YT1TP2oZWVGPWiMXjLcwG81dJA7yNueKfMSJKdx-9bCOZ-KpbFZUQ.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/ZwXu7Yg3IXpL27BienHY5AoqLMBLcGEdaUcxAsEZ0WjdZSSLOwLzWhC_kDpdDR5Z-lrocA0YdfeDtCYW_nMHAqzVHnpHYGET2xnJqdZsuaPGQ8TMp36YxndFnnMefxl8pG54vCq2SogKxRzMLVaL6ajNVivN6HIXZ8amIhLl6e3NOmtnStnuNJPL7KccSbM8iGdJF0yL6fAV8zdCwU1nqMjEu4EolitZmIaIYCMEHTYNi3qZ0af8owO2gqTzYCiWrjYQ1sIPub8diz-FTdrBsS7kUqqMMsYC7YT1TP2oZWVGPWiMXjLcwG81dJA7yNueKfMSJKdx-9bCOZ-KpbFZUQ.jpg"
-    },
-    {
-      "title": "WB ПВЗ Новости. Менеджеры",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE40WTlxUmZfREg0ck9jdWJtbXoyejdvQ2pZaEI3V1pmVFd1VE1JSkFiNDZNeWNYbU11TWJBNW9hUTFmdDZ1czdRV2xmZW1ualllMXBBbnQzWEU2dw?oc=5",
-      "source": "MAX",
-      "category": "MAX",
-      "date": "2026-10-29T19:25:39+00:00"
-    },
-    {
-      "title": "WB ПВЗ Новости. Менеджеры",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFB6Z0FWdnhGd0hFX1BSZWZBd1VfRWpPcWllaWlvMTU0dkplNUdkNXB5c2twRUp3S0M0OFI4dGFkeU91dENqQkFRLUNHSE95YjFBZU5hX28yU3B1Zw?oc=5",
-      "source": "MAX",
-      "category": "MAX",
-      "date": "2026-10-29T02:09:25+00:00"
     },
     {
       "title": "❗️ Работа курьеров в День народного единства\n\n4 ноября график курьеров зависит от города:\n📍 В Архангельске, Мурманске, Петрозаводске, Пскове и Северодвинске у курьеров выходной.\n📍…",
@@ -1007,6 +1121,9 @@
           "url": "https://max.ru/join/_Su3lomMsIlRNTIypYXzbHIXI7uM1YNukenRLbfaL60",
           "text": "Подпишитесь на МAX"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/Kq-Ssyuvb4ScBaBVHUUwGxaVCNPRR-tMhye_JwNvIgJEmymxPdqHLY4LEC7ekwCrrehc78h_fuEPDjB3aCBjGKVxZFZ0m5fV2rRyE2zKSWDV-QRieXdFgJjWJitd3nodljatWbfLVLT24iq_E0JPNAUTUobFZ_CrU4ruSg4XEcARGljzwm1XGm-Pcq7Y1xQRRkHvTsLAOQfACvUgDmqIT_h-stRLcDLsBscz47zxxrrEAiwWaCQ1yXZUmSf-uVQhXBM6eUKwHHze7KuYOv46KV8ZCN9Z1_RlSwODodBnTuwbeyVm-OyU286MhLCDnZ8Glg3d2CJ0_0zD0DJy3ph0Xw.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/Kq-Ssyuvb4ScBaBVHUUwGxaVCNPRR-tMhye_JwNvIgJEmymxPdqHLY4LEC7ekwCrrehc78h_fuEPDjB3aCBjGKVxZFZ0m5fV2rRyE2zKSWDV-QRieXdFgJjWJitd3nodljatWbfLVLT24iq_E0JPNAUTUobFZ_CrU4ruSg4XEcARGljzwm1XGm-Pcq7Y1xQRRkHvTsLAOQfACvUgDmqIT_h-stRLcDLsBscz47zxxrrEAiwWaCQ1yXZUmSf-uVQhXBM6eUKwHHze7KuYOv46KV8ZCN9Z1_RlSwODodBnTuwbeyVm-OyU286MhLCDnZ8Glg3d2CJ0_0zD0DJy3ph0Xw.jpg"
     },
@@ -1024,6 +1141,12 @@
           "text": "в помощнике по брендингу"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/uuSFRXQYfP9YMX2gsof4TTLWkxU1XYOYoJpMou6lsGxAeAmABpYhOmGzb5i-zEftlboJL5_LOxYZnPyRHK89d9rAbd05RJw9373ZVIIMv7kgoUJFoSRp3ocQAeZqPO2qL1YI8R4xezLSLitAAf7R7PtCkt2S_b1sZ1SQ7QevSuMZMuV24nvBJoovZalZKfrlyXEay8qNvvkFifX9nmoRp4YCHoQBYOCZfdJCboHdxKgwc-074w68ex7UKMfZ59gM4LG7IGpEvpJfYcDwFeTvo5MMil1naTZHVPqyfacR2AGKxHizNlVSt6A0jQ-Eh7BtcK1TZEiWJ-w-cOxF0RrrBQ.jpg",
+        "https://cdn4.telesco.pe/file/TvIE6kgBlPlixwOCm0Kg1-iI6NZb96hq7-BuNDNm-hj9RaxV1aN562sGeG76xHlxoZZJP-fD-rquYZFzwuOvqQHcVwEKg5xBVtjMbZHSlYf-Pg_-xLmDjfhnRxTHX4vk8Or5RqAw95O1BgubAC8ax9ZTeEATrX1St2QbCy4p63v2q3rEtol9dlFI3ufKrSLrnJqDvOPLqQMzIMssbfhLBeQzy6mcW67J05wn2tuCdwpH1kPGpRRd76eV8ULag87xbwTMmBEMbmdzLwBjUu4p-qrPn-DgiyNir_IKgJgzVRayWoDOizQT57issZ_UQwBX1XEGY2pM6iNb3OjxywdeJA.jpg",
+        "https://cdn4.telesco.pe/file/GEq7MjENXPRYQre53H8Ys6bmvP5F3pi7roWQGXDKUmxTjZvQaL4VbZ4KcbWqEO_20ajL-5rfPCU326iarhG90GaXtJ5utCzJLjFmUkMiH7fSj5LGdClEwJLsiBrDU0c4db1qW_nemK3UDcKC_WVkxBMRszEw3G074B08h-X5ZN6-oYtFPe-8cdZ6QbWv9PbZBqoFM0WuGu1HWpCPDyEJegonVl-dW60dH1wnIcGpV-wiPux2w9zMvZPeyAlyghqKJrnlgxdAdNIu5R62yt2PT74eaHKsJgO9SQ8umOh_cc-nA52Qe0wtS8u8FmB2S7rOXDKKrO9Ojzqb8ZYNwC5Waw.jpg",
+        "https://cdn4.telesco.pe/file/Pzuv5s6lCJk4s0VKacWCbloNI930_yuZl-1Jz52VRVkKbFhcbh6ZA4Dvn0XxrYoWyW9eYm_YIBzc9x0S9mGf28ZhJQDUtf2IrOx11ibXmLpf6T5n5QTePP59-BbBY6JwsIUqY_NY8euOWrXmAZTVQTAt_tEVa111sIAmlNM1yGP235ALj2QJjQN8Nviu5frosKLF9sViLhZuUTTyQ3mHS0k-q67_FwLcaYeQF-RPzipLCsfAmNaab3D0g3ZfUgf0lNfj_dncMnJ-Q8XJsPeJDNa2iOPYL4WqnfDEuuArGB21TSv4U27SjSq49JtfgslQGtp7sU6ZmweQxXzPxEMSUw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/uuSFRXQYfP9YMX2gsof4TTLWkxU1XYOYoJpMou6lsGxAeAmABpYhOmGzb5i-zEftlboJL5_LOxYZnPyRHK89d9rAbd05RJw9373ZVIIMv7kgoUJFoSRp3ocQAeZqPO2qL1YI8R4xezLSLitAAf7R7PtCkt2S_b1sZ1SQ7QevSuMZMuV24nvBJoovZalZKfrlyXEay8qNvvkFifX9nmoRp4YCHoQBYOCZfdJCboHdxKgwc-074w68ex7UKMfZ59gM4LG7IGpEvpJfYcDwFeTvo5MMil1naTZHVPqyfacR2AGKxHizNlVSt6A0jQ-Eh7BtcK1TZEiWJ-w-cOxF0RrrBQ.jpg"
     },
     {
@@ -1039,6 +1162,9 @@
           "url": "https://pvz.wb.ru/apps",
           "text": "https://pvz.wb.ru/apps"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/HupArY8SuEeA2VsvmgTaQMLByBMMTNFUjZLEJn4TeVgVPMJpMzhJvOkREBZ0typWMV5ELFKMGgdaivDokdl7RKhlw9SyGDAOvnja9D7fkIXwSQUzVTTbfDU14ZOCwICzk0RP7f4kEmvGLF8W3YuDmlf-hF1xHFmw_WCgP2_5Sq1ns1vJoeDfmGYFa0qyLPbx1LohNMsl76ycBUYTuthyHUMKU8QdxrYe6QaIVuy2JiVIg4BPk2gIdGcPHCvyhm335EU1EOoTUbjqWsCypJccIv69XdNb-i8LokZl_2gh_9sv_QQz9ATy3txVz0nm5pH3GRxNldhFcU283NmvMqZJdQ.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/HupArY8SuEeA2VsvmgTaQMLByBMMTNFUjZLEJn4TeVgVPMJpMzhJvOkREBZ0typWMV5ELFKMGgdaivDokdl7RKhlw9SyGDAOvnja9D7fkIXwSQUzVTTbfDU14ZOCwICzk0RP7f4kEmvGLF8W3YuDmlf-hF1xHFmw_WCgP2_5Sq1ns1vJoeDfmGYFa0qyLPbx1LohNMsl76ycBUYTuthyHUMKU8QdxrYe6QaIVuy2JiVIg4BPk2gIdGcPHCvyhm335EU1EOoTUbjqWsCypJccIv69XdNb-i8LokZl_2gh_9sv_QQz9ATy3txVz0nm5pH3GRxNldhFcU283NmvMqZJdQ.jpg"
     },
@@ -1060,6 +1186,9 @@
           "text": "https://lms.wb.ru/lms/ru/calendar"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/TmfwfDW9Ypwe_JaPODUuDaDrohzhI2CaeSjx8KhQ67fGC-tfe_gx5WIhsHWcAzluwCGhEFnM7NRfdllSH0FANaQOgKaDE-Ud-6GL34wcQrBcVO3h4IKipfZd-R9ujmzCY-aD6ted7bn8WCteXJ-d5wIK7kG0r034h_srJLd14epXRrlqIzGBHWpaUm0kMLfQRBWi2EHr29oDwuQlkLNNWdKORIY-F4g-27tRufjQiypsxqbey3UJcM1kK8L7Sd4maYiiw_8yhVoFDRrF9pJXrwWiGVGLWzPUHIEGM0tkseftIJ_L5LLfDB0xEmq9I1U1_9MUgQJiY-QVubT3cOmc3Q.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/TmfwfDW9Ypwe_JaPODUuDaDrohzhI2CaeSjx8KhQ67fGC-tfe_gx5WIhsHWcAzluwCGhEFnM7NRfdllSH0FANaQOgKaDE-Ud-6GL34wcQrBcVO3h4IKipfZd-R9ujmzCY-aD6ted7bn8WCteXJ-d5wIK7kG0r034h_srJLd14epXRrlqIzGBHWpaUm0kMLfQRBWi2EHr29oDwuQlkLNNWdKORIY-F4g-27tRufjQiypsxqbey3UJcM1kK8L7Sd4maYiiw_8yhVoFDRrF9pJXrwWiGVGLWzPUHIEGM0tkseftIJ_L5LLfDB0xEmq9I1U1_9MUgQJiY-QVubT3cOmc3Q.jpg"
     },
     {
@@ -1071,6 +1200,12 @@
       "channel": "wbpolzapvz",
       "content": "Защитите рабочие устройства и данные ПВЗ\n\nСлабые пароли и устаревшие программы упрощают злоумышленникам доступ к компьютеру, камерам и данным ПВЗ. Эти рекомендации помогут защитить доступ к вашим данным и обратят внимания на порядок действий при подозрении на взлом.\n\nЧто делать, если заметили признаки взлома\n\nНа компьютере появились неизвестные программы или подключения? Кто-то выполняет действия от вашего имени? Сразу прекратите работу с системами Wildberries на этом устройстве.\n\nНе вводите пароли, коды подтверждения и другие конфиденциальные данные. Не пытайтесь исправить проблему с помощью неизвестных программ.\n\nПроверьте безопасность рабочего компьютера\n\nОбновления, надёжные пароли и правильные настройки помогут защитить компьютер от постороннего доступа. Собрали в карточках к новости семь шагов для проверки устройства.\n\nЗащитите роутер и сеть Wi-Fi\n\nЧерез незащищённую сеть злоумышленники могут получить доступ к подключённым устройствам. В третьей карточке к новости рассказали, какие настройки роутера и Wi-Fi стоит проверить.\n\nПроверьте доступ к камерам\n\nЕсли пользуетесь видеонаблюдением стороннего провайдера:\n\n— включите двухфакторную аутентификацию для входа в личный кабинет, если сервис поддерживает эту функцию; \n— используйте уникальные логин и пароль; \n— закройте доступ для посторонних и тех, кто больше не выполняет задачи в вашем ПВЗ; \n— передавайте доступ только тем, кому он нужен для работы.\n\nСоблюдайте правила безопасности\n\nЧтобы защитить рабочий компьютер от вирусов и постороннего доступа, скачивайте программы только из проверенных источников и не заходите на сомнительные сайты. Также будьте внимательны к сообщениям из писем, СМС и мессенджеров: не переходите по подозрительным ссылкам и не открывайте неизвестные вложения. Не подключайте к компьютеру незнакомые флешки и другие устройства.\n\nПомните о безопасности данных: никому не передавайте логины, пароли, коды подтверждения и другую конфиденциальную информацию.\n\nКоманда WB ПВЗ 🟣",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/pOyyGbefIe5Y4mmLUs1EMfTE3eMDV5bKsYaf3Ht4BC4SYmQvgI_4lXdZCvnd5Gxt_wN6nQzZx7g3vZPumGE2JuRdFW2Offf5ahVE1JPI0gRKaC21qB1Jo7Gt7zF3hcNdwjqseLNHtlv9UWdjEubipYPW7GbhnSSm6M4jnWXHhSB7r8PDb9vANvfozTr-ztRLU1QjqUd4FP-XnthgsiJ1Lzghn8jGxQSNwQKJVIXUjKX6B8F0Cz7VcxjA4mti7O1UhTGwtw5-nKgtca7E8YcoPvvNsAFHCFDWRJBJPu8ghbmEGqSlae_Waj7O8ng6wNDg9VcKNhTmp_gxVzjlWTRrCg.jpg",
+        "https://cdn4.telesco.pe/file/EOJDkAtxyz39kmy89N7B3OfBXp1uxj343OZtSDXjDuJbh_meblDRV7I4BKNozQ6yp3xZHz4d1pArEfZVRHVE5w95Fz26HW918U73t22SA8T3KbhSHEvjb-rJxg_svAYbazX_S_2R7-3Xy3g0InMLeZ3sAk9-ET6wZUmUL8hIqpzQBS1N3dWRrIISCYB6e0_6aM2OhNYvuPdMAXFl1jawLz6gH1hALV2xJhjnqDilnYEKNx0oHKX0R4nPJuqs0Qb1rEe7u3iP5LkaeYcxC3pHtKLsVEEp9RXdfiE5JsbZjEHhiRadId084JvRpfwwwWe3FDMZ3hnr-xMCd_Dp0DHMmg.jpg",
+        "https://cdn4.telesco.pe/file/We2ypOlrHdlqOE3PVtCuaTYu4PWdN0I3HuSTIWwL4q17Q8jYJ4QOg-DDA09XPTXvD1dsYsTjEO4wnt84WqfDBa6Mo8S223SOkFVn2Ii00iI3Chf5-xcD295AnvGxm9UFZaFlFu3jTcUi-RbGLPrHf5GkHMzcgtkAGODIGmnx4-Q1Tmb9Rt0vQy5EejbWqZmFJ-EB6vRCcpm8FhUuLICbBrxcYg1SQV3I1Q8N3RT40ND1SVgDe5XepYCQB126kvZ5CeticY-rWNSY4meWowkeu0v0PP9Jo1K95hXw89kW3Rt_vl5IoTcKj59Vow7BeC9KiavNOxtExj3sHfMvHsZNAQ.jpg",
+        "https://cdn4.telesco.pe/file/B9c-wj4VSV7lbax7MX5laIpXLIbtG_S8TlyU7iUzCYZ-P_KCJZHwoo1Emkt5wiJ7Vr4n-_7QSahoVyl_RchtJYhja4gETPnafys645T5G-FAxKkJu6mI1owe3mIc4SZGxHU0s6B2ibaIBA1MQ_V6dK37eeC8F-N3XRloR6pAiBUSuLks76_uYdbuBXkIDm4e52ZVEFbI0IfL4vDNQa31xSQm682mzhwklpVQh1IVoQrncYx_I_UKnjqyY47n3BluwqItx0lRZ0YhahoGBuMfANFdmGJY6VtQf27xddaqI0EISNR5dtENX78kv-eGWpoJ-YSd1RjRBmnq14f-E2jhDQ.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/pOyyGbefIe5Y4mmLUs1EMfTE3eMDV5bKsYaf3Ht4BC4SYmQvgI_4lXdZCvnd5Gxt_wN6nQzZx7g3vZPumGE2JuRdFW2Offf5ahVE1JPI0gRKaC21qB1Jo7Gt7zF3hcNdwjqseLNHtlv9UWdjEubipYPW7GbhnSSm6M4jnWXHhSB7r8PDb9vANvfozTr-ztRLU1QjqUd4FP-XnthgsiJ1Lzghn8jGxQSNwQKJVIXUjKX6B8F0Cz7VcxjA4mti7O1UhTGwtw5-nKgtca7E8YcoPvvNsAFHCFDWRJBJPu8ghbmEGqSlae_Waj7O8ng6wNDg9VcKNhTmp_gxVzjlWTRrCg.jpg"
     },
     {
@@ -1087,6 +1222,9 @@
           "text": "https://lnk.wb.ru/CduLv"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/NDVjI8K7oLOdOYT3DIm5TtDHqtuE_9LilHF6BpRuAUf3cQ-xh3Q2Ntm8VAkGQG_4wrOrwi5ML6dbe3094qEOSuehDenc_lXd99jBcfTYXnNDSY_no0_-pf1-XPgf3hD_zusM4gDsLLShfT6vCp3KKpN2mSti2QFexvB-QFk4HdyUaYaHGKnSbR261ryqMe7A_7nl7MRyZAtzI7B3-3AMbeaOD3PVIqj2evnhKq2tibTqv2VSm97VhNjuU1zwnELyRMq4qP9ZA9UOySiMGmKuJQ4PJ5csmrmztri0uZqCAt_-oCPtgcLVswLVLqpCuz3LgEDviz3QcFuUopqh-B0gfQ.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/NDVjI8K7oLOdOYT3DIm5TtDHqtuE_9LilHF6BpRuAUf3cQ-xh3Q2Ntm8VAkGQG_4wrOrwi5ML6dbe3094qEOSuehDenc_lXd99jBcfTYXnNDSY_no0_-pf1-XPgf3hD_zusM4gDsLLShfT6vCp3KKpN2mSti2QFexvB-QFk4HdyUaYaHGKnSbR261ryqMe7A_7nl7MRyZAtzI7B3-3AMbeaOD3PVIqj2evnhKq2tibTqv2VSm97VhNjuU1zwnELyRMq4qP9ZA9UOySiMGmKuJQ4PJ5csmrmztri0uZqCAt_-oCPtgcLVswLVLqpCuz3LgEDviz3QcFuUopqh-B0gfQ.jpg"
     },
     {
@@ -1098,6 +1236,9 @@
       "channel": "wbpolzapvz",
       "content": "Начали отправлять в ПВЗ стикеры с новым дизайном для подготовки товаров к отправке на склад\n\nВ автозаказ расходников добавили новые стикеры для подготовки товаров к возврату: убрали брендированные элементы и немного уменьшили размер. Пример нового дизайна показали в карточке к новости.\n\nЭти изменения не влияют на подготовку товаров к возврату на склад — используйте стикеры как обычно.\n\nОстались запасы со старым дизайном — что делать\n\nДля подготовки товаров подходят оба варианта. Продолжайте использовать остатки, а когда они закончатся — переходите к новым стикерам.\n\nКоманда WB ПВЗ 🟣",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/dnEKgyCd_XugWa-790qJe-Htu6QDk9vRFlxSAPUdjsN6DnROisj39Qx-3Zhx2_BMamxW6b_VY1ThYIAizatWjMXMbH_rhBXtqvHpUx_w12sMZ58NbG3DW65PE264at6_fuW_ils9ojioKOlC0Ibmpz0NjbBUjVAVthc5HJeZ8phjy1Z2JNqukTaMp7flKlOfUudHkWdbZlM3fOvO7YTLJfMh13vsP9_gvuqxnN6QWUVsAfUUiAAVlkHPIzMWk8eQtgrApA3DOeZ3fs1QK7TLPIBIuHC0Uv9q_bUyqRAjfm6fPzym4fkMfMCCQz_t4mH9jj-c7gM9Ui-xlASEUm8rmg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/dnEKgyCd_XugWa-790qJe-Htu6QDk9vRFlxSAPUdjsN6DnROisj39Qx-3Zhx2_BMamxW6b_VY1ThYIAizatWjMXMbH_rhBXtqvHpUx_w12sMZ58NbG3DW65PE264at6_fuW_ils9ojioKOlC0Ibmpz0NjbBUjVAVthc5HJeZ8phjy1Z2JNqukTaMp7flKlOfUudHkWdbZlM3fOvO7YTLJfMh13vsP9_gvuqxnN6QWUVsAfUUiAAVlkHPIzMWk8eQtgrApA3DOeZ3fs1QK7TLPIBIuHC0Uv9q_bUyqRAjfm6fPzym4fkMfMCCQz_t4mH9jj-c7gM9Ui-xlASEUm8rmg.jpg"
     },
     {
@@ -1122,6 +1263,9 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/L3crXPi_IHsfsGbn5tnoLReaiKPITp5Kc2dN35Ay3Lju8Dn8Yz4jyiLQsAvL1mrm6o3x7x7a_ED_a-jyjzZQdQ85oErMUM_8OGNLCV49_YA5K_ygHzt_dHogWkteur3xawaEAOCAL3mCfiRW3z5PWVXLCRRxZNe5gq--ou6dlHIMs477yCIEP05CYCTgh-CslA6PKXzsUSZjtxYPlXKmAFd8NgvUbOZzUdZQWAyIfVSI0WiqV2tV4HWVKgwcz2VUczDjeLt887afJjbSlG4ZzameMsfDdSmm-2WNF0JUCcD67Qg82A9nUr4IehQ6dWh1M4rNbXC-oUEFnmCN1mTZvA.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/L3crXPi_IHsfsGbn5tnoLReaiKPITp5Kc2dN35Ay3Lju8Dn8Yz4jyiLQsAvL1mrm6o3x7x7a_ED_a-jyjzZQdQ85oErMUM_8OGNLCV49_YA5K_ygHzt_dHogWkteur3xawaEAOCAL3mCfiRW3z5PWVXLCRRxZNe5gq--ou6dlHIMs477yCIEP05CYCTgh-CslA6PKXzsUSZjtxYPlXKmAFd8NgvUbOZzUdZQWAyIfVSI0WiqV2tV4HWVKgwcz2VUczDjeLt887afJjbSlG4ZzameMsfDdSmm-2WNF0JUCcD67Qg82A9nUr4IehQ6dWh1M4rNbXC-oUEFnmCN1mTZvA.jpg"
     },
     {
@@ -1133,7 +1277,7 @@
       "channel": "wbpolzapvz",
       "content": "Что важно знать про отдельные возвратные коробки для МП-товаров\n\nЕсли продавец принесёт несколько МП-коробок с 1 товаром в каждой, можете собрать и отправить все товары в 1 возвратной коробке. Когда перевозчик приедет в ПВЗ за поставкой, ему нужно просто отсканировать общий TRBX-стикер и забрать коробку на склад. \n\nПри этом каждый товар нужно принять и сканировать в присутствии продавца\n\nКогда будете принимать поставку, зайдите в раздел для возвратов и создайте отдельную коробку для маркетплейса. Приготовьте любую пустую коробку без наклеек и стикеров, наклейте на неё стикер TRBX и отсканируйте его. Только после этого сканируйте стикер поставки WB MP и начните принимать товары. \n\nПожалуйста, попросите продавца дождаться окончания приёмки в пункте выдачи — важно проверить и сканировать товары при нём. \n\nЕсли все товары продавца не поместились в 1 коробку\n\nЗа один раз можно создать до 3-х коробок для маркетплейс-товаров. Создайте новую коробку и продолжите сканировать поставку. Позже оставьте эти коробки вместе с другими возвратами — водитель отсканирует TRBX-стикер с коробки и увезёт её на склад. \n\nЕщё в МП-коробку можно сложить товары от разных продавцов\n\nНапример, вы приняли все товары от 1 продавца, но в коробке осталось ещё место. Тогда отсканируйте стикер WB MP другого поставщика и положите в коробку столько товаров, сколько поместится. \n\nВажно: в коробку для маркетплейс-товаров нельзя складывать обычные возвраты покупателей, для них есть отдельные возвратные коробки.\n\nКоманда WB ПВЗ 🟣",
       "links": [],
-      "image": ""
+      "images": []
     },
     {
       "title": "Wildberries хочет купить у Шереметьево «Библио-Глобус» — крупнейшего туроператора России, пишет РБК\n\nСделка может обойтись маркетплейсу в рекордные $1 млрд или даже больше. Это…",
@@ -1144,14 +1288,28 @@
       "channel": "wbpolzapvz",
       "content": "Wildberries хочет купить у Шереметьево «Библио-Глобус» — крупнейшего туроператора России, пишет РБК\n\nСделка может обойтись маркетплейсу в рекордные $1 млрд или даже больше. Это будет самая дорогая покупка Wildberries.",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/Czw6_ih2KczPOeGKaCG2D3wVF_ayeigoi3edRhwMNxPLAjVsVo8tcRNthGi4-F9syo2fiLHL3zKEAkNkgzAfXQMJ6mTK6rtdKpBiLo0FhA8TROHoqb_GLG8FhhbGHTr3Bu3z3sVALwI_rztlSyREGd818CTa5pjFcVuzKxJkmIynzrdkVeNFHZp72f_K_TfPsUhMddaS6ptXLlt0mIVNHv_uA89NhGS9txAbuRtZC3-s85T5-3OnXTwa8fUIZv34gj1LS7rP_QVx7k1QaUCpkJAZNVxLuD_2wZt1c8kzSxNxGS_zFoyEkqJedrmjg0UT4sNdOzh-9-OxcVfJ0KN_8w.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/Czw6_ih2KczPOeGKaCG2D3wVF_ayeigoi3edRhwMNxPLAjVsVo8tcRNthGi4-F9syo2fiLHL3zKEAkNkgzAfXQMJ6mTK6rtdKpBiLo0FhA8TROHoqb_GLG8FhhbGHTr3Bu3z3sVALwI_rztlSyREGd818CTa5pjFcVuzKxJkmIynzrdkVeNFHZp72f_K_TfPsUhMddaS6ptXLlt0mIVNHv_uA89NhGS9txAbuRtZC3-s85T5-3OnXTwa8fUIZv34gj1LS7rP_QVx7k1QaUCpkJAZNVxLuD_2wZt1c8kzSxNxGS_zFoyEkqJedrmjg0UT4sNdOzh-9-OxcVfJ0KN_8w.jpg"
+    },
+    {
+      "title": "Новый сервис для поиска специалистов от Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5oSTBWNTJJcVBzSTdIdEF4dm1WWVNOM3dGb3dDNFF3QnBFa0duQ19DVWZnOWYxcUJIelRJVGdiQ1lLeTNpQUtPdFZyQXNDRk5jTUtjLWhJVjlzTE96a1RueG05NWpuZVhpQjVmS1J5aWhaQXJmZ0xIYzFOYw?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-10-21T10:07:46+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.042963+00:00"
     },
     {
       "title": "RWB предупредила о мошеннической схеме с «книгами со склада» на Wildberries",
       "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxQc0RfZjJtLXJxYl9oSXV5eFVUOVZ2ZWxTZkxWVXF6T3VWZ2NERE1JVHU2N2U3VnExaS1YekVOakF5aDZCNDAzMGQ0NXplYWlaejQ3LU5EYmgzUWJMYWtNLWtfTXJsMVBndzVsRndmdDdPTVJSaHBSSUVKaGlZZG5mSWtRa3ZKSngzN0I1eGxmcHJRdkRCMVdqQTg5N3B0eDJ0ejJ3WFp1MkdsX25PbC1tblJMbUtrQkJDQi00OER3NmpBcEZjclB5UA?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Компания",
-      "date": "2026-10-20T07:00:00+00:00"
+      "date": "2026-10-20T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.043308+00:00"
     },
     {
       "title": "Интересные новости прилетели от Т банка, правда по поводу Озона, но все же",
@@ -1162,6 +1320,9 @@
       "channel": "wbpolzapvz",
       "content": "Интересные новости прилетели от Т банка, правда по поводу Озона, но все же",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/Gc3-VGg6t8jw3yA0kOPCrlawzjqH61ExinylAYXpce5CCOQjtsah3iSDZeRw1_nhFcL6DxNWgffxWxNtYGmNOIKYwBBJDjyye90u5VNzVIiLZcsq8oOK6cUN9e6LYu5DBz3V58VydGK5nYQyzZX89Uh3TftAZRfi72TDZbRBP-5V5RiI3GRmhGbMfC4VB_IllvMxcd-QgOP31NOny_MHJcKS0NkC4lpwkUTWlzyi6eBfvCS4fl77R06uO1kj4selwVmPHknfGbYuHNGgrL6p4cB-vLLISib9vzX0foNRi-D56c7ibCx6ApTLLEw_C17tzwOVD6AfN6gSi4J_G0vuog.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/Gc3-VGg6t8jw3yA0kOPCrlawzjqH61ExinylAYXpce5CCOQjtsah3iSDZeRw1_nhFcL6DxNWgffxWxNtYGmNOIKYwBBJDjyye90u5VNzVIiLZcsq8oOK6cUN9e6LYu5DBz3V58VydGK5nYQyzZX89Uh3TftAZRfi72TDZbRBP-5V5RiI3GRmhGbMfC4VB_IllvMxcd-QgOP31NOny_MHJcKS0NkC4lpwkUTWlzyi6eBfvCS4fl77R06uO1kj4selwVmPHknfGbYuHNGgrL6p4cB-vLLISib9vzX0foNRi-D56c7ibCx6ApTLLEw_C17tzwOVD6AfN6gSi4J_G0vuog.jpg"
     },
     {
@@ -1173,7 +1334,41 @@
       "channel": "wbpolzapvz",
       "content": "Что нового в версии 1.11.0 десктоп-приложения WB ПВЗ\n\nВ этом обновлении добавили проверку остатков клиентских пакетов во время выдачи, дополнительные настройки озвучки и другие полезные функции.\n\nНиже прописали возможности, которые станут доступны постепенно, поэтому у разных пользователей они могут появиться в разное время.\n\nПроверка остатков клиентских пакетов во время выдачи. Теперь, если по данным приложения в ПВЗ осталось 2 больших пакета, добавить к заказу 3 штуки не получится. Так расход будет учитываться ещё точнее и автозаказ сработает вовремя.\n\nПроверка работает для каждого вида пакетов: если осталось 0, кнопка добавления перестанет работать. Если закончились пакеты всех видов, окно выбора не появится.\n\nОстатки проверяются и во время выбора пакетов. Если данные обновятся и в программе остаток будет меньше, чем вы уже отметили, добавить ещё пакеты этого размера не получится.\n\nНастройка озвучки под свои предпочтения. В разделе «Настройки» → Голосовая озвучка теперь есть выбор языка и голоса. Чтобы включить нужную озвучку:\n\n1. Нажмите «Загрузить».\n2. Дождитесь окончания скачивания и выберите озвучку из списка в блоке «Язык и голос».\n\nПока скачиваете озвучку, приложение показывает прогресс загрузки. Если вы закроете и снова откроете приложение, прогресс сохранится. Выбрать озвучку получится после скачивания.\n\nЕщё появились кнопки:\n\n— «Обновить» — чтобы скачать новую версию установленной озвучки; \n— «Удалить» — убрать озвучку, которой вы не пользуетесь.\n\nВозможности ниже появятся у всех пользователей сразу после обновления приложения\n\nСсылка на гид по безопасности в приложении. Чтобы перейти к инструкциям, откройте «Ещё» → Полезные ссылки → Гид по безопасности. Портал откроется в браузере вашего устройства, отдельно от приложения.\n\nНовые кнопки и цвета карточек на экране выдачи.\n\n— Теперь в верхней части каждой карточки товара вместо галочек есть переключатель «Выдать / Отменить»; \n— над карточками — кнопки «Выдать все» или «Отменить все» для действия сразу со всем заказом; \n— у оплаченных товаров отметка с фоном зеленого цвета, у неоплаченных — красного. Так вам будет проще подсказать клиенту, какие товары ещё нужно оплатить.\n\n Команда WB ПВЗ 🟣",
       "links": [],
+      "images": [
+        "https://cdn4.telesco.pe/file/kUZXiuazco3FycCPh8AZwKFLh-_CbZYbWDNt2EynSrDQRtHc9TUo4WYkIG2MJFFRdvVhTB7rxW6Fey5UmlyyfWInUi6_AIak8cGY9tHVApdjWb8oJMCFFeJnGOflK0_LVZFolxiEFUhJRMJbhm4pFa2hkI9NGkd8O8joWLCYQmMMftNptipGHPLFWQcgCbyEJVkWBXvr4SKCiDYSeuAjeOHnZhO7WJIMTNMZKfLiS52Igg2ThBjHW0MiGNYrnK-kP3ubCNFuLOqeGLfKBVj2k2ZV01WrT_0RFx_0LaOtgbrKnmiy0aClZNm5Ef6LG1Lyo1aWg_xKS3f2pDGZES6JQQ.jpg",
+        "https://cdn4.telesco.pe/file/RNGpZfAwrF43xk4SketsAZQyYZS8Fsw6wIEoWJVRsKxup7kgd2Y4sr-2lW8ayXkXHYbW_5XMupiZfDZYVv52QG2-OPbmUEan0TZgzdO6txVP1ayNLB7Sg4uuD-zSiHCxKfFlXJcsinXLfT6B1YD-q7etF1Ttg7A884B0JrUlGb4uplASa6rksVJJcpT89gCjB3vEi14sdzuZQXpD89iE3zXyo-0W3G1MvgqmyfkhDfdRL2AfnNMAed7GoPPbFnDUf0QLVxuTyyd9WDX9d528XidXxTA4hy8oO_XjqyRmV9uiOk29ybPZzTreI3v9ly0YZREPlcRE8mBpUV3rp0v_6A.jpg",
+        "https://cdn4.telesco.pe/file/oopMU3-QZ4idKMAERD2f80rQJt4CGQbJYQLeJvUGqpWPfAsR68OfFlSJB8CnQuG1t87j7WXFleoonqON1EN4iu-v0XsCHUT7ijjb4xK9UXl_XL0FjJlWjjYx2nH_tqABL8T-oT0fRArZjztOqSk9oue27RbOcrnRzUo83qixmdvZKfNbMU_HYVf5aqPmEvw5A4da6dP8pUd8tPCA9biFboLOnWHyl9vR0YSKXN85TwGdJrEHc1tWDGBREllD5XUDgyW132RX9CLUBcxqi5kTQtvC_OmUeN2QHrSmO0DWTesOblkpaH02yhRq9nrArxS9n3B1QJzJfhHaTgG5J6kvTg.jpg",
+        "https://cdn4.telesco.pe/file/g0Sqf915sKSRN4HmmODD3bLHIq6lNjKUsSoHkXphKeCkKYFsJ0FqfWntb2G7PhQRUcU3UFQGHBFWfj-8svfMONSa-1PteFIoMnvrxW8G8nidysO-fkmSyMd2Z_BUwsrn_JxFQYNPTvcoc8sPvj4gaEPmOpRMHj3NKQqF0GwBKfHcXmKssuE0Ljvye-cLxyg27OSU_ayYG8IXpPG12o44arlltojMHUrvixjkQagPqP9QcQNqLDjRjQ5FV37HN-y97MGn-3f626JHTeIHNoURHM0csQxP8W_rCVEbeCHsx5WEF4jvnHojJ25_MVkStzRATlnsye873K2Umj1RY51ZPQ.jpg",
+        "https://cdn4.telesco.pe/file/kyBwHB8SPi35myYc41yyBjcCkEi_HP1WqLHteQTKSOAxHC4TG2rJg41T6DBWBZuIMenXo_-WBx2iWW-8vT8vVgnsvYHXX0XL929jmPyZlhhhqgp9fFSbI_02f86DCyS5CaGUw7_u5UaFeqY_hEbse4vqBKRyqj20RzyXJzI9diPYqeTWnVux92L9XeORmm5ycTc9GBxAh6BRKXRYpmUQ5-0ptH7Ncuzm5FA10cUxYv7YsLX29Lu7v2n_bFuwj9FdrVZCRQT0e45PhKwbw36k-gKQEpjrM1d0HFZX7ph8venkwXYkvwKcN5N9LeEx0rp0xQm98OgURQimqJKQzZlFfw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/kUZXiuazco3FycCPh8AZwKFLh-_CbZYbWDNt2EynSrDQRtHc9TUo4WYkIG2MJFFRdvVhTB7rxW6Fey5UmlyyfWInUi6_AIak8cGY9tHVApdjWb8oJMCFFeJnGOflK0_LVZFolxiEFUhJRMJbhm4pFa2hkI9NGkd8O8joWLCYQmMMftNptipGHPLFWQcgCbyEJVkWBXvr4SKCiDYSeuAjeOHnZhO7WJIMTNMZKfLiS52Igg2ThBjHW0MiGNYrnK-kP3ubCNFuLOqeGLfKBVj2k2ZV01WrT_0RFx_0LaOtgbrKnmiy0aClZNm5Ef6LG1Lyo1aWg_xKS3f2pDGZES6JQQ.jpg"
+    },
+    {
+      "title": "Регистрация на портале WB Partners — Как начать продавать на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOLS1zaGo5YWx5S2h0NHBEMWxucW5QRHlYVkpZRHNZOUhtY3NsbmNZRzJaREQzMTh1ZDdlSzR1cEJMcmRxMTJ4cnl3ajhNd2djaUlJZDdtWUpvN1dOWG1MMndwR1o5U2pLRW42VzZ3dnk3MTFyNjNabHVyY19qTnl3bVNNU1FQNFhtbTByWnFqZ2pVc19SVTZHRUZQY3hiVlFWdjVKVkVYLTNEeXBsMkFKSkZIcUI?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-10-12T03:55:41+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.043543+00:00"
+    },
+    {
+      "title": "Как работает агентский факторинг на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxNVFhuVV82cXJoUjgtcEt0c2NvUUxYUmZIbmJ0T3NkLVpWOTlxYi1QN1ZGNnFKRWNDM2JBTTAzeWw1RmFPajIzc3BqQjRLemVCUllXRGVjRElmcXJRcW9hS0lBNUxmY0lEZXJSSjhic0tjRGstNHBFT2tFMndyN3dMWkxjTQ?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-10-10T08:18:50+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.043741+00:00"
+    },
+    {
+      "title": "Infra x Security",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTFBIcmxxZ2ZpZW1pZjAxVE9CYUlYWEdfbEMzYVNpVm9VYTF1VmlWcTZmaXQ4M1ZZNGRyc3ZEWjVSQThlazJsazdLWGFPNFEyLXl5QjJXTlJ3?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://meetup.rwb.ru",
+      "category": "Компания",
+      "date": "2026-10-03T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.043939+00:00"
     },
     {
       "title": "📱 Работайте с заказами и с телефона\n\nНапоминаем: принимать и выдавать заказы можно через мобильную версию софта ПВЗ. Откройте pvz.avi o.ru на телефоне и добавьте сайт на главный…",
@@ -1193,28 +1388,37 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/rCxtCSetJp52iJckpKn-JosdumssqKe2y48BEgV4ct5s_sDFLr3yfh7J-YKfhaBDFAr9dY94v0ZuSU0ERkS-hVsSDdoo8PC4uetNUgI_b6tyvwyvgkf_0JIaM3G9EmWeZuggz429_FtuUqWjsVWPcQ4UD41ALyjBA6zaeqBzB0DGEZEqRhpXLj6Gv2NI5d-Tw5aFF51tb8ylF7WqiGAY3yTF3jKflGlBx0LUK6YP8HvPmNJcXUG56a4Oph0BqIqvhjZ1goCB8AClbO9_OMtSsIoT1la0LFuYYJ8tVLnHgRHcTbgDxvxTaZTmO1dXj6BISL40Az2KWkOR6Cp-PNTP2g.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/rCxtCSetJp52iJckpKn-JosdumssqKe2y48BEgV4ct5s_sDFLr3yfh7J-YKfhaBDFAr9dY94v0ZuSU0ERkS-hVsSDdoo8PC4uetNUgI_b6tyvwyvgkf_0JIaM3G9EmWeZuggz429_FtuUqWjsVWPcQ4UD41ALyjBA6zaeqBzB0DGEZEqRhpXLj6Gv2NI5d-Tw5aFF51tb8ylF7WqiGAY3yTF3jKflGlBx0LUK6YP8HvPmNJcXUG56a4Oph0BqIqvhjZ1goCB8AClbO9_OMtSsIoT1la0LFuYYJ8tVLnHgRHcTbgDxvxTaZTmO1dXj6BISL40Az2KWkOR6Cp-PNTP2g.jpg"
     },
     {
       "title": "С 1 октября на Ozon и Wildberries новые правила — что изменится для покупателей",
       "url": "https://news.google.com/rss/articles/CBMixAFBVV95cUxPVGY4RUVDZnNJekZQODJZTkJqbjNiOTR6bnR2M3A5X0lVUTVHWGVoTE1QbFZHY0tJQlpVdDFGVHF2SkxvSmttLWlWWUVHajdHMmM5YVlISmprS1NpQWFkSU5FTFpfYTNqMDhjVXY1b2VLdHVrMkxvTjlCUXUwTE5tUTJHQzA3aDZ6ZFR5TGc2NHhTM0Q2SVhWSXNyNW9qNlF5TmcxTXo2Z3pwd3dLVGYxeXNVSDlSSDR6SzFIWWZPbkFvc2Ja?oc=5",
       "source": "AndroidInsider.ru",
+      "publisher": "https://androidinsider.ru",
       "category": "Продавцы",
-      "date": "2026-09-30T07:00:00+00:00"
+      "date": "2026-09-30T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.044171+00:00"
     },
     {
       "title": "В ВТБ рассказали о планах закрыть сделку с RWB в конце октября",
       "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQdS04V2NjSFd0clFHZGFWWlZlS0tPVjlwZkFNbDdqbXdDZ2ZBQlVwTWFSMmd6LTh6WFZrb1JycHhhS1R3dXVjcFYwZUgzRTRwaUlKLWctaEM5T3ZPcjdDNUxNMUlnQnltRHJ0QmtsbTlsWDFrMTNva3laZHBBRHoxdkZYaXpUSXR2TWtDMjhZYTVkZw?oc=5",
       "source": "Эксперт",
+      "publisher": "https://expert.ru",
       "category": "Компания",
-      "date": "2026-09-29T07:00:00+00:00"
+      "date": "2026-09-29T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.044395+00:00"
     },
     {
       "title": "ВТБ и RWB планируют закрыть сделку к концу октября – Новости ритейла и розничной торговли",
       "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxOWE1jR19LMllnX2lpcVZtdE9vUmpSQzVod2NLWkx2UkxJR1JEbEdwaDR2VVN1OGN0OEVhNUo4Tl9yZzlLLUdNOUFSdm54T0lKYVhKb1VsWTNPdHoyQzdOYjdKanJaUnV2MlI1SFF4Zk5xRm9pNjJ2SDhUVnZEaG9TbnM0Vi03cXNCZktMLTBSWXhBcUJzVW1KRjQyb25ZelR1V2tYNHJDUDNXbGM?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Компания",
-      "date": "2026-09-29T07:00:00+00:00"
+      "date": "2026-09-29T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.044610+00:00"
     },
     {
       "title": "🔔 Новый раздел «Претензии» — уже в софте ПВЗ\n\nС 28 сентября все новые претензии будут приходить туда. Рассказываем, почему это удобно.\n\n❗️ Смотрите всю информацию в одном месте\nВ…",
@@ -1229,6 +1433,9 @@
           "url": "https://max.ru/join/_Su3lomMsIlRNTIypYXzbHIXI7uM1YNukenRLbfaL60",
           "text": "Подпишитесь на МAX"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/oPEvDvYRqinCZV1vXquAL9U2VDt1ojJxl3NsxOX5sYWuGylxspzjfTAoZJ8DoGASXAFfUca6y9qoGEJQVz0iAUOJ_kCNuNgJ47dM_xmbHf-t_sP2eovjEzA2WLstQNm3vJjoUQ8O9cOq7wjvoEZHAnUYo-GZR6vBXbKh169IviMr0kBN5xvNMyANA2L5Euta08Pg2xPToP0uaFNaHJlLCIpGUzThj2E93NzdtN3jpB3SIrm_fZChTfrJmkELV1tDbp-5so0r8q7EtrfLqIhK8rVt9aYXiEKylXxutFXUZOAPD6VsMcnjD5TPpIx0fQ09gp5QJIou0R9gnS6EAZYaYQ.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/oPEvDvYRqinCZV1vXquAL9U2VDt1ojJxl3NsxOX5sYWuGylxspzjfTAoZJ8DoGASXAFfUca6y9qoGEJQVz0iAUOJ_kCNuNgJ47dM_xmbHf-t_sP2eovjEzA2WLstQNm3vJjoUQ8O9cOq7wjvoEZHAnUYo-GZR6vBXbKh169IviMr0kBN5xvNMyANA2L5Euta08Pg2xPToP0uaFNaHJlLCIpGUzThj2E93NzdtN3jpB3SIrm_fZChTfrJmkELV1tDbp-5so0r8q7EtrfLqIhK8rVt9aYXiEKylXxutFXUZOAPD6VsMcnjD5TPpIx0fQ09gp5QJIou0R9gnS6EAZYaYQ.jpg"
     },
@@ -1246,7 +1453,19 @@
           "text": "Оставить заявку на подключение"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/MZcBEYxYXxYtpE9ohd1yH2tiD-gcSbrucWXVcPn4YVxpwF9x_zCgilAwZfBv_qfCR9lIDjSIDUUY5EHbWbcneFfABfTrFgQH27KbcnEFvJ7knsNMOqgSLsUKI6GNilkVA6JfbM-ft8gMkXY2Vb__Hj8UUy2mLoKXmIOLafdZQA7sT-MoIBpAMOTcbT57ARJlOhF19rlLJboylJIqxbQSYLH1QGdsm7Z9BGHACqu8DsSBca-g4SEucWQLSAC_hGFCkyXVBJ8BtvS8JrMwVkDOOU8K-tjHbbtOcakR7PAv-_bay7DSelaEqLPGna2IFqlKChYuwEzT3D1cGkAAfMMQZg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/MZcBEYxYXxYtpE9ohd1yH2tiD-gcSbrucWXVcPn4YVxpwF9x_zCgilAwZfBv_qfCR9lIDjSIDUUY5EHbWbcneFfABfTrFgQH27KbcnEFvJ7knsNMOqgSLsUKI6GNilkVA6JfbM-ft8gMkXY2Vb__Hj8UUy2mLoKXmIOLafdZQA7sT-MoIBpAMOTcbT57ARJlOhF19rlLJboylJIqxbQSYLH1QGdsm7Z9BGHACqu8DsSBca-g4SEucWQLSAC_hGFCkyXVBJ8BtvS8JrMwVkDOOU8K-tjHbbtOcakR7PAv-_bay7DSelaEqLPGna2IFqlKChYuwEzT3D1cGkAAfMMQZg.jpg"
+    },
+    {
+      "title": "RWB Медиа: новое за январь — март",
+      "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE9HeFZrY3FTblVCaUpSaGFlSXQzV1RocklvckI3YW1wT280elFJWVJ1dGM4SUhyTDZYSnZwN0JzU1ZHekIwd3hRT2lxcGVhWWh2N2kxb2pnMUstMUl5aDZMMWZRX3ZaMU8ta1BDRw?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-09T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.044808+00:00"
     },
     {
       "title": "🔔 Новый раздел «Претензии»: как подготовиться\n\nС 28 сентября претензии начнут поступать в софт, а общение по старым продолжится в почте.\n\nПодготовьтесь заранее\n✅ Проверьте, что вы…",
@@ -1262,7 +1481,28 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/BSrqd7L59RDVfmtspZi9TcVBw2QUuRL6kmmF2Wpk_t5o9pX8SNzfvvSJrIdimH01XYsjBmsvcehWof3RMgjQgRVWfaKO41TRBmX6vBmCsopj2ip8gjetq-a6xKTKzduwqh5Iqq5XK8CXBXIil3HqEKdqUp88J-wnU6nSw6I8MF5iXVBZGVxwlpBAgcNv3ttWwRD6FMrx6hyE-k5VsqIYzM2jy6VMGhPKQrvg1DRNtIyWN_oFC2N8rzdhgX56tTbuNxGLhm3TveJ7YyT_YOnROyjOccgh06PvAH92NYV1mlIwS2NNoGHq0_taWyfGgXgy5_1DdlIYnz9FtJwjMES1lw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/BSrqd7L59RDVfmtspZi9TcVBw2QUuRL6kmmF2Wpk_t5o9pX8SNzfvvSJrIdimH01XYsjBmsvcehWof3RMgjQgRVWfaKO41TRBmX6vBmCsopj2ip8gjetq-a6xKTKzduwqh5Iqq5XK8CXBXIil3HqEKdqUp88J-wnU6nSw6I8MF5iXVBZGVxwlpBAgcNv3ttWwRD6FMrx6hyE-k5VsqIYzM2jy6VMGhPKQrvg1DRNtIyWN_oFC2N8rzdhgX56tTbuNxGLhm3TveJ7YyT_YOnROyjOccgh06PvAH92NYV1mlIwS2NNoGHq0_taWyfGgXgy5_1DdlIYnz9FtJwjMES1lw.jpg"
+    },
+    {
+      "title": "Как продавать цветы на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE9GcTlCRHk5dmNpc21iSFdKYVpkWFQxT1NCblAxekFqazFWREFqd3dBYTVTVUVhLWw0aTVGYjNhbXR4UWhJMHBJdmpCdEtILVp3NHB2RkJ3dFp4LWxMYng3dEtyWjIyQ3Jxa1cxV2w3eHY2dw?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-08T13:34:52+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.045029+00:00"
+    },
+    {
+      "title": "Кыргызстан — Россия: новая модель поставок на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxNUVNYZzItVGdmcThsQTlYbkhjYy01Q3RSaTdPSDlELWR4NVYwQ0RaVXVvb0JGTEpNUS1Pc0JrZmxwSDhjOUIyREtESTV6R3lxcGZhVVpIQ3VKQ1p3NnRSYVlVTVlPZUlIczFLanZSanplaHpQb25tQzBZaTBSMzlGakxPNTMxeXVJUzdiZlZB?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-08T00:44:58+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.045249+00:00"
     },
     {
       "title": "🌟 Обновили процесс заказа брендированных материалов\nТеперь заявки через новую форму обрабатываются автоматически и быстрее поступают в работу. Также мы будем отправлять дату и…",
@@ -1286,35 +1526,154 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/Eyr95yZO9txmgLulB-dxDZPi0jc5O7gV1xoL92bt8M83-bUS1Dg6OQhAln9hZ4kIzT_GjREeuyKZcdv5azmyS4bcjmR2ybIkcqBBlhh_ehMO_KIzQHXU3EE0CQHZ3zhG1Rj0sAkMJ-LoBsgksG0BNQry8HH-WFL-dTLiuRmHuxr2e1_IXP6gJZGuerw8GalCJg3czqdtjQn6GoyQQX3i6FD7ek6VebSkhEaSRKlVjxnVc3nPBESZS6VKoI220L6Nob8KToXxk0_GHZy6NY3xxXML7sqV9jLKd3rTirKYDWT9zZ5KEEr2cPkdwOVDd4f2mNrtKHdthdJQ66CzSDVivw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/Eyr95yZO9txmgLulB-dxDZPi0jc5O7gV1xoL92bt8M83-bUS1Dg6OQhAln9hZ4kIzT_GjREeuyKZcdv5azmyS4bcjmR2ybIkcqBBlhh_ehMO_KIzQHXU3EE0CQHZ3zhG1Rj0sAkMJ-LoBsgksG0BNQry8HH-WFL-dTLiuRmHuxr2e1_IXP6gJZGuerw8GalCJg3czqdtjQn6GoyQQX3i6FD7ek6VebSkhEaSRKlVjxnVc3nPBESZS6VKoI220L6Nob8KToXxk0_GHZy6NY3xxXML7sqV9jLKd3rTirKYDWT9zZ5KEEr2cPkdwOVDd4f2mNrtKHdthdJQ66CzSDVivw.jpg"
+    },
+    {
+      "title": "На какие склады лучше отгружать поставки на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOVzhadV9ldHhEME5yZmtEbWFWQVNVTjRsZWdtbzBXdDBEN3BlckZMaXFJYkFZZUFyd0ZkMndpM0k0ZEFuVS1oYmJnS0FHbzZIXzlxZEN0MDZXckFvOWJQblZ4OEhYakhWT0o1LXQ5dmZMVXJlb3NWVlBLV0FROGM3RXV3UVFxeGQwZEJERXF5NVA?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-07T07:46:10+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.045458+00:00"
+    },
+    {
+      "title": "Программа обучения",
+      "url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE15VlE0QldwMUhQMnZQck5lbkRzZ3YzNlpmNS1ianFtakFZMkFBZFlhTHVxUGsxZkQyUU13Q0t0UkR2cjJtYkZTeGxTSmt1S29CWUpIS3ZpQkduWFVsWkg2dlo2UUo1RDA?oc=5",
+      "source": "Университет RWB",
+      "publisher": "https://university.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-07T01:17:42+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.045652+00:00"
+    },
+    {
+      "title": "Как WB Track помогает владельцам ПВЗ зарабатывать",
+      "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxNUUVTbmd5QmgtTWdLZDktZlVVS0ZPNDk4eFg2YlJyajVJcDdBS0tmMUpOS28yM0d2Zkc3bC02MGFmREZVTk5kNW9hdUlFTnNWMEN0N2R6WjNGM1NfbTk1Y1JzaXNsc25tRzA3ZHpHMHJtYy1hTXI2RzdfRFB3QzgtbzZKeks?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-04T12:02:16+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.045849+00:00"
+    },
+    {
+      "title": "Обзор кабинета WB Медиа: доступный функционал — Всё о продвижении товаров на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxPQlliMXJ2eGVneG1CSTBVVzFCbFpxZmhZbjZrbjlZWmRjd3lKWUI1ZFctNlVVTzRwOUxqbi0tc001VzRPNmwxWlQyTUx1bmdPQ1hSXzlBbmFhNkthZHV1NDBlQUJBY3pMTTJKaWFNMFJfNUJGNWp2WS1CVm5IU3Ixa0prVE41dlk1V2lOTUl5NGQ4ZG1ZZWVjMHF6T09pZVI4aVdWckZ4cGtCQnZLMWlIYzR5dGJhV3V5WF9Qako3YW0?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-04T08:29:18+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.046080+00:00"
+    },
+    {
+      "title": "Как начать продавать на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQR3dPdWFSQi1TcWYtanE0ejdCaGxzS1JsdW9La0ZzY05Bei1FcWp3UVpmWFhDN25fb09HS1NubHlROVZESzEtc3pMdXFrLTRuaWVLdXZBNnJUVDlPempxQl9yLWNNZV9iYk90QjVoWnlQLUw4anN1TmJyMG5yeDJOdTZDcw?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-04T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.046289+00:00"
+    },
+    {
+      "title": "Всё о продвижении товаров на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPUG9fYjI2Ny11UzBlQTVSV2s0MU1RMTV1RzBMai04YXA1T2FBMHpQZEphREJ5S0tRejNVS1JUaWc0Wm44ZlJ1Mlc4ZEk0UTRLclZkcWRTOFVRRkxOMDhMSEJrOVBFU1Awc3lkVHp1X0pRanNyN0ZIZGJ2QTBYOHdTcng2OA?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-04T05:37:25+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.046481+00:00"
+    },
+    {
+      "title": "Меры поддержки от Wildberries и государства",
+      "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE5xMERXUllDRWFqa0lTb3pkZXdyaDE4eDcxZER0YktBdGhkX1EwaURuQ1ZRRk9MV0JLVzBhYWdzWWpBd1MzMGpPRWd4MDZ0UlJDbk1aeDVLMFBMWUc3SnBoYk16X0pvVXVCS2M4cTlIUjdMZXpKTmdJSVFfNlEtNEE?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-03T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.046688+00:00"
+    },
+    {
+      "title": "Меры поддержки от Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFBKWnY2MXpqUnBjdk1lbFF2cDVkOG9KS1RZZ2NaRmd1anEwVVVpTUVWWFF5c0NBVGZyWW5ZRVdydkpLTm9ORDFfWGwtbF9RZjZwYkZvUTdyS3NLQkxwVWhPWUlCSHU?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-02T11:43:36+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.046900+00:00"
+    },
+    {
+      "title": "Платформа роста",
+      "url": "https://news.google.com/rss/articles/CBMiTEFVX3lxTE5mN3htUVVIa1RjR0NsMkV1ZVJNSVdpdl9sa0Z0TWpJa0lRZmxYdmV1NTlsbHBqR2g0el9LLUFGOVkySVp0RW9VTlRoQno?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-02T10:21:52+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.047125+00:00"
+    },
+    {
+      "title": "Видео и подкасты по работе на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE00Vnd6MVdyek90X1pyZnEwckNDeW92NC1xQzhjU29lMlhpdWNqYUZEWjBUNERzZEZKc2duak5NdXpkWUhDZV85VE9aQVdiZw?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-02T07:37:31+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.047322+00:00"
     },
     {
       "title": "В Минпромторге допустили распространение мер поддержки селлеров RWB на всю отрасль",
       "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxPdXRXVHplU0N4cUpxM3dENUxvTlhuS1lJeksyR2xfbjE4dlRDTkV2bGJWQXYwZ1hLQzlQWDZWYjRZeWhSREdRTXd6UU0xTVhINnZJczNpY19xODY4ZDZtYWtzc0pKZ1FLalQyZF9SOG9YeTFfd3NSTFlsQWFJcVRMNC1RTGFvQmVaLUp0VF9pb0ZVUS1BQWtKMHktX2FXS2lPWUhJQllrRU8?oc=5",
       "source": "Эксперт",
+      "publisher": "https://expert.ru",
       "category": "Компания",
-      "date": "2026-09-02T07:00:00+00:00"
+      "date": "2026-09-02T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.047532+00:00"
+    },
+    {
+      "title": "Добровольное страхование на Wildberries от рисков БПЛА",
+      "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxQeS1mbjFINXpVUnZzdmp6aVE5aXhMdG1fQUZaazdyUHlXMjFnQkFyV3Job3ZSVk00M213MmttRWI0dkthUFA4bzVyZkY4dU1UTGdMeDB4cnJqcTBCVUtHOVJnY1F3bzJoeGZReUVmc2pqYjZ6NWlnN3BzWVVpemstdWxWb2cxU1pwVXhr?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-02T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.047745+00:00"
+    },
+    {
+      "title": "Статьи о работе на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMiQ0FVX3lxTE5HSnlndXMzZ0JHUlRTNGQ2M1RDX0c5a1prWlB4QkEtWmpSdnZqZU1ub2p1eXRWYThUOVRjbkluYklqSGs?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-09-01T21:32:42+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.047953+00:00"
     },
     {
       "title": "RWB протестировала выпуск ЦФА для продавцов Wildberries",
       "url": "https://news.google.com/rss/articles/CBMingFBVV95cUxNR3ptaTNOSkFCNGJDZ1RUMDFGMTk5NU1qeTdaNF9jTmRXQnpGOGgzQkxjMms1cU4tbmdXNmdvWllKV3hibFJ5dnlybTB1ZV9xM28wZXNNZjF0Z0d6T3h5dlNyX2prYUxldnhaZFNaaTg0T1JoaHRDd1R5VHotOXdJMnJhSXpiZkhIVGc4ekJGR1NhdE9wRUJmTmp1MldWZw?oc=5",
       "source": "Ведомости",
+      "publisher": "https://www.vedomosti.ru",
       "category": "Компания",
-      "date": "2026-09-01T07:00:00+00:00"
+      "date": "2026-09-01T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.048178+00:00"
     },
     {
       "title": "RWB и Wildberries запустили пилот по привлечению финансирования селлеров через ЦФА",
       "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxPN190VVhwUi1kUkxEcHhxUm1PNUhjWVB6Q1V0ZEE1bFdwaHlKYWFHR1p5REV2dm1GTVpKdmZFWk1LanJHVXlvdnM1S3MtNzVWdnlWV2VZZEo4eEx0dThMSUdud185WktNTWl3RjB3NjRHS3ZmenBmcVJIWDRXU1JFeW1EcUxfUzE4TzkyRGxBNlU3T3J5RWpzQnU0MjJBcE1fN1FlU0NDdVdQdDI0UjRLRDhLMGZHMnJiVFE?oc=5",
       "source": "Агентство Бизнес Новостей",
+      "publisher": "https://abn.agency",
       "category": "Компания",
-      "date": "2026-09-01T07:00:00+00:00"
+      "date": "2026-09-01T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.048391+00:00"
     },
     {
       "title": "RWB провела пилотные выпуски ЦФА для продавцов Wildberries – Новости ритейла и розничной торговли",
       "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxPMFVSYkRvc3l3YWtoNGZBQ3J6VFRCS0QxRUhJeW44OVozRkZ3QU0weE5LZVF1cU05LXhxc3RCaWtMOUlVZ3E2bjA5OHplZWJOXy1RbFZBNVp5eU9Ia096SklDU3VSaVUzM2h3RWE0Qk9yZ2xUWlJRQzE1QXR1Q3dkSW9ka1pGSVBoMUZVaWFUTENRa2oxb0FjVFV4VFJSTXlwZTNTT1RVUHc3WHppb1hWMEIwSnM?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Компания",
-      "date": "2026-09-01T07:00:00+00:00"
+      "date": "2026-09-01T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.048605+00:00"
     },
     {
       "title": "❗️ Проверяйте паспортные данные при найме\nПриём новых сотрудников — ответственный процесс, от которого зависит стабильность и безопасность работы вашего пункта выдачи.\n\nГде нужно…",
@@ -1338,6 +1697,9 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/ElJF1HeKBRKkuTbpx5t5qK-UyUU3G3uv43XWjP2gLPkfTC2Lxm6Z1X4jfc1ZvetRGxYXfFRzx7trcogDz2UBoNGvcaeJHcsnJ7XBVsB4AOvQlqpwAezzspV1vNu-Q1umntbwB06fIEpw8ihIlcRXnYbI3r2VG8V6A-V1RkOYyhNxxlc-lHOyCxmEn39b0ogTVdphhWosWV-KCgaQVgVKSgucZqYwUcISNt3V1eKK2AlnbHzPnVPf8vIfGdiN8SnSW_wmP4Jkb9amEV1v6ZCnqRIWBqQBWd8st8808xHgWTDgRHYJ1LMUZ0qlCt0f2ZPzL5FuVTxtELxXj1GlVdzlvg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/ElJF1HeKBRKkuTbpx5t5qK-UyUU3G3uv43XWjP2gLPkfTC2Lxm6Z1X4jfc1ZvetRGxYXfFRzx7trcogDz2UBoNGvcaeJHcsnJ7XBVsB4AOvQlqpwAezzspV1vNu-Q1umntbwB06fIEpw8ihIlcRXnYbI3r2VG8V6A-V1RkOYyhNxxlc-lHOyCxmEn39b0ogTVdphhWosWV-KCgaQVgVKSgucZqYwUcISNt3V1eKK2AlnbHzPnVPf8vIfGdiN8SnSW_wmP4Jkb9amEV1v6ZCnqRIWBqQBWd8st8808xHgWTDgRHYJ1LMUZ0qlCt0f2ZPzL5FuVTxtELxXj1GlVdzlvg.jpg"
     },
     {
@@ -1354,21 +1716,37 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/p3ejCqrEphSGxPF84V-7_9royrFNG4ZtD8RsIcXO0OxuIpxSboL-Yf8W1XG2LoujlylsHqhmuDsQvv-qSQBzb20ises1lWEuWT7oChX22TLbL3JcOyTqZie61ExukDEVaYwOPDx0dQIP2k4fl5uqwYa888yvNrqn8dsqH0aI65AXytNDMPWfKHSkzW_cfB43hk9MHaiPyYRCm1LX3_8ENVhbwhB9LXMwr5miIENF-kReH2iTom2w8WFykwYeE-Pa6XEkMPwtZ2xhQgQHe7JVLgVm8V_DYMCA3r7doezwq2uChIo33kRzzKMdnxH5uV_CwN3HRkx_L9-_39OnB9UJ-A.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/p3ejCqrEphSGxPF84V-7_9royrFNG4ZtD8RsIcXO0OxuIpxSboL-Yf8W1XG2LoujlylsHqhmuDsQvv-qSQBzb20ises1lWEuWT7oChX22TLbL3JcOyTqZie61ExukDEVaYwOPDx0dQIP2k4fl5uqwYa888yvNrqn8dsqH0aI65AXytNDMPWfKHSkzW_cfB43hk9MHaiPyYRCm1LX3_8ENVhbwhB9LXMwr5miIENF-kReH2iTom2w8WFykwYeE-Pa6XEkMPwtZ2xhQgQHe7JVLgVm8V_DYMCA3r7doezwq2uChIo33kRzzKMdnxH5uV_CwN3HRkx_L9-_39OnB9UJ-A.jpg"
     },
     {
       "title": "Сделка ВТБ с RWB сдвинулась на сентябрь",
       "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5TbGNrVWFPUlp6SWotMnN3RDVPT3B5SjZJa1lFMWFmQkZRR1BsNHU2bWV3R1Z1UkRmTWItbWVsUERCN2hfSVZXajlWSDVrYm5tTnfSAUtBVV95cUxPbVl2M0NtRzhoWGNhLVB3SWVfYUduVDNuRno2dWRlOFJ3ZVlFbWx5dHpKZmxDWWdKTmxsekx4VGg2SnFfcUo4MW5YQkE?oc=5",
       "source": "Интерфакс",
+      "publisher": "https://www.interfax.ru",
       "category": "Компания",
-      "date": "2026-08-28T07:00:00+00:00"
+      "date": "2026-08-28T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.048812+00:00"
+    },
+    {
+      "title": "RWB: главные тренды фишинга в 2026 году — дипфейки, мультиплатформенность, автоматизация",
+      "url": "https://news.google.com/rss/articles/CBMipwFBVV95cUxOZmI0eWpuUEhMeGJPSHFWNGYtTm9EVlRwZEZfOHNzVjU1M05uaGpkRUFiakJmVnFjdkZSTWdrUEt5bS1maEhLSE5kZmwtY2ViTXFZeHJJcEhqODN0MC05S0dhQ1l3WmNQeFBhVk5qYmV3SWpVSzY2Wm9jMThYMUxtYUllaXFybzVjZG81XzVHbzlQS2Nud0RKZ0xDWXZoVGg4OU5QSVVLRQ?oc=5",
+      "source": "cisoclub",
+      "publisher": "https://cisoclub.ru",
+      "category": "Компания",
+      "date": "2026-08-27T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.049041+00:00"
     },
     {
       "title": "Пострадавшим селлерам Wildberries дадут отсрочку по налогам и страховым взносам - новости Право.ру",
       "url": "https://news.google.com/rss/articles/CBMiQ0FVX3lxTE1JclNkVlRMdXZXclJUU1g0b0k0UFFRRWZHaTBnX1dMRktmWXBacGtBX0I0YWllbnRmOHlWeUxEclhpZEnSAUhBVV95cUxQTzBYZ3QtOV9nakVrVTVycTlyRmhodnJ6cTdtcW1NSkc2M3dZMURhRkNNSUVzTnNrYzE0c1ViVVhITlVhQVB6RWE?oc=5",
       "source": "ПРАВО.Ru",
+      "publisher": "https://pravo.ru",
       "category": "Компания",
-      "date": "2026-08-24T07:00:00+00:00"
+      "date": "2026-08-24T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.049259+00:00"
     },
     {
       "title": "🔔 Напоминаем о конфиденциальности\nБудьте внимательны, когда работаете с данными клиентов и внутренней информацией компании. Это влияет на репутацию и доверие.\n\n❗️ Не передавайте…",
@@ -1392,21 +1770,55 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/NuEDJVntSTmF1nzdWIxC3xGnTbnQ3Xn3flNaCFiif2Ni7XYTOkq-gt8_3_9wMpZkY_8AnMJTVpBS--lMXcgLQn2lx0WnuXsFqipOAE8wrN_lRKYMmj8WZ145W2Z4MZ7XoNVXd6vvbVFe4nXUt0g3cYU9aJDnTJIkFB7sShrZNdg3dMUsxy2IvxXayGYsuw-F9noxRBCLr_5x242h7MNjcrodNynGSannXRWBDsJC3SjAX467OK5oMWYB-Ql3UVfIvuda1-yvqNQDDSKlYiL_L_1pHinBf1TMHZcIU8iMgI0GA89HvAYXfqGpSKpsZA9yznNoCeJrnVglb4f14DYxfg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/NuEDJVntSTmF1nzdWIxC3xGnTbnQ3Xn3flNaCFiif2Ni7XYTOkq-gt8_3_9wMpZkY_8AnMJTVpBS--lMXcgLQn2lx0WnuXsFqipOAE8wrN_lRKYMmj8WZ145W2Z4MZ7XoNVXd6vvbVFe4nXUt0g3cYU9aJDnTJIkFB7sShrZNdg3dMUsxy2IvxXayGYsuw-F9noxRBCLr_5x242h7MNjcrodNynGSannXRWBDsJC3SjAX467OK5oMWYB-Ql3UVfIvuda1-yvqNQDDSKlYiL_L_1pHinBf1TMHZcIU8iMgI0GA89HvAYXfqGpSKpsZA9yznNoCeJrnVglb4f14DYxfg.jpg"
+    },
+    {
+      "title": "Как настроить push-уведомления в кабинете WB Медиа — Всё о продвижении товаров на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQYmZlZHdGQXd4aFZJUEdPcFVKTkFTbnlzdHZwckx2OVhVenp4bjNKZlQtNzlyQlEyVTliVnNXdDdjU2tlQUdsbGhkYUxFb24zdW5XMVZ6cnNQOUV5Tzk5RHl4S0c4SHRfVnRkbUMtVlJLUXhqYk1FNVZJb1R6ZDdscDMxcnRMVXR1eWxRTE1sVlFRNTNzZE1saWkyem5zR0VMTk5zdzU0V20wNHRzT1BVbzNuOTBFdzkwRWl0d1BQRWE1WThOaDdZ?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-08-18T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.049467+00:00"
+    },
+    {
+      "title": "Реклама у блогеров Wibes и оплата с помощью WB Инфлюенс — Всё о продвижении товаров на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxQT1hVMUQ2MzloRGU2MEcyVHVFdVEtMWpzWl85ZUNLTDlzdi1tU1BKMTFEZWhHSlZ1d3Z1TGFtQWdmblN5aWpEZ3prNTVGZldqV3VRcWstNjg3R29uU3dZdjBmNEJWLXpLTUhwWi05cXQteEZ3MEFZODlYRTIwQ0g0MUFVTExscGNScmNtLWNET0lGaDZEdWhxTkgzeXEyZmNYRFlkNnFHaE5LSi05TEpMeENEV2t5cVBIdmRWel9BbV9PQ2k1OEU4Nko5NEs5Y1FkUEM0?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-08-18T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.049680+00:00"
+    },
+    {
+      "title": "Оплата кампаний по продвижению: все доступные способы — Всё о продвижении товаров на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNcUQ0MXlYZzZvNjdrbjE5QUM1X2x6WUlhazRtQnVFbVRXblV4dm5kSUl0eEVVVlBBdFI1b3Joekg4UlFWZEtTbW1SUldOaHVEV0RDcWxDbm53TTFPenEtLUJYNGw5Ny01RG52M3lVNU5qTzdseVE2dmtKMjRqWm1oX25KYWJmeVVacVV0ZmlwTkhodm9Cbi1zUU53Nlo4WGhUZHBjcWVXYWU2OXh6YVdFeV9BR3RKTnJmMDVuTFM0S3BrbENsMXhKa1FiaFg?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-08-18T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.049894+00:00"
+    },
+    {
+      "title": "Откройте свой ПВЗ Wildberries с нуля: пошаговый разбор",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOcGNvTG03cmQ4QzJic3BxVUJiaThNa2drSE5fYXBDeWx1b284Vjl3dEduMndXZ2lnQVBiazZJUnphc0lVX2hfRnZyVjd1M0ExV0hGWmNpX2NMTENBTXRaUkUydlIzTkVhVEV0NWp5Rk5NNVNIMTJoNWdKYmJGOGJXREt6TQ?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-08-18T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.050128+00:00"
     },
     {
       "title": "Wildberries изменил правила возврата: россиянам раскрыли новые требования на ПВЗ",
       "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxOV1lQVjZNVnQzNkVBcWtKX3NHZTJsVy0wT1AtY1ZFNnZZMlBBeFdVMEZiZXRMYk1ZWnoycXFQRm1kRGxVX2dXaFZYZjB3OTNHLUNjZEFISV9WLVdteU5NcW9QQTNFUVVqdzhHRGlrMS1nN2MtckN0bnZFZlFSMFFRMWNhWWpKaVo1TER5VkRBYm14WlZtT0VuY3AyU0ZuUWNnNkY4QVNKY2JsenNzUWRfWmhmbEh3SVpU?oc=5",
       "source": "Общественная служба новостей",
+      "publisher": "https://www.osnmedia.ru",
       "category": "ПВЗ",
-      "date": "2026-08-11T07:00:00+00:00"
-    },
-    {
-      "title": "Как выбрать сервис синхронизации остатков между маркетплейсами в 2026 году",
-      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE83NTBiV2N3ZUp4cUx2TElxb1BlR1hNeGo2WFo1U3F5bjcyTHQ3X1RKdEF1eUhJcG1RQ3NoZGxVYnVQRGVpOGxNb180bG9pWE91dkE?oc=5",
-      "source": "Sostav.ru",
-      "category": "API",
-      "date": "2026-08-05T07:00:00+00:00"
+      "date": "2026-08-11T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.050337+00:00"
     },
     {
       "title": "Как действовать при чрезвычайных ситуациях\n\nНи один заказ не стоит риска для здоровья и жизни сотрудников и посетителей. Сегодня расскажем, что делать при ЧС природного…",
@@ -1422,21 +1834,10 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/nPzaqXRiBYekPsb2IcRNl5FkKYprLWlDs2LCwYbwXQNpRawW4ttgAXLl-ZxK52U4CjV2RmbH_17eD54IfyXLRPtR8WYP7YfDGbi-ECClSGV1yEJ-5gGyeZptO_CgkWYKEYh6MJtGUxZDOh0SqbEASw_dcawFyHRzhi25F83KJgeZ_m1fWOvd64ibwG2QcfSwnwoMqiq9N6v91g9on_e654x2GsE2l79CVkLwEq6dri9UBGrQ5VuXwlWSntAWdaRfTbrpYzvRPGELNj3d_wtJFbPFsaasVCactp8KvT3z5F07rJQKbhg08nT869c6B-JS5KmU-GuJWMlCp7XJMYfHfw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/nPzaqXRiBYekPsb2IcRNl5FkKYprLWlDs2LCwYbwXQNpRawW4ttgAXLl-ZxK52U4CjV2RmbH_17eD54IfyXLRPtR8WYP7YfDGbi-ECClSGV1yEJ-5gGyeZptO_CgkWYKEYh6MJtGUxZDOh0SqbEASw_dcawFyHRzhi25F83KJgeZ_m1fWOvd64ibwG2QcfSwnwoMqiq9N6v91g9on_e654x2GsE2l79CVkLwEq6dri9UBGrQ5VuXwlWSntAWdaRfTbrpYzvRPGELNj3d_wtJFbPFsaasVCactp8KvT3z5F07rJQKbhg08nT869c6B-JS5KmU-GuJWMlCp7XJMYfHfw.jpg"
-    },
-    {
-      "title": "Обновления кабинета: AI-сегменты от Soloway и товарные баннеры в «WB Медиа» | Маркетинг | Новости",
-      "url": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE92THBydGxTUG84amRTa2cxWVBobGZ2cTBTUEdmSlJPV0s1cTlhaVNKWldTVTZLUlRSbWQxdll2VEhOOFpXTWIzN1RZcVJRRXpqdHdDX0JDNUkzSm1HaGtKV3FibU1fMk0?oc=5",
-      "source": "AdIndex",
-      "category": "API",
-      "date": "2026-08-03T07:00:00+00:00"
-    },
-    {
-      "title": "Самое новое в «1С:Бухгалтерии 8»: загрузка реестров продаж юрлицам и ИП через API Wildberries",
-      "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNZVd5UWdkQnVJZmtxUkVxY1dPUUxCcTk4YWs2eGZqN0VFOVpjVDVDeVQ0UlNJc2N5eTZ0cktLMGdUZV9CeWdjMWlSekJDNkgtRTFfX2hiTl9xSzVOWmZ3ekhpN2NrbmFCb3lRQU5JNWF1ZHV5SFkxa3JwXzhQRVRyVy1rUVQzNVdMTDh5cG9VbDRIUzBfNmZMczY2UEEtUFpISEVvMzdwQ0JhTDY5LU1lMUdkdUxaYVpMOFR3Vg?oc=5",
-      "source": "BUH.RU",
-      "category": "API",
-      "date": "2026-08-03T07:00:00+00:00"
     },
     {
       "title": "📍 Как прошёл бизнес-завтрак в Нижнем Новгороде\n\n23 июля мы встретились с вами на мероприятии для владельцев пунктов выдачи Авито и потенциальных партнёров — это было важное…",
@@ -1452,35 +1853,46 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/NhvWFQhyVQMfI3xPXwreWGjCMlrqZIGL9Wqynd4tKAiveSipc15QdQ21edqy3rR0KbmAyzxnxQQ7_INsS0OK_rRpW0yvf9V0i4FbamzACobh7hK6LlQ-ml3HmWO5WOeViOHPLWA2F2qb-lkNGYTjJnArqYLVBYZyg-W3fwtEW4ApJ0BZ9Ksva_hQHY7xv9fmLJ6MykBPFZQCl9Pq4cuuTBNEYI0dwKbTocdjPSjZFYngpgEh1TWdqzDwwjZY6wvLIPXmzCDEolbrDsyMcBNC3-8ROt9gSC1Rde1LCtV_3eqqXVMTV7xJ_8zrp6xMRJNbmCDnc4fnXdsdHrQbiGCv0Q.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/NhvWFQhyVQMfI3xPXwreWGjCMlrqZIGL9Wqynd4tKAiveSipc15QdQ21edqy3rR0KbmAyzxnxQQ7_INsS0OK_rRpW0yvf9V0i4FbamzACobh7hK6LlQ-ml3HmWO5WOeViOHPLWA2F2qb-lkNGYTjJnArqYLVBYZyg-W3fwtEW4ApJ0BZ9Ksva_hQHY7xv9fmLJ6MykBPFZQCl9Pq4cuuTBNEYI0dwKbTocdjPSjZFYngpgEh1TWdqzDwwjZY6wvLIPXmzCDEolbrDsyMcBNC3-8ROt9gSC1Rde1LCtV_3eqqXVMTV7xJ_8zrp6xMRJNbmCDnc4fnXdsdHrQbiGCv0Q.jpg"
     },
     {
       "title": "Wildberries снизит стоимость обработки товаров по FBS – Новости ритейла и розничной торговли",
       "url": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOY191WXluSDl4NWhsV1ZySm9iTUdNOTBBWmlVcmEyX0U2bVk2OXloeXZMZFVzR0t6MG5md3B5ZnJ3RzdKbURoZ3NWUzdTUWo0Rk5EVDJLZTNoanRNVUJpNVN1alhCTnl5Szl3TVZfZ2lhc015WjFvMXBfS1V2UUZRNGdQSDFiWmRuUkpCeEhYRW5zaUtGeENyTjdfSXpFaXNCc01peQ?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Продавцы",
-      "date": "2026-07-30T07:00:00+00:00"
+      "date": "2026-07-30T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.050546+00:00"
     },
     {
       "title": "ВТБ готов рассмотреть различные формы кредитной поддержки Wildberries-Russ, если будет запрос",
       "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9pUEt2OXFxX2xubUZTTHVtbnZFV1pDSzBib2ZJdWY4UEV3OV8xUjJhRGNqRldjaTVJUmMyTjN5N3pVcE1pYWxoZUtSQnhVMUhpM0HSAUtBVV95cUxNU3cybU41dDJaZFA0YU4wZEI5ay03UVJHejhrY1ktc0QyUXVjc1RGM2VwRTF6T1hkYkF5Wmt1d1J1NmNfMUtDU3l1aVU?oc=5",
       "source": "Интерфакс",
+      "publisher": "https://www.interfax.ru",
       "category": "Компания",
-      "date": "2026-07-28T07:00:00+00:00"
+      "date": "2026-07-28T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.050756+00:00"
     },
     {
       "title": "В RWB разъяснили механику расчета выплат пострадавшим селлерам",
       "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOVFlQLUtCMkZZaUFLV3plb1BVOUZoel9RakR1MVRvZmhLOWc4QnJNUG5LaFBQS0VWWkE2V2xPY1RMUGNBb2ZMTkRfcTNrZnNLR3NFaWdOaHEwSzBYY25WT1BNTmlsT0hXMWlaVjR2R3NuOWJMeHkzT0tjdTNTTXNCdXdpNUczR2RDMTR3ZXpJMXc1QQ?oc=5",
       "source": "Эксперт",
+      "publisher": "https://expert.ru",
       "category": "Компания",
-      "date": "2026-07-23T07:00:00+00:00"
+      "date": "2026-07-23T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.050964+00:00"
     },
     {
       "title": "Wildberries все-таки пообещала компенсировать продавцам стоимость товаров, сгоревших в результате атак ВСУ",
       "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxQbDRJTVpYbVRjNUx4TGE5TTdLeHVCQ2hwTk5Sd3ljdW5qMDJjSFg1LUtxRUxVUmEzNm5XSEVWNUIySmxXT3pMay1NRG05eE4yMVptbVFSNm9VbDZrdTdPaU5GLXdiaE0xM0wtaldtNl9TLVA2bUhiaDdUMWVPZVphUHdqaXlBNEh4b3hhWkNiQUo0T2dEVFlVRUxOVE9NTXFwZHhvS2pqbzcydEJoTzU2Ni1fNFpCeUhyaVlLekVIem5NN3I3Q1VZa050MNIB0AFBVV95cUxOaDFFaUxaQTVaQnNCNl9NcGNXcXRMR0JqajJhQzRLUFdZZWhkc0IyaHlEZlFIWWVQY1NWaFBxTkhxQ3lLeVU0NHpkWlFwZHpVbWg3N2t2YnpQVWhvcmdmS1BiNW9Ka0RtOWNrM0ZyZ0ZBU1JQOTVySE0wYU1feE9DYkNNRnNmYzdEVzZRTEpaYmVRMGVuZmhrWG5EN2NLcW15MS1uR1ZqZTEyZWVsSElIa3JQeEJUT1JhbUdSa1FvRUZGNEpqY3ZNbmFRejhNeWda?oc=5",
       "source": "Meduza",
+      "publisher": "https://meduza.io",
       "category": "Продавцы",
-      "date": "2026-07-22T07:00:00+00:00"
+      "date": "2026-07-22T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.051200+00:00"
     },
     {
       "title": "❗️ Как действовать в конфликтных ситуациях\n\nВ прошлом посте мы напомнили правила безопасности при работе с посетителями. Сегодня расскажем, что делать, если ситуация в пункте…",
@@ -1500,35 +1912,55 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/d_gbREn45F4CH-A1i-n-IZYAVVEAlfOjU4FUVQjGrNITwfg-bRea6pESJdExl71mVI_BmjBpkPByYsf6qFYPnKVgdjRQFgaIQSXbgLFoBbWPiWRhF3e6nUs8v75afz9faWQAsFUcVHdcKdbVDOt8nlU_a53x-XpfafLfOGcLxu17SaqIzVFvopZhUheSvAoBx-wKJXdoha312gY65qbydJVGFWpYkwzb3IthRIg9lJFfdMxAQwOjvHsbxfpnzNIXtXhXCWF11eU4tAT3qJGxG4Mz6OzSd4a_2RW2O5txo7vlHxfjCTTlU1LOYp4BQo7yb63Yt6UwEdZPbtMlxbXWQw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/d_gbREn45F4CH-A1i-n-IZYAVVEAlfOjU4FUVQjGrNITwfg-bRea6pESJdExl71mVI_BmjBpkPByYsf6qFYPnKVgdjRQFgaIQSXbgLFoBbWPiWRhF3e6nUs8v75afz9faWQAsFUcVHdcKdbVDOt8nlU_a53x-XpfafLfOGcLxu17SaqIzVFvopZhUheSvAoBx-wKJXdoha312gY65qbydJVGFWpYkwzb3IthRIg9lJFfdMxAQwOjvHsbxfpnzNIXtXhXCWF11eU4tAT3qJGxG4Mz6OzSd4a_2RW2O5txo7vlHxfjCTTlU1LOYp4BQo7yb63Yt6UwEdZPbtMlxbXWQw.jpg"
     },
     {
       "title": "Wildberries может заплатить пострадавшим селлерам, но не всем — эксперт назвал условия получения компенсаций",
       "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE85UHBFdHVEZWpUY1Q5RmlvX3VNU0FRQ01zaTF5UUJzRHY3NDJQNURiTTZRX2JGNVJYZDU5TUxiejl3Q29BVDRXQTVMR181Zw?oc=5",
       "source": "Клерк.ру",
+      "publisher": "https://www.klerk.ru",
       "category": "Продавцы",
-      "date": "2026-07-21T07:00:00+00:00"
+      "date": "2026-07-21T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.051409+00:00"
     },
     {
       "title": "RWB регистрирует в Роспатенте «WB Карты» и «WB Навигатор» | Тенденции | Новости",
       "url": "https://news.google.com/rss/articles/CBMiakFVX3lxTE03Y3F4ZTVsbE5OcVpXaVlsSzRCeTY2alhMTy1YZTR5RFZqNTh0WlFZd0pteDQtX3BGa3JmSEVkT2dpeWlCb3VyLW9NUEE0dUx3UzM4aEV5UmdnUjlfMjBKV2FodmJMSnNySXc?oc=5",
       "source": "AdIndex",
+      "publisher": "https://adindex.ru",
       "category": "Компания",
-      "date": "2026-07-20T07:00:00+00:00"
+      "date": "2026-07-20T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.051622+00:00"
     },
     {
       "title": "Кризис 2026 года на складах Wildberries: компенсации, цены, отчеты — что бухгалтеру нужно зафиксировать прямо сейчас",
       "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE4yR2UwUlZpTTYtSWNYOGpsTmJNb2lSMXZnYV9VZW5DY3pFb19GZjVIRDYxNHdDNEZGbWxyWEJwNjdsQUZudDA1S0NDenlUemlxQWc?oc=5",
       "source": "Клерк.ру",
+      "publisher": "https://www.klerk.ru",
       "category": "Продавцы",
-      "date": "2026-07-18T07:00:00+00:00"
+      "date": "2026-07-18T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.051834+00:00"
+    },
+    {
+      "title": "TechDocs Online Meetup",
+      "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE9jemdfSjJHSm5VRHZrWF9DeTNDejhxMU1EWmxEZGhIdEhUVUstdHh6U0RUWE1OVExJbUMzbmoyQ290OW1rbVRsa2twZzNXVVV4a2lzblYwZGRpVnp5Y0E?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://meetup.rwb.ru",
+      "category": "Компания",
+      "date": "2026-07-16T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.052063+00:00"
     },
     {
       "title": "Wildberries и Минэкономразвития РФ запустили проект по продвижению туризма в регионах России",
       "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxObUhzVndmSUpITmlZdlpOc3lPR2VfN2xiSXhPS2Nhc2E1WU5wY2drSGRYby1Mdkt5a2J1bFVsTXJRcER5eldqN0hEWUFHR0xyUkQtbDRPQ3loS1V6RGp5SG1RREV0VVBpZ3JKRmN5ejdRdi13Mm04Rk9HbVpTUDZTUVprU2d5bkxvMUE2cDlGZnZUdXhyUEdfcC1ILVNYZnJQcXNJR2JkZlNycjVNR2RhdG5yRmpremZFZGtEazNIaHlWUHVRcXplTUp0SU7SAdIBQVVfeXFMUGR0cFI3Y1RhUm83TVcxbUFZYXVZeC03alpSWnd3NG1RbmZFT3lFdkVZQktDYmRIVmN0VGlpSkkxVzNOOWtlaFBwWHJvVGRBaUVxUUhrOXo4MUtxM24tbE9JNllmdTlPWFVmOFA2cjRxUGc5NHhQb09VYTFqRExySGZCVDN6VGZTZkxQd1g0WXI5V0loSi1fN0NXV21jNERTaDBuLTJuNEJDVUxUbWhhNmlkdTRfazNRbkplcjRCWG11czRuYm4zUVBMc3pCM3NBNzZR?oc=5",
       "source": "Ассоциация Туроператоров",
+      "publisher": "https://www.atorus.ru",
       "category": "Компания",
-      "date": "2026-07-14T07:00:00+00:00"
+      "date": "2026-07-14T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.052282+00:00"
     },
     {
       "title": "❗️ Правила безопасности при работе с посетителями\n\nБезопасность сотрудников пункта выдачи и сохранность заказов — наш приоритет. Напоминаем, что делать в разных ситуациях и какие…",
@@ -1544,56 +1976,37 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/TwZWpAsee5jzGB7ewCVp-MAC183dYdELeOV3EOzelBTaoIBjLMmjreWzm9bFQyFLNm6GhKs64Kmh7EMWJ8dP7afbBysuRlGUSDrTsLfJiJ0pNZrBnxrQv6CvNaR2S8YHLKLyLmhSUwZNz5PsqxumMB-4cEHtveUgLGi3xr6471t2V8C0G58fKPr-6_Y08eC9sLtmeYl-lo1OZxLwsVXbyI9U8YGEJiSlvGgagY7W8fGDOfz9a6ouH5VINbmxPUiGZY7kmZpCk_99u8QSWukFRcsI7cErOc-LLetgKqM0zOvqnkpemFjwdlrcdXfH3BlM_uONmmUzPWmCP3jgcaILRg.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/TwZWpAsee5jzGB7ewCVp-MAC183dYdELeOV3EOzelBTaoIBjLMmjreWzm9bFQyFLNm6GhKs64Kmh7EMWJ8dP7afbBysuRlGUSDrTsLfJiJ0pNZrBnxrQv6CvNaR2S8YHLKLyLmhSUwZNz5PsqxumMB-4cEHtveUgLGi3xr6471t2V8C0G58fKPr-6_Y08eC9sLtmeYl-lo1OZxLwsVXbyI9U8YGEJiSlvGgagY7W8fGDOfz9a6ouH5VINbmxPUiGZY7kmZpCk_99u8QSWukFRcsI7cErOc-LLetgKqM0zOvqnkpemFjwdlrcdXfH3BlM_uONmmUzPWmCP3jgcaILRg.jpg"
     },
     {
       "title": "Продавцы пожаловались в Союз интернет-торговли из-за новых правил Wildberries",
       "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxOaURUZ2FrOGNYaTJBY25TRms0UndzbVpEazFCVVJqWkdYTTlPeXlteF8yTENhX20tTHhYZkJERE9lM000OU8wZE0wM2J5QmxGbkdBdkpSU1lGdmJPRDA2OVhnZXM0R3NQbGg5NXYzc1lzdXdKVUtMVThYcWZYR0wxQWVlLWZoV1UwSXhQMzMzdmYtX0JmTlg5OE5oM28tZGlCLUMyMDUyenI5ekUydFlwNTZkc3V0Qm5aMHNTdmY2SG1iSXdINWNaRQ?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Продавцы",
-      "date": "2026-07-07T07:00:00+00:00"
+      "date": "2026-07-07T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.052497+00:00"
     },
     {
       "title": "Продавцы Wildberries пожаловались на новые правила расчета логистики",
       "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxNNTNWYV9sRWkxMkozWFJ0cFZyRkx5NUloTl9kdzVsUUd4ZnFwNjB5cjdfNGFIcF9GdHlVYWFuY3JDY2RKbHpIRFZRMV9lWEVCUjh5VDN4SWpkVHJobEUydl9oWVVINEhRd2xmTGV5bHl3bGtDSldBZFZ6d3BzTF90emd5SHlubXJVOFctN1M3SnNVVVZFc0VCWEFYajNMZGllNnA0?oc=5",
       "source": "Агентство Бизнес Новостей",
+      "publisher": "https://abn.agency",
       "category": "Продавцы",
-      "date": "2026-07-07T07:00:00+00:00"
-    },
-    {
-      "title": "WB ПВЗ Новости. Менеджеры",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5lX2NhaHE2bU50M01DZlAtOWlNelBuWEp1SDNpVEVfUUVIamFiUW1xR0haQUp3WnU1TU54YmpQem9ZSGlFajVHRTNxdld3anRPdWhtZl9PM1ZxZw?oc=5",
-      "source": "MAX",
-      "category": "MAX",
-      "date": "2026-07-07T00:32:41+00:00"
-    },
-    {
-      "title": "1С:Управление нашей фирмой. Новое в версии 3.0.13.374",
-      "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxNZ0RYeDJIUl9LbFlrN1JPZ1dqXzI1bVU2OFlhTF9za1JOT1BJX1JmaEQzMlBHd0dZMDdpamR1TzE0NGxUaUpBNk9UcUlGTnJURDRhTFJDeVhXNndEd3dsOW4tZWFjU0FiSEpwc1JqM0lvcERBQ0t3eHJzenNFbktSaQ?oc=5",
-      "source": "Информационная система 1С:ИТС",
-      "category": "API",
-      "date": "2026-07-06T20:52:14+00:00"
+      "date": "2026-07-07T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.052710+00:00"
     },
     {
       "title": "⚡️Цены на Wildberries могут вырасти с 7 июля из-за новых тарифов для селлеров",
       "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE1jOUxQTUE2QThmVjkxRkdfbmpiTTJZMTlVTUNSR2tqLWZWWjJacmRqT0FiZ1lTWHBVQU5EMmJVRzVrQlBnbjRfY2dMMm52WkxPbGt3?oc=5",
       "source": "Клерк.ру",
+      "publisher": "https://www.klerk.ru",
       "category": "Продавцы",
-      "date": "2026-07-01T07:00:00+00:00"
-    },
-    {
-      "title": "Новое в версии 3.0.200 :: Информация об обновлениях программных продуктов 1С:Предприятие",
-      "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTFBNZThKX0E5aGl0ZDZFa2ZNeXlsOEppOWgxckpOQU1RMFlyTEVydV9ZWWlveTNDRzRybENNWTZ5QXZLc1UycFFibVB4R1lYUVViZzhVVVdoVVd4MEdsdG90VmJxaE95OHptQXQ0T1JBc1NYNmV4M3dfNlJQSlU3QQ?oc=5",
-      "source": "Информационная система 1С:ИТС",
-      "category": "API",
-      "date": "2026-06-30T15:26:38+00:00"
-    },
-    {
-      "title": "Самое новое в «1С:Бухгалтерии 8»: изменения в API Wildberries",
-      "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxOeU8yZElzRUdDZWxEVVdUa2I0cVRjaVdhRGpCbXk3amI3OS1RaDhDRTJxRGRCa0xUVEktblBzdDhBbHRacWppaWFfV3VVX0w3ckZlMHhqNmhmcEJkVm9nX2VKUGpnVnJyd2x3a2N1cjNrc2txS2hLRVM4dkpIUzlGVzJRV2lPZzduaXhnNjJB?oc=5",
-      "source": "BUH.RU",
-      "category": "API",
-      "date": "2026-06-29T07:00:00+00:00"
+      "date": "2026-07-01T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.052926+00:00"
     },
     {
       "title": "🔔 Обновим оферту 25 июня\n\nВот несколько ключевых изменений:\n1️⃣ Добавим условия о временном закрытии ПВЗ в отдельный пункт 13\n2️⃣ Обновим сроки уведомлений при внесении изменений…",
@@ -1617,6 +2030,9 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/vbdYNcHMvcDFQs1emRxaWKHqg91TWm90A73cMucxY4sDDiR9-arWZBVsgt7YKhF8Vb48sTt6GFUmUpmVeYyxv6mjhrHTknfnLDXFWvN8tEiiy_tmNt_YxJo8kv_m6nc_jmlDm54gU6o6jMu1LMsNmraN6JZFPrpqt7v4dcVppaTwVXVflGj9JZuesBXRkv7cn-vdls17gRngehW6XfsdUjzRaNfWNHuFAwnMYaQGD2pxnl78rTXiloEn_EbBJI1jxmBpHCBpsm8OrnKp-o9PZRZ0PDn6zMYRFA2EZ6Ylb3UgPttOg1oO8LN4VcrtRYkzuNNIlyhgxPuOLyiGHXlJ9Q.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/vbdYNcHMvcDFQs1emRxaWKHqg91TWm90A73cMucxY4sDDiR9-arWZBVsgt7YKhF8Vb48sTt6GFUmUpmVeYyxv6mjhrHTknfnLDXFWvN8tEiiy_tmNt_YxJo8kv_m6nc_jmlDm54gU6o6jMu1LMsNmraN6JZFPrpqt7v4dcVppaTwVXVflGj9JZuesBXRkv7cn-vdls17gRngehW6XfsdUjzRaNfWNHuFAwnMYaQGD2pxnl78rTXiloEn_EbBJI1jxmBpHCBpsm8OrnKp-o9PZRZ0PDn6zMYRFA2EZ6Ylb3UgPttOg1oO8LN4VcrtRYkzuNNIlyhgxPuOLyiGHXlJ9Q.jpg"
     },
     {
@@ -1632,6 +2048,9 @@
           "url": "https://max.ru/join/_Su3lomMsIlRNTIypYXzbHIXI7uM1YNukenRLbfaL60",
           "text": "Подпишитесь на МAX"
         }
+      ],
+      "images": [
+        "https://cdn4.telesco.pe/file/JjeBb5RrIJAeK22m4382s6_WE3PVENvxeg4eJF3ZHWCcRg7LXecH3-Lialb8nQZXqrjVA9X15YJfpf9TCisMXnLIqjJb-f7YrPr60G1xd9a-IHIUN3ciIZrb9c5DuC8M2NvJc8shggg399MVQz6E5T1Syw5huZb3DYAs0DRjr1xW5R7wvQ-TrHMKS90poiwQUEfB1cIR1Gg_i1k1OsIuPW5-aV9YkZ24RwXhRyX1nn9sxYTQr_sod41pwQj18ZZ9JjlCukqxy1p405jtRo_DW_7jPllj-qUj8E_LefWQ5LOrQsE-yuuKiQkQI49t07EolXPpWtjOQ8BfmoTKLdqhPQ.jpg"
       ],
       "image": "https://cdn4.telesco.pe/file/JjeBb5RrIJAeK22m4382s6_WE3PVENvxeg4eJF3ZHWCcRg7LXecH3-Lialb8nQZXqrjVA9X15YJfpf9TCisMXnLIqjJb-f7YrPr60G1xd9a-IHIUN3ciIZrb9c5DuC8M2NvJc8shggg399MVQz6E5T1Syw5huZb3DYAs0DRjr1xW5R7wvQ-TrHMKS90poiwQUEfB1cIR1Gg_i1k1OsIuPW5-aV9YkZ24RwXhRyX1nn9sxYTQr_sod41pwQj18ZZ9JjlCukqxy1p405jtRo_DW_7jPllj-qUj8E_LefWQ5LOrQsE-yuuKiQkQI49t07EolXPpWtjOQ8BfmoTKLdqhPQ.jpg"
     },
@@ -1653,14 +2072,19 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/mOLz_g_lNCDOPjxULaS-OBlaEAoMJSYdAlvZbG1WYTGGQnq_qY6U-gJIKBCPQ4csGXpE5eKrb-nH3yNyCFYzljEL0Cr2LOMAAO03bcIthQZUlcYTfZRLM4paneBXRQpu_YXYD6uzYHZ-cRO8oszkYkldUiov-OxadAOEdsEskhbf52AOmuAbC4T3JwTmwQaDWkhQqOg98FbR-7J_szF75FRVwP4B_Pdee0IQ0P3smEM-BGsh7rOECANd8lU5ngBstNv0JWaWpnQo9JM8LrjBzd2ByKGpNIy4sp3spaacZArZzj6jSISio-oRBYXEWZpXY1KIc6Z321NoMkDel7nJTw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/mOLz_g_lNCDOPjxULaS-OBlaEAoMJSYdAlvZbG1WYTGGQnq_qY6U-gJIKBCPQ4csGXpE5eKrb-nH3yNyCFYzljEL0Cr2LOMAAO03bcIthQZUlcYTfZRLM4paneBXRQpu_YXYD6uzYHZ-cRO8oszkYkldUiov-OxadAOEdsEskhbf52AOmuAbC4T3JwTmwQaDWkhQqOg98FbR-7J_szF75FRVwP4B_Pdee0IQ0P3smEM-BGsh7rOECANd8lU5ngBstNv0JWaWpnQo9JM8LrjBzd2ByKGpNIy4sp3spaacZArZzj6jSISio-oRBYXEWZpXY1KIc6Z321NoMkDel7nJTw.jpg"
     },
     {
       "title": "Обработка товара при приёмке",
       "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9RRzVMVnNsTDBZYy1BYmlFN1hPQlFvXzYyWTdHQjJFemRYbDNONnZUZ2NJbWtaaW1CQm9aRW9SNFNlSG1DVWtlQkZtcDNIaE9JODJITG10YWVqRU42cG45cUNCdFVOaVRvSEtiX25BWDRJcl9UNzlaRkJiS1RNclk?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
-      "date": "2026-06-13T12:20:46+00:00"
+      "date": "2026-06-13T12:20:46+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.053154+00:00"
     },
     {
       "title": "🌟 Добавили раздел «Сотрудники»\n\nВладельцы пунктов выдачи уже могут создавать учётные записи сотрудников и настраивать права доступа.\n\nПодробности о работе с разделом читайте в…",
@@ -1680,6 +2104,9 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/o-GLDCLvrSzz5mB3vPxRFE_y3x59AN9InZ9SvcinUUxhXr3C5dEn0Hyv5Yp6LBRV8L_MzAjeeHMrp0tELNid84wPlv4ifM6b4c4_1-StD9q_pKkNbtCNiD5TN7A_GmbZHFVytwD3TkTWB22GckYkbrbhcdXiqeKl2Kd21kCdgur415ez0sNMomoC-EeoGgpnD0jk7gIyGbB8Pu4qZuxCjGhy3uQ2xDqZyYxE05VHZH5Q_ud5jF_FHouFnYnsNN4b2u-WTvj7MPB0CIo2ewz2s-VmmwHVkEUz4EF7yNXSDAPU_reHKgBEHx8YfX27uvpdL7lbBkTosrw-QD4-Tz8X9Q.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/o-GLDCLvrSzz5mB3vPxRFE_y3x59AN9InZ9SvcinUUxhXr3C5dEn0Hyv5Yp6LBRV8L_MzAjeeHMrp0tELNid84wPlv4ifM6b4c4_1-StD9q_pKkNbtCNiD5TN7A_GmbZHFVytwD3TkTWB22GckYkbrbhcdXiqeKl2Kd21kCdgur415ez0sNMomoC-EeoGgpnD0jk7gIyGbB8Pu4qZuxCjGhy3uQ2xDqZyYxE05VHZH5Q_ud5jF_FHouFnYnsNN4b2u-WTvj7MPB0CIo2ewz2s-VmmwHVkEUz4EF7yNXSDAPU_reHKgBEHx8YfX27uvpdL7lbBkTosrw-QD4-Tz8X9Q.jpg"
     },
     {
@@ -1696,33 +2123,60 @@
           "text": "Подпишитесь на МAX"
         }
       ],
+      "images": [
+        "https://cdn4.telesco.pe/file/r619JRx9BDiRWZQYjts-MuWt7mUWIkSAK0LQUZKfTzAY9cnTC6qq2zcCZzvGkBX9znkDBtdTor6piBd_iGU-2fam2-v_-JTZOxXySKYMuCSgd1sQDthy04dZa4SUHiOeQjZp1XOFnKkAkit1uij5uIy0-wY9HP6WeemcPjC5SsyaDdwvkFS0aUVVPhBeFtVuCDxNbI04TBEoKsvbXt_gvjiRcPNJGJ7RyJJa6qyeDuNXCTlHlOErV-VzysOX5om_2P1l6AYmJOHCd5YxEmT3xTuQFz6G9UcOsMTSSmZay5u5Cg_gdJVYd7BTnwDPiexH46l_UEoDRwcAaMLHFfNYfw.jpg"
+      ],
       "image": "https://cdn4.telesco.pe/file/r619JRx9BDiRWZQYjts-MuWt7mUWIkSAK0LQUZKfTzAY9cnTC6qq2zcCZzvGkBX9znkDBtdTor6piBd_iGU-2fam2-v_-JTZOxXySKYMuCSgd1sQDthy04dZa4SUHiOeQjZp1XOFnKkAkit1uij5uIy0-wY9HP6WeemcPjC5SsyaDdwvkFS0aUVVPhBeFtVuCDxNbI04TBEoKsvbXt_gvjiRcPNJGJ7RyJJa6qyeDuNXCTlHlOErV-VzysOX5om_2P1l6AYmJOHCd5YxEmT3xTuQFz6G9UcOsMTSSmZay5u5Cg_gdJVYd7BTnwDPiexH46l_UEoDRwcAaMLHFfNYfw.jpg"
     },
     {
       "title": "Как начать продавать на Wildberries или создать свой бизнес на маркетплейсе с нуля",
       "url": "https://news.google.com/rss/articles/CBMiwAFBVV95cUxNeTRlZlIwUW5YVEI1aGZMZWV5WnlMRjJrMzIwTDQ3Y3ZER1pwXy1jX1dsNElpdTItS3kta1pwTzlLVGdCWnkzQU9XZzQ4N2dPTDRMVGpmek10ay1HNlBoQUFWamsyX0ZrSVZDM0xpSVlCQTNuMU44bmg0MlpiX3BpLTl3Wl9iS3had0pIc3NfZ2ZQQmVhalM2aThyQ0VJdXZuVU1LWnVKdXJ1WDVFaWtEdDJWRVlrS0VpNWZ2cFJrbVg?oc=5",
       "source": "skillbox.ru",
+      "publisher": "https://skillbox.ru",
       "category": "Продавцы",
-      "date": "2026-06-02T07:00:00+00:00"
+      "date": "2026-06-02T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.053362+00:00"
+    },
+    {
+      "title": "ПВЗ будущего: планы развития на 2026 год",
+      "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTFByZllGY2lyN2luODMteTZrUWIyS05GdmxOcm1WV3pYa1J2OXMtcUctMzdxS19sSTlpZ1Yya0NNSFNGWHZwWllVVWswNEdmVkIyX3R1Z2FfSGRadDBQSkNFdmpzcURDU1lnODZlbG5qUnV4OXRzLWVXOVAtSFdJdw?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2026-06-01T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.053571+00:00"
     },
     {
       "title": "ВТБ раскрыл детали сделки с RWB",
       "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxPSGdYT29xRVQ5ZGFKZ3JrZElwN09iRTVoVEc3eng4cDE0UEZjYUxKeEtpZ1VkZzg2N3NrUWdJYkZNNGx0TFlfUkd4dFE0M2pGcWVta00zNUlsYmFfUWgtRGlFdEh0d1ZYRjJzMUhCSHRuMDhaVlZSYVcwMUIyc2hsZWdobERVUQ?oc=5",
       "source": "Ведомости",
+      "publisher": "https://www.vedomosti.ru",
       "category": "Компания",
-      "date": "2026-05-28T07:00:00+00:00"
+      "date": "2026-05-28T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.053781+00:00"
     },
     {
       "title": "ВТБ намерен закрыть сделку с RWB до конца лета",
       "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTFA0TGVMUzFjanZUMjlTWUdKY1ZRdWVrSTBYdUxBVWhFdkN3UjZNVVVTVWdHVmtwSGtOSTNMWmJhNXNPV0RPTW1iRWxoQmtGcE1CYjF4T01DRHphNVJqa3p5dzRYTFdlRmRLVmh3VGZhdnFJek41eDVuRA?oc=5",
       "source": "Эксперт",
+      "publisher": "https://expert.ru",
       "category": "Компания",
-      "date": "2026-05-28T07:00:00+00:00"
+      "date": "2026-05-28T07:00:00+00:00",
+      "article_checked_at": "2026-11-16T23:14:53.054008+00:00"
+    },
+    {
+      "title": "Trust & Safety AI Meetup",
+      "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5qQ25iUWMweTFKTmtUX1ppWDdtSE1rRVdKNk9nc1NoUzlEOGw4QWxkelVjcjhHVTJMbkhPb0hydUYtX05XNDUzWEp2b3dKWVVwbmRnTUxveE4?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://meetup.rwb.ru",
+      "category": "Компания",
+      "date": "2026-05-22T07:00:00+00:00"
     },
     {
       "title": "WB повышает тарифы на возврат товаров с 21 мая",
       "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE9SdnpSRmZoNGNWLWRtaTBoU0xPTnN5Vy1yLUlpbFViejRjT19sZ2JRN0ZlOXp2ZGd3bTE2aDlHNHVFZFk3ZF9RbUIwZ0Nfb1BXSld2M2JGeHhWZy1wOWlZX3RWX1dXSkJFdXdONWFR?oc=5",
       "source": "Т-Бизнес секреты",
+      "publisher": "https://secrets.tbank.ru",
       "category": "Продавцы",
       "date": "2026-05-21T07:00:00+00:00"
     },
@@ -1730,6 +2184,7 @@
       "title": "Wildberries и Ozon меняют правила: разделение отзывов по вариантам и карантин цен для селлеров",
       "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxOeFFibHU2SVZ5WXRGY0lqY21oUGxSNGJLREdsbU9xTzMyeHNONU0tUVBvY29QOHRudjZxekZXcTF3N0xxdXZBek90U1BVd3ZCd21xUVlFbjhyV0s4T1RULUhRM2w5aUpyWEp0MlFMakttdUpVVHlMXzl3Vm1YYThINHlXVGJ4TXR2ZkpoQ0pTejRzUThJWTJxQzNjcm9vb05OYXZJSmhCU0l0dzdxakJB?oc=5",
       "source": "Финансы Mail",
+      "publisher": "https://finance.mail.ru",
       "category": "Продавцы",
       "date": "2026-05-16T07:00:00+00:00"
     },
@@ -1737,13 +2192,31 @@
       "title": "Я искал пассивный доход, открыл пункт выдачи Озон, ВБ и Яндекс, но оказался на работе, где часто не платят",
       "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTFBNQnV0ajdPSDJieUJWMzBKVnN6a3EwLU52OTdtOEpVbTdLN2VMLUxXdXM0bEpsT0prSnR4cHdURm1TeVJ6U01RSW00RGtLQdIBWEFVX3lxTE90Z0JmVEFLUlpMWGtYMjR3cWFwMzFRenlEckFxVWFOWktuem5zMW5waHhyelVZUjlBTUYzRk54ZU05NkFpU0xKT051WHcyUm9ick9Jdkh6V2w?oc=5",
       "source": "Хабр",
+      "publisher": "https://habr.com",
       "category": "ПВЗ",
       "date": "2026-05-12T07:00:00+00:00"
+    },
+    {
+      "title": "Главная | Meetups RWB (Wildberries & Russ)",
+      "url": "https://news.google.com/rss/articles/CBMiOkFVX3lxTFBVQXdyUUY4MDNlRFp5T2ZrelkwM0UtVUREdHhKd2RER3dGbTRQSlotVjF2X1NKejBoZkE?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://meetup.rwb.ru",
+      "category": "Компания",
+      "date": "2026-04-25T03:36:04+00:00"
+    },
+    {
+      "title": "Мероприятия",
+      "url": "https://news.google.com/rss/articles/CBMiQkFVX3lxTFBrS2VaSk15S3pkeWFZM2lad2hGTXdFLW1pbWJVZm9MQWtlLTRLYzZ0cExOcm9kZDVxVmkycERYT2R6QQ?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://meetup.rwb.ru",
+      "category": "Компания",
+      "date": "2026-04-24T23:36:14+00:00"
     },
     {
       "title": "ПВЗ Wildberries теряют доходность: выплаты падают, расходы растут",
       "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxQQUFhUHdxMGFiQnVxal9qRVcta0J1NzNKaW1EdWVBMndJUHgyMklReEZCLU5TRW8yU2NaWnRLY2RBVzl0dF9KNE5SMmVXSEV3dkNNQmE1SHFjYlZQTkVSTkRNbFRPcUJLemhPdmI4eGxwNXplNnc5bWRSSk1VYnVpa0hmRGlkUzBMNUk4aDNmVTl6dE5aVGFYTXhLU2hNV2FpMmN2Vkw1bnhLU3Y5RDlSOUk4SlF4cl9aekE?oc=5",
       "source": "Logistics.ru",
+      "publisher": "https://logistics.ru",
       "category": "ПВЗ",
       "date": "2026-04-24T07:16:53+00:00"
     },
@@ -1751,6 +2224,7 @@
       "title": "Выплаты для ПВЗ Wildberries за 2025 год снизились на 25%",
       "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE5QdWQwR0FNanZEZEJQZzZOMVZ0WTRPUmJqWi1od29ndXZubW0wTDlDSEtoQUxydGZDS21wOGdlcGRmYUFWaV9wbk5RLXBZZlFNR28tZVJ1NzRBRHBTZGRHNlhWSWU?oc=5",
       "source": "Т-Бизнес секреты",
+      "publisher": "https://secrets.tbank.ru",
       "category": "ПВЗ",
       "date": "2026-04-24T07:00:00+00:00"
     },
@@ -1758,27 +2232,39 @@
       "title": "Доходы пунктов выдачи заказов Wildberries упали на 25%",
       "url": "https://news.google.com/rss/articles/CBMiREFVX3lxTE5sdHE1Qm9aUFVmQlR1SVJTOHZpS0lpMU5GNUFHSHJSNThHaVZhdHgzcWdwaTQ0bEcxcmxwNFg5XzZqRGFn0gFKQVVfeXFMTjBVOURwcEhTN0xTQ2JBMWxjNjh4am9mY2Q2Qk5Cc1JLY3lVX0ZiWndvQzBya2p0RlpZb3dWelphWFNKaFZvTThHZXc?oc=5",
       "source": "BFM.ru",
+      "publisher": "https://www.bfm.ru",
       "category": "ПВЗ",
       "date": "2026-04-24T07:00:00+00:00"
     },
     {
-      "title": "Проверка токенов доступа к API Wildberries | БУХ.1С - сайт для современного бухгалтера",
-      "url": "https://news.google.com/rss/articles/CBMioAFBVV95cUxNUU1LREJ3RmtCOGtadnpqVlByT3RoeHhSZUdSQ1NJZ2duZTlVQXpXaWYwSE54RURTUFJ5aFBXQzRnNzBGYXgxVFN4NWhxQzFySkwtVHBLUjduUHk2R3U5bXpGUGM4NERPUEgzeTFpLW82Q0prdklucDIwcUFzLUdJSWF5a2ljdEJUWDRFNGtkQWpoMFlvSjFrcU9SanRWTHZo?oc=5",
-      "source": "BUH.RU",
-      "category": "API",
-      "date": "2026-04-16T07:00:00+00:00"
+      "title": "Как мы считаем углеродный след?",
+      "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE45VjEzaU4wTng1RGV4TERNSFA0TTVKUURlUHpDSE5HZVllN0pNWThra1R1UExXMUktSlA1S3ctTkpVbUFndU5Fc25XclNWTWpWMERsRHM2OA?oc=5",
+      "source": "RWB Участие",
+      "publisher": "https://esg.rwb.ru",
+      "category": "Компания",
+      "date": "2026-04-15T12:50:22+00:00"
     },
     {
       "title": "Комиссии для селлеров на Wildberries",
       "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE1LMVpWckx3UjFyX3ZYM1VXc0xzVHgzUDlhYXVWZnAyOXh5WDBDbHJ0LWhGSVFUZVJrVkV0RDdiYm1PR1pjdjdvVWthTzdrTnZFQWhZc3l1dF9mZWh5Z1o2cHRmLTdBcGZicXdsbl84V0l6TXVHY1FZN1A2UF8?oc=5",
       "source": "Т-Бизнес секреты",
+      "publisher": "https://secrets.tbank.ru",
       "category": "Продавцы",
       "date": "2026-04-15T07:00:00+00:00"
+    },
+    {
+      "title": "Единственная профильная магистратура по e‑commerce с Wildberries и РУДН",
+      "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE1vMENmQXllcmI0TTAyNDVsSG1Ca3JfNTZ0WUI2WVdDTXNTZk9YOEJHS3BVUWd3X1NDMTFQWnFaeFVUTWQ2XzJwVXVIM0NfYmJHa2oxWkk5cHU?oc=5",
+      "source": "Университет RWB",
+      "publisher": "https://university.rwb.ru",
+      "category": "Компания",
+      "date": "2026-04-09T15:25:36+00:00"
     },
     {
       "title": "«Рив Гош» и Fun&Sun стали частью экосистемы RWB Медиа",
       "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE5TUDNGWkQxZGk3a3o1ZVhFUmRnbDNnTVoyekFIRnFlR0hQdEltZ0x2N0V6VkFJRzZkT0NlalVOTkhkaTEzTF9HZjFwcjA5YldCSV9ZZkVvSEV0TzcwSk9LMEtfVDU?oc=5",
       "source": "AdIndex",
+      "publisher": "https://adindex.ru",
       "category": "Компания",
       "date": "2026-04-09T07:00:00+00:00"
     },
@@ -1786,6 +2272,7 @@
       "title": "Логистическая инфраструктура RWB превысила 5,2 млн кв. м – Новости ритейла и розничной торговли",
       "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNM3E4TkpXNW13dGRBc3Uta3dfUTJuZGYyRVV4M0Q4a3NMUllnRHl1ZmZ6VWVyUkd6ZnF2VzNBMFB4bVpuX0h6ZDhBWmktSFpORG85SHhfLXFjZ1hQY21qRXJnRUxBR1FYUGNXN1FSTlR0eXU1M3M0Nm1SVW9EeTdEbDZqcG9CRThzUDVWSFZKQjNlOUFKd0xodXVtTGVYTlEtRXVmdXlrWmNEM1U?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Компания",
       "date": "2026-04-08T07:00:00+00:00"
     },
@@ -1793,20 +2280,15 @@
       "title": "RWB запустит автоматизированный формат ПВЗ – Новости ритейла и розничной торговли",
       "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNQTRQZXN1NUE3cXA5bDk3c0JtcG5oWXZhTERxQWhRN2k0cXREWVNVWlZDSWhCdUtoMldaOE9iNkg3S1l3cVFzM3RFSTYyMVNNU045Wklid3R3a3FFakxtSTdSQU1qR0ZhUDlfejlGSXFSVDdrMkpZVExXVlJzTEZkeHlONGVNN2EyUy1JM051cEwzNllpQ1M4?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Компания",
       "date": "2026-04-08T07:00:00+00:00"
-    },
-    {
-      "title": "WB ПВЗ Новости. Менеджеры",
-      "url": "https://news.google.com/rss/articles/CBMiSkFVX3lxTE1TVWszUWxCUk1xUHN5a205ZF9jUllmSVhiZW5fXzFlN29pMnhFYllnaW1LcGpLbGdYWkVFNGpGeUVwTXFoSFBRN3ln?oc=5",
-      "source": "MAX",
-      "category": "MAX",
-      "date": "2026-04-06T15:17:36+00:00"
     },
     {
       "title": "Wildberries уравняет комиссии для продавцов из России и Китая",
       "url": "https://news.google.com/rss/articles/CBMizgFBVV95cUxQQko5aUpGUHFDd2F3ZnA3UE5GT05jdDB0elY3Y3hZd08ybHZhRFhvdnZacDFyRVl1Q21EdXpkM1FBSHU1Q3ZqYmVSREdLOGhvd3F3SEIzSzBrcVNtakZRbU1XXzROYjVIc2x0V2lyUTNmX1pBZUs3TzMtaXRZeHVGc1F6ZTAwbEphZW5XOExwd1R6TXh6S0xHM29IMFk2SmFnZHdYUHpEQ3JLMUhoY2RnaTRINXBVN1ZtRDI4eGVPT1JZRTNzOTB3Qm1rZlNmUQ?oc=5",
       "source": "rb.ru",
+      "publisher": "https://rb.ru",
       "category": "Продавцы",
       "date": "2026-04-06T07:00:00+00:00"
     },
@@ -1814,20 +2296,15 @@
       "title": "Wildberries начала тестировать возможность получения заказов «Рив Гош» в ПВЗ в Санкт-Петербурге",
       "url": "https://news.google.com/rss/articles/CBMiygFBVV95cUxQeF90dG5sMWJuWkhhTGx4WUVoLS14SU42dm10a1lBUmkxakR3dFJuSVAzWVB5R1Mta0oxLUM4QjZiZC1LaGRRQWFhRlBJZWtDM0tlaFU5S0E4aWRrSWk1bXNkU1h6NmQwLWNfd0FlMzFIWC1SOG1tdEV0a01Baldrak12UTVUVTRrNVdFUmI0YnZOQWMzVUtEZzQxTVkyLVFTVjJlYWJnU0lrbzRuUUNvTkVnOVRuaFMxRkpPSzgwU1lQZG5LUWhhZ3VB?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "ПВЗ",
       "date": "2026-04-03T07:00:00+00:00"
-    },
-    {
-      "title": "От Google таблиц к DataLens + PostgreSQL: как мы делали BI-систему для WB и Ozon / Хабр",
-      "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE96eTQwc0RRdUJNYkVwMWZ4aTZKNExoV0E0SVdiRlQxY3dmYWFweXFmNnQ3Mi1mVVNIT2lJZG4yQVh1REUtOHp5bFFXRUxJdw?oc=5",
-      "source": "Хабр",
-      "category": "API",
-      "date": "2026-03-31T07:00:00+00:00"
     },
     {
       "title": "RWB запустил в тестовом режиме сервис WB Книги для всех желающих – Новости ритейла и розничной торговли",
       "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxQQ1kzRzVTc21QaHVkQkpQUE1xb0p3cnBiVHRsQ1NQS2gtR1FXbjFUVEFNcUloMVYtakc3ZlpRRVlBdjN3NHJVbDhDeENSSG8xNWRxZ1ZMTXBuREVqMUJHYTZrcW1YQVlUdTROOWIwdEJYNS1sTF92SmdfbGdsQ19kLUUycFBOdkhnUGx5ZXdJT1FscEUzQThYdHA1Xy0waUJlOGQzdVFCdk1Ddk81eU9rbVh4bTlaVS1zaS1ZbUhzTQ?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Компания",
       "date": "2026-03-30T07:00:00+00:00"
     },
@@ -1835,13 +2312,23 @@
       "title": "Wildberries изменил правила выплат и оставил селлеров без денег перед налогами",
       "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxPam42TG1PXzZhb3NTaXdVY3FFandYZWFVVmZIQ1VDOHBuYU5EQ3F0MnluZ2R1dk4xb1V4Z0ZGN0prTVRHYTQtenBfWGVUX05TdTFWZEpOZm5uTFFuS3FWaDVkTFFBdjU4dC03cVVhMWdxdG5DRnE5ZDdpdm9WT0N4MjFIOXkyYWFUb3A4c0xqZWJ4czBfbXJvOUJmWDYxZU5JNHhfeW1TNlBoZnpkczhBbk5UZzdra0dQdWVHR2I2LS1BRG1zYmc?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Продавцы",
       "date": "2026-03-27T07:00:00+00:00"
+    },
+    {
+      "title": "Программа обучения",
+      "url": "https://news.google.com/rss/articles/CBMid0FVX3lxTE1qdDEtUkFOdk9Jd20xaDlWeC1lUjNsdlFKQTFMM2F2X0owb3NkSHlfMmFiRkE1U3k4S1BqQVlYbGhvdFkwcnJEbXlXQ2swRXB0dFFZbjBEaGJYSHlyRkExdmRRdUg4bk4zZWlZdzZ1UjVNcVBUYUtF?oc=5",
+      "source": "Университет RWB",
+      "publisher": "https://university.rwb.ru",
+      "category": "Компания",
+      "date": "2026-03-26T08:17:06+00:00"
     },
     {
       "title": "Как новая оферта Wildberries ударит по продавцам",
       "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE5mLThtYU55TjZmbEFwbkprSGpGZXhhWlFQbU1QaWt3TXExcFp1NEtMdXhUZUZ4RXlwWUVJUlNkakpZekdvZzBJMHFncExDRlF1cU5wam9FSjQ0Q2ZnUEVzSjlLUkt6cEtNY18xdjJ5djJTa2NDTEF1R1VkT0Q?oc=5",
       "source": "Т-Бизнес секреты",
+      "publisher": "https://secrets.tbank.ru",
       "category": "Продавцы",
       "date": "2026-03-24T07:00:00+00:00"
     },
@@ -1849,6 +2336,7 @@
       "title": "ФАС потребовала от Wildberries и Ozon изменить условия для продавцов",
       "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxPV3pIcm5xTGUxY3paQW1NMHJZQVptT0JOMW1sTHZuSWc1YmxpQzFDTEV0Nm5vamVxa2szYkVFUXlFdXZNZW1vLVNBVzRuclB1YTdMNDJGRGliVnltRlotWGVJR1JIRmUzeVpnYjVYdWNlTjNvOFlGYlhYaWRQaFg2ZmdYVkN1YmVOWTF5NldQb182TDJad2s5bkU4aHUyR0dZblpnejYwZE96TzZMTmc?oc=5",
       "source": "https://profashion.ru/",
+      "publisher": "https://profashion.ru",
       "category": "Продавцы",
       "date": "2026-03-23T07:00:00+00:00"
     },
@@ -1856,6 +2344,7 @@
       "title": "ФАС потребовала от Ozon и Wildberries выровнять условия для российских и иностранных продавцов",
       "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE5vX3RWWXpkRkFXUlBxOGdWNHJNaERmLWt5SU1vTWVZUjEwNHh1ZXNoLTUzaDZGVkxvU2V4SXBBeV9xOWhIWDZNeHViX2Fpb1nSAUtBVV95cUxPRldaRkR3UVBCcTZDOUNsd1hpVGdoSlQ5Z3VyeUE0OGplMS1OWm9DTVlTVkk0T21JOFR2Vm5aZkZBbTBMSFc2ZndLOWM?oc=5",
       "source": "Интерфакс",
+      "publisher": "https://www.interfax.ru",
       "category": "Продавцы",
       "date": "2026-03-20T07:00:00+00:00"
     },
@@ -1863,6 +2352,7 @@
       "title": "Wildberries & Russ предложила ряду авиакомпаний продать бизнес – Новости ритейла и розничной торговли",
       "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNSllUbjljSVQzanFHQmIzUklFTldJeFdwM19vWW1IQndwbEVmUVR4ZlhoU2J3V3FFVXp0bjcwWkUwZldrTXRrWGtXeHJQZHlNb0RNX0VLYVVINWlCMFNrTFR6Ym44SzJ0S2pnZi1yXzRoVDRMRGtZdjdFNUZSLWZOZWhFTVhPazNOVGU3cThxZXF0aF83TFBIVVRlZHp1SXZZdUxzbEdvcnhWeEZiamh3?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "Компания",
       "date": "2026-03-16T07:00:00+00:00"
     },
@@ -1870,34 +2360,55 @@
       "title": "Wildberries меняет правила вывода денег и расчет логистики",
       "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQdG5tUGlHSi1TMEJUWjJJRWdGLU02ZXZCMTJIY2tTU2RyR3B4c3VVcm1VVDk3VE4xd0hIODVJTzdiMWY4T256QVJvUU1TV21FWHZFMVQ5LUpXbnhjdWszZ2gyaGRxVEZEeTRlZ3dLaDdRZEtIUlh4emJSQnQ2NjFSZUI1WXcyVkZlV1VianUtanZmUk1qbkE?oc=5",
       "source": "E-pepper",
+      "publisher": "https://e-pepper.ru",
       "category": "Продавцы",
       "date": "2026-03-14T23:35:29+00:00"
+    },
+    {
+      "title": "myteam",
+      "url": "https://news.google.com/rss/articles/CBMiOkFVX3lxTE1pbGNIQXNSSTdTekFhUFB6SzNnYkl2SUN4ZjEtV2gxWXVaS0VSdmQxdHNsUk1feXFoMlE?oc=5",
+      "source": "myteam",
+      "publisher": "https://myteam.rwb.ru",
+      "category": "Компания",
+      "date": "2026-03-05T07:21:29+00:00"
     },
     {
       "title": "RWB Медиа открыла ИП доступ к кабинету с медийной рекламой | Digital | Новости",
       "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE83djFOVGJlOFFwX1BKQjYxWGdBaWt3b0VPZDFlTXFGUlJsOVQ1UmQza0F5djNhUXYxOVowOEZ5WF9BQkk4SUQtZkY4LU1KNW1vSU1xQWxWV1FhWXFvcE94WHdxcUc?oc=5",
       "source": "AdIndex",
+      "publisher": "https://adindex.ru",
       "category": "Компания",
       "date": "2026-03-04T08:00:00+00:00"
-    },
-    {
-      "title": "Как я подключил 3 маркетплейса к AI-агенту за 25 минут / Хабр",
-      "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTFBhVkFDNVFSRTBQeHhmdjIyNTlmT05sZGtuSVZhTjFsRHpiRXdON0VncmRNNUNyTEY0bkRheVp6R2VFQi1mdndIYlNZWHVvdw?oc=5",
-      "source": "Хабр",
-      "category": "API",
-      "date": "2026-02-19T08:00:00+00:00"
     },
     {
       "title": "Сервис отправки посылок через ПВЗ Wildberries стал доступен по всей России",
       "url": "https://news.google.com/rss/articles/CBMiRkFVX3lxTE1hRUtFeXRieVY0RHd1bzJTRTRYUXpYYmtENXB5U3MwaFNQc1ZWY21qanhhMWhvX2RCSTFoc1N2ckVXeURkNHc?oc=5",
       "source": "Т—Ж",
+      "publisher": "https://t-j.ru",
       "category": "Продавцы",
       "date": "2026-01-14T08:00:00+00:00"
+    },
+    {
+      "title": "RWB (Объединённая компания Wildberries & Russ)",
+      "url": "https://news.google.com/rss/articles/CBMiMEFVX3lxTFByUE1KX2xvYnlZWERIc2pkOVgyeUh3aWQ3d1pKRV94a3pPdzdrV0NiTQ?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://rwb.ru",
+      "category": "Компания",
+      "date": "2025-12-26T17:49:14+00:00"
+    },
+    {
+      "title": "Платформа продвижения RWB Media: главное за 2025 год",
+      "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPOUVhM2xPU2o3Rmc0RzcxZ3hDcmVnTjYybVRUX0x2azhKcWtBajlRSld1NDRrRDhpakVNRUxhWWJhWk56dm9xMHc3YlV6NWhWdFZ3LTZ0SjZPMWZYUnFCSU1IZTZtTUkzSXZaeWFjbkhTdGpyTjBQWXN6NnlvcmtfNlU1NE9yODJSSWk0?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2025-12-26T08:00:00+00:00"
     },
     {
       "title": "Wildberries обновляет ПВЗ: зачем маркетплейс запускает масштабный ребрендинг пунктов выдачи",
       "url": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOZ25XN3cwdDZnTzZOWVJHYV9MZVc2VkFTT0ZYdklMYVlfRVg0dU0yandWNUFIN1I3ME5YZ0pOMzkyZFk0TVA4cXVtYnduUXA2VmYtSU15TmZJbmMtTW9Fa0R4a2hVUjRiZzlaYm9kWFlmMWk5NnZJX0NZZ2ZoUlFCUVY1YmVYckZxUzdsSDZseGZicFAxczg1TnMyQUQwTGZSZlN1b1BJbF9JcmxnX082QTJHdGFQM2tPT1Jjcw?oc=5",
       "source": "Logistics.ru",
+      "publisher": "https://logistics.ru",
       "category": "ПВЗ",
       "date": "2025-12-19T09:46:43+00:00"
     },
@@ -1905,6 +2416,7 @@
       "title": "Wildberries меняет оформление пунктов выдачи: обновления дизайна коснутся всех ПВЗ в России на RB.RU",
       "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxQMXRaNWs2OTk5ZDRxejdqVDlxMTlqUXJrQ2hOdTI0NUh3YWJIalpqOFFpOUJRQkUwbkVFZjhybDJtczRpTUhrNU5UcDdnMDFTZW5xUWlDMWUxVG5ZWHl5Rm5XOUhBUmdFYjJPQmxUS2VQVUJLUkJWMXA0NWV6MWhQakpaMEF5VkVrV0tVbTBGUXZRYk1fT19POG56clk5NnBJQy10bVFQbTB1aG0xN0dzUVg0TTc?oc=5",
       "source": "rb.ru",
+      "publisher": "https://rb.ru",
       "category": "ПВЗ",
       "date": "2025-12-19T08:00:00+00:00"
     },
@@ -1912,20 +2424,23 @@
       "title": "Wildberries запустил ребрендинг пунктов выдачи заказов – Новости ритейла и розничной торговли",
       "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNd3lJTks5WFNFZ0VRa2FrZXEzSE1tNXdJV01nSGxKNm5jMWF4Y0lIdGJ1bXE4WVVHbHhBLWcyMmV4eDdiVkQ3LV8wT0R4Q1FjalF5ODhsLWp3UVVzUm9Vb3NyakxWMFVEVktKaEJuN3JtOFBtVVlkenhlY2x3TUU3cjgtMlNobGFJc0FBWDk2aG5wM1pFUHM2OHFFTHBoN0J0NWpXUzhTNVVEUWM?oc=5",
       "source": "Retail.ru",
+      "publisher": "https://www.retail.ru",
       "category": "ПВЗ",
       "date": "2025-12-18T08:00:00+00:00"
     },
     {
-      "title": "Wildberries API: версии есть, стабильности — нет",
-      "url": "https://news.google.com/rss/articles/CBMiTEFVX3lxTE5Udy1jQ0Q1NkY0QXBCbDk2OThFVGRkbTBwYktLajZUOUJVaVFlR3lxbFlEVjVtalFqa0ExU1lMSTVtUFdCN1Z3ZHI3VmrSAVdBVV95cUxNSEszeVFNNWdLMVVwbm9lajNZWGhzaDRKYmVpd3FGcnVjU2FzNG9RXzNkOERDVE03YWRVNG5KRDdZMFF0S0Q3cXVoaG84WjNHMGtIT3dEb0k?oc=5",
-      "source": "Хабр",
-      "category": "API",
-      "date": "2025-12-13T08:00:00+00:00"
+      "title": "Университет RWB | Главная",
+      "url": "https://news.google.com/rss/articles/CBMiP0FVX3lxTE5BWlFaUTFBNWxxQS1MenJVYnNEVmJPRDVtR3lCTGlLV2tQRWZpOXpzM0tULWJqLUo2cWFtUU11NA?oc=5",
+      "source": "Университет RWB",
+      "publisher": "https://university.rwb.ru",
+      "category": "Компания",
+      "date": "2025-12-12T15:04:53+00:00"
     },
     {
       "title": "Мультибрендовый ПВЗ: как новый запрет на «принуждение брендом» меняет рынок последней мили",
       "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNRVA2cHJsN1V1V1RPTm1LbXZ3Zkw0UmxXSW9oblFrNlFjYURrLW5IUWlBUU54cWphY09JYkJVN1lHNEpYcWowOGhSRlpBQURpSGJ6UnlyeTZhNWdPVWE5Nkg2U3VoNUllcEhJMXlYaTM0RThvWFd5N3VxQjZOdV9sTlVpVkFsVDdzeTV3aFR3Q1dURjJRc25fSWNWSHRYa080c0dPZjQ1UXVEU3RzMkJnUjgxX3h2Zw?oc=5",
       "source": "Logistics.ru",
+      "publisher": "https://logistics.ru",
       "category": "ПВЗ",
       "date": "2025-12-09T07:17:14+00:00"
     },
@@ -1933,20 +2448,23 @@
       "title": "Как продавать на Вайлдберизз с нуля — пошаговый гайд для новичков",
       "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxQaVk3MTc5V043YUxNeEJjbmJ6dnZCU0xIb1pIbWdGejFsbHVQNmpNRUV1d3VLVVNOTnliWmZPdk85S3l3TUZiTDVBX3VXVUp1dzFpN1RXTkdYMk5uZ21JaWgxUWsxUmZrSjlQaTB2ZDVxRHUxSzFTNW9IN1ZwNmI0ekx5RzlhNENORWpvQkQ4aDdpR2c?oc=5",
       "source": "ГАРАНТ",
+      "publisher": "https://www.garant.ru",
       "category": "Продавцы",
       "date": "2025-12-03T23:13:50+00:00"
     },
     {
-      "title": "Вайбкодинг — не Вайб и не Кодинг",
-      "url": "https://news.google.com/rss/articles/CBMiTEFVX3lxTFA1WkR5M3FCdWhwTHcwdEtRb3VVeXZYX1gyYTZTT093M1JIZllfV242MXM4d3U3UkhSMmNSWnc5eFYtRFg5N00xQVdJbGPSAVdBVV95cUxPT29xYkJLQ2o0SUZ1bE42eDdBUms3ZVlISHNGdG5xSjFBTUtvek54YkcwZl9PRENtYnRSQ2wxb2xEUi1OakZ0eXZKMlBITmw2Q1RzTm5ybnM?oc=5",
-      "source": "Хабр",
-      "category": "API",
-      "date": "2025-11-29T08:00:00+00:00"
+      "title": "Свой склад для Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE9OSHNETGpMcGJzamVYYWRSTXBZRzZVSTV0QzN5OGo5VXNIVzMzUmdiaVUyZ2VfU3paYzBkYno5ZE1ERExyTFR1b0tFM2N2OVBQQV9aWThPSjhQZDAwSWRMYkt5dERCRldP?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2025-11-26T08:00:00+00:00"
     },
     {
       "title": "Wildberries и Ozon пошли на уступки продавцам: как рекомендации ФАС меняют правила игры на маркетплейсах",
       "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNY09XUkNQYjAzN2hyaFdHQzgxYlptQjZzYzVFRTVkOEdoZlIyWk9DUnVnSWJ0cE1lTzBhcXJvbWlYeDhMMWd3SmpsR05LVnJaODNhRk1CYTVSLVpwVUtNVFN4SXY3eXR0ZWFrMllYYlVqTEYyeUNjSkhZLTFSdXd6ZVhBdWlIUW1xMzhfMm8yaW5iV1Q4c0FTLUNmcnJTNXJHM3lVMUttbTRpNU80OEZkdDI3SDhRUQ?oc=5",
       "source": "Logistics.ru",
+      "publisher": "https://logistics.ru",
       "category": "Продавцы",
       "date": "2025-11-18T08:00:00+00:00"
     },
@@ -1954,6 +2472,7 @@
       "title": "Wildberries и Ozon изменили правила для продавцов по требованию ФАС - новости Право.ру",
       "url": "https://news.google.com/rss/articles/CBMiQ0FVX3lxTE9YMFBGWUV0NGZfZ3ZlN0h2eS1OUUpXYWlacmdFTmxSUENIRHlQaW5CMlRlOGN1YVdJVUhIenk4Yi1lSUHSAUhBVV95cUxQb1poZmNVUjI1d0hNQV9DUk9jX0d0SFlZWHFCSlNtdUVObXE2LURjZUdJbk5iQm9FRDJFNFNXTk5pclNhZmt1LUw?oc=5",
       "source": "ПРАВО.Ru",
+      "publisher": "https://pravo.ru",
       "category": "Продавцы",
       "date": "2025-11-05T08:00:00+00:00"
     },
@@ -1961,27 +2480,39 @@
       "title": "Ozon и Wildberries исполнили рекомендации ФАС по правилам для продавцов",
       "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBXa1prMmN3ZzEwajVzUXF5M192MHBKbUkzODVuUkhtemNPYTE4dU1NSHZKMS1RaVhJU29EM1dCMndla3FqaDNIb3VwSlM5X0NTdXfSAUtBVV95cUxPR0I5YWZMaTFwQkNGVV9WakhnQVdsblpuOWplb3lsZngwMnl1eFprb0pnTWF4UFloTGJRdENZV2pVNGN5b2l3ZDhITHc?oc=5",
       "source": "Интерфакс",
+      "publisher": "https://www.interfax.ru",
       "category": "Продавцы",
       "date": "2025-11-05T08:00:00+00:00"
+    },
+    {
+      "title": "Как и какие карточки сравнивают продавцы на Wildberries",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNZkQ0bnJ6a3RtSWZSS3RfVDZpNThNOUlFQW95NFNwbnRUMkJ1NVEtbGZ1Rm0tUmhxWWozczNPWmN4cjZvOWoxMXk0Q0FQeFN6a2duaDBOV1ZIZjNGWWVTU2pmamZkNXJFcE5SLTQtcG50WVdYLWRZZWFzekNxMHJpb0RWZ3JuMEdCbklWTzFfdkpHZw?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2025-10-31T07:00:00+00:00"
+    },
+    {
+      "title": "Продвижение Wildberries & Russ: новое за июль — сентябрь",
+      "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxNNWRxLTc3ZHNKV3djVEt1Y3ZGVjlPazN2MTlkekJyZjJ3cUw4TTM2aGZqNk56azVtblFaWG5ZVV9XaVlReEVIb1ZuLVlEZlE0UXE5QjYtZUUzSVdMUFU0R3BTQWJLMFdIa1dPT0NJYm5tM3ZaWTJ0Yzc0eXIzSDdOalhSaXBXSkx2SkE?oc=5",
+      "source": "RWB.RU",
+      "publisher": "https://sreda.rwb.ru",
+      "category": "Компания",
+      "date": "2025-10-21T07:00:00+00:00"
     },
     {
       "title": "Как создать, обновить или удалить токен WB API",
       "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxNZWNrUWZnTUkxeS1DRGoyMV81VjhXdWRRaDJ2cldUMGdiNjltNjNJd1E3N0VaOWJKOFNHdmE1Z21KaVhFeDlSdnppR0FOLVJjc3VGN3BPMS1aVlQ3NWMtS0dNN3dPMmVoRUQ1dldyWVN6QV95X2xZa25ienNwOFNGMkxQVmI0cG1McEdGUFo1U19Lcmw2WlhsUjBRR1RLZGFVTWt0NlNB?oc=5",
       "source": "Wildberries Seller",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-10-20T18:24:49+00:00"
-    },
-    {
-      "title": "OTA-система обновления прошивок для 30 000 устройств в закрытом контуре: опыт Wildberries",
-      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1lWklQejVOWDJaWVlQOUY1RDBiakZYemRLSVcxbkkyQnBLMWxadWpLOUlzVlN1YjJ6X25DekxBampKZHR4ZE5CQVFwcFdib3REWHhTZTFZdlZWdFFRSHNv0gFXQVVfeXFMT29KeWRReVlTYll3OHdLTmRpdFVqLURFTHZTZnJMNlFybVNYVGlTSG4zZU5PSHQ4UWwzZ18wdGotR0NLbUE4S0xGRE1Qdzh2X25LczUwQk00?oc=5",
-      "source": "Хабр",
-      "category": "API",
-      "date": "2025-10-20T07:00:00+00:00"
     },
     {
       "title": "Этап 3б. Отгрузка поставок FBS в ПВЗ, ППТ и ПФЦ",
       "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNNFdGbTV6SXdoVWc1NTU4WEozYncxV3EzbEhfXzFmNDNCYjYzSkdKMXpPRjJDdUgzTDJQaEhnc2t5STliNXNBWkxnakJ0Y1NnMS1jVmthWm54NzhCeHZjQ2NuR2JsdEV6eEZ0QmtvQU9HR29lM1ZBLVBkb0ExdDdqZVRrSVk2TlJ4emd2X2NTMDY4Qm9vWnZENTJCaml0b1FuQXNHVE9wTzJvYUQzZlE?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-10-12T05:53:00+00:00"
     },
@@ -1989,6 +2520,7 @@
       "title": "Справочный центр",
       "url": "https://news.google.com/rss/articles/CBMivwFBVV95cUxOU0ZTZUF6ZTI1QkZOWDZWUDEzMmZudlY3MG1BWkMwYktEZHZ4NUNXNUszcEcycGY1V0NiZ0ZWYkdWRk9hM0x1VHhFbGJkZ0ZIOGN6R2ZvSDltX1lIZXctUjhLZTFSaWpWWDhnWW80N0FuRU1EVmZ6YUk5WTlPQmpVSS1HNy1CNzhXWG5BMGNrWmhfdjl4TEV5SzJzS1FQSHFTczcwUkp3ZEpWY1pfMDBwbmpVTTkzd3pZS21xTGRKRQ?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-10-11T08:04:53+00:00"
     },
@@ -1996,41 +2528,31 @@
       "title": "Этап 3б. Отгрузка поставок FBS в ПВЗ",
       "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNN2w3TGN1SDhsYlAxRTJHVlU1RHA3UEdqbDM2QThMS3gzM1VSMGZxczJhV2NBY1ZXQUVtN2hEU1FCU2xtV0Frc2ZLYkUzdk80cXJxelBvOFlGLUYwNkhMdTg5OTQyX0pjNzllWFNkU0FQdVhud24yV1JudG95Z2ZWUVRoOFAwSE5BbTNFYUFtNldicXVub1Z0RHNXYklMYlc3T2EzLVdZSkRISlpLZVNnV2VVdHNYZw?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-10-11T07:51:43+00:00"
-    },
-    {
-      "title": "«Wildberries одним днем обрубил бизнес сервисам аналитики»",
-      "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE54VWpxNzBXTExKM3Fmd1BHMzBSOFI2TGMzWHJSb24xNnVkZjNtR0d6OXZpR28xSl9NUlNuOG5fWWFNTnU3MHNiM0tCTkx6VXVLQUZBSkxxbTZTYU1BclEtTmh6ek91bHNJSDZnMThn?oc=5",
-      "source": "Т-Бизнес секреты",
-      "category": "API",
-      "date": "2025-10-07T07:00:00+00:00"
     },
     {
       "title": "Ozon и Wildberries ввели новые правила для продавцов: рассказываем главное",
       "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPNnE5eXh3TGhaaWIyTzc3QWZCazJFdFZwT1h2ZTNzOElwenJfSVo1cUxCb3RrcUxjbXk0bk1laFZreGdELWl6WnNHblZJLVBfU0pqN0I0WjVGaUFNUjJyYWIxVGhXaVMydC1VQm5FT0NYNkFteDFETTAxMVF2OTRWMDBRcVNOUVVXaU5JRjlGWmc3dGpMV3NxM0tTcEtSWlU4bl85Ujk1SFN5cDFtY2Nv?oc=5",
       "source": "skillbox.ru",
+      "publisher": "https://skillbox.ru",
       "category": "Продавцы",
       "date": "2025-10-03T07:00:00+00:00"
     },
     {
-      "title": "Парсинг цен и данных о товарах конкурентов на Wildberries",
-      "url": "https://news.google.com/rss/articles/CBMiY0FVX3lxTE40RVdvQ0lkc2sta2l5RWdjRFFDSlRtVzdJeEhQZ0I4Y3NETjdFSS1hUW5lWXgtdHdmWVhuQlFOLUNzMHY4SUlZTVY1Y3diOXNNNjRzbkNaTDZIZ2VYZFJGb2tRa9IBV0FVX3lxTFBiR3NvNmhKaU5zSExKdmpjQ0dIdXAwdDNwTkRzQkNTelIxMVVJNEhYWU5kbEJwRFM2cm9GR3F2MUlNUUZLU0RDWGVhbFpPTDF5X0l0UzRoMA?oc=5",
-      "source": "Хабр",
-      "category": "API",
-      "date": "2025-09-21T07:00:00+00:00"
-    },
-    {
-      "title": "Wildberries закрыл доступ к данным для сторонних аналитических сервисов",
-      "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxPT2Z6VmZXUHBWOWdZMllUaXRlaEQ4Y3V4cndDREVCU1BHVjhuRXR5eDlULUctTEJRYTYwc1BLeEI2QmpXNWpKN05rOTJfb3Bla2FKMUY5bnlCSXdnWFhoN3huLUMtQmRwUzhsTk1jV215Wk5pM1NMVTJ1Nl9aX1l5VHB0RkpQQWJ6a3RJc0ZoMGk?oc=5",
-      "source": "Fashion Buzz",
-      "category": "API",
-      "date": "2025-09-19T07:00:00+00:00"
+      "title": "Infra Meetup",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1iVXhPZVVJSTgtQ2F0a0RwZHhYclgzeU40STl5UGtycFJ5ekRlNEdVQ2FwUjctb2YxVWlUWTZyY2Ixb2huemMxQTBqMkFiOHVkYnVVM2N3?oc=5",
+      "source": "rwb.ru",
+      "publisher": "https://meetup.rwb.ru",
+      "category": "Компания",
+      "date": "2025-10-02T07:00:00+00:00"
     },
     {
       "title": "Скидка WB",
       "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE1ubGJZZlU2R25CYjBmTE11MEhnQ0FlTDBZdVBBT0dwQnZCck5PXzdIcUFjSFNCSnlYaW9mQ2otOTFhaHp2dXdZbFZidVFYaTZtTUtNdUdmSmVnWkRSTXlWSHl6XzN4WGkxQkQwWUh4QmRtVUk1WHFuMA?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-05T02:12:40+00:00"
     },
@@ -2038,13 +2560,15 @@
       "title": "Оферта",
       "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTFBWRkIzc1pMdVNsVm03dHJyVjY4UGNBanFXWmlLaWZFLUVDdjB3aFRnZUFyQXl3cC13RzR2MXJ4VXBuVEJNMEljN2RZU1VWc2JsT2htNmwxSmE2bkQ1R2ctVHo0cEUxS0Z6VkFGRzdjUDZmSlhU?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T20:20:39+00:00"
     },
     {
       "title": "Как выбрать модель продаж",
       "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxOa211Wm1VaHRqQm5FTERYRTdfdU9DX3dvSlprdVJzSkFacEFjc1ZkZlhnZGpHLVJIekVTZ3ZqdjVlSVRkTHRCV2xtZ1lGZUJsU2tCdmEzcjZmTWpXTlRHcGtPVzV0TTdwemgxWHpQYVhNcHBOeEdOTFl5UUJMNmNxT0hmcWIyZ2hmazQw?oc=5",
-      "source": "Wildberries Seller",
+      "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T20:06:35+00:00"
     },
@@ -2052,6 +2576,7 @@
       "title": "Как правильно упаковать разные виды товаров",
       "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOVm9DbDFyaV8zZXJ3TExBOHBrMEdraUxGME9ndUpERno0eXV4VG5QenlVSFVNZnNhYmVXYVdaZDAxNUNGT09qRVYyYU5yTXRtTUJlcEYzelctU3ZicVMzblYwYjNBRmozRE16czB4aE9aazkzX0x3eXdwN1dIWElxay1fMkhvaXFsUWNWei1GLWNkcWdyX1NVN19B?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T20:05:58+00:00"
     },
@@ -2059,13 +2584,15 @@
       "title": "Как оплатить долг",
       "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQS3JPUFZqZmhEdkYweEo1TjVfSGlWdEQ3WERSSlhEaTFfaHJGaU93MVQwSng0Vzk5SE1oNnBJR29TWHFzUmtiakd5aXpSZmdJMXBhSW5DZExWUXlWdlVPM2ZZTm1rVlZ5NlFSUVVFYUNDRzFvdXpuakhrZW5uWGN1QmlEbw?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T20:01:14+00:00"
     },
     {
       "title": "Упаковка товаров для модели «Склад WB» (FBW) — общие правила",
       "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPcjY4dmw3WDJLaWlRbUxIbVZ0a1ZoYmEtR01uZ3VPaXRkWHp1N2lRT2VMME5kUHM5LTUwVXY2aUZiaVJGSEREWkVVeUs0S19ZdDQ4VWNQWmZnX3dhQ2t5Qnh3Z1p2Z3Fzb3lDZ1d4ZUx2YzVsY29QVGpJZ3hkVFR2bzAxTFhhYkk2emc?oc=5",
-      "source": "Wildberries Seller",
+      "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T19:56:27+00:00"
     },
@@ -2073,6 +2600,7 @@
       "title": "Этап 2. Наполнение упаковки",
       "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxQOTVYX21PZUcyN2txTzhvWHVOQ0x1MHZhV0MxZ2dBR2Q4MFI2eXdzc195LXlBYW1GMjhjS1dUUlRTNzJkYnZad29ZY3FnSjBLMEtINlRiNlRnR3dyNmNPblVNZDZZWUVUc05HaFNISXNtaFFXUV9uUF9tMzhxLTNIV29tU2dUWlVreXE0YVpyZw?oc=5",
       "source": "Wildberries Seller",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T19:23:56+00:00"
     },
@@ -2080,6 +2608,7 @@
       "title": "Этап 3б. Отгрузка поставок FBS в ПВЗ, ППТ и ПФЦ",
       "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNbWpLeGZtbzhWSWtiM04xUXBwZ09rcmdCV3picHJGUVhqSnBPV0FGZDUxR2JMU2g5UVBiSTZrcWlJWmgtUEhWM1R5X0w2RkVRaTl6RlVFdzA4Wkp2dG9IUlMtVXE1VTh4RHBrN0U4MkhjcWdaYUl2TW41cFJZeHYwdDdGN3VlVjBHdUVHWFo3bFlyXzVRVHJORm93a25IQWd2RWNQQ21QZUItbzdKSlE?oc=5",
       "source": "Wildberries Seller",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T19:23:02+00:00"
     },
@@ -2087,13 +2616,15 @@
       "title": "Перезаказ товаров, от которых отказались в пункте выдачи",
       "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNY1R3UWJXa2hCaEI4cXV5clAtSVBlS1l2YTZsUnhlR01rTHlac2stbkVZTUNHZ2dwYlpJS1lOMG40YkNWM3NRR2wzSmdacWZnT0N5REZYbkxGU0wtV2lFdEdyVmd4ejk2VzFyMENLRW9TazZwN0VzUFZiN1ZubFNOZUtlWTBydjlBZGYzeVkyUHJaOHZpV1l6dE9nNzkwcGNIX2JNeGVSZmZRbzNFTXc?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T19:22:19+00:00"
     },
     {
       "title": "Регистрация нового продавца на портале WB Partners",
       "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxONzNkVlhPU3ZiZEhjbUQxVGx2UVhSaE1NcTdtTmF1LTBxYlpSYXFQNjV5cnROMF82dFc5bGpPc3lxN3RoZVZkZlhOeGY5elhNclBaZGszZnREM2hGYW11dWRXNDZyZ1Q3NHNiQ1kxNl8ydFN1aW1XVjlMZ0RRNWxPLWhJY2NpLWtIdFZlemc3NGg?oc=5",
-      "source": "Wildberries Seller",
+      "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T18:52:50+00:00"
     },
@@ -2101,6 +2632,7 @@
       "title": "Коэффициент вознаграждения Wildberries",
       "url": "https://news.google.com/rss/articles/CBMiigFBVV95cUxPMGZOd2M3OHFyV1NrUnlTZUhoaGgweU5HR28wYWxhNWxmSE9ETlBtRmdKQ2ZsdlJtSHJJTXR0VnJkcUdPSmRidjNCejRIZHJrOEMtRWwtRUZGUEVURW5Tb0NMYnRlNml2SEdBdG9uM09zX3ZUWG5xZzRxdlZuWWdxb29YUDJDY1VJNnc?oc=5",
       "source": "Wildberries Seller",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T18:19:06+00:00"
     },
@@ -2108,6 +2640,7 @@
       "title": "Модель продаж «Маркетплейс» (FBS)",
       "url": "https://news.google.com/rss/articles/CBMifkFVX3lxTFA0YzdtOW1jQVNSQlhXWjZLT3p0TEVFR2NORjdVVVpfZ3Q2dlBFUVBxRVA4TDZzYVpjREJONjMzMHFBUDdiRjRVN0dxQ01oTk4ta0tPVXlPTHFHS29yY1RLYUJnQkhrN29acExFRWRuZVFpb1JiUTdYWGdDbm53QQ?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T16:09:55+00:00"
     },
@@ -2115,6 +2648,7 @@
       "title": "Работа с заказами по модели «Маркетплейс» (FBS)",
       "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxOY0NrVG5KYlVyaC1nMHM0dWotQWcyNjlUNmFacnp0MFB0QlBjUjFhbnV4VDVWREdqRVJiczQydTZxbHNyMi04cnFsUk9QV3BvbWFvd2ZDUUtIVVFMMWxMSWVBZ0E1TElta2ZlZ0xJdzl4QzdWTUlQSWlQZF9GbEpFRVY3MlVweGdtYXlER004c2VfNHFJ?oc=5",
       "source": "Wildberries Seller",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T15:42:08+00:00"
     },
@@ -2122,6 +2656,7 @@
       "title": "Досудебное урегулирование",
       "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxNcHBFaGJXdTlJWFdDN0wycGE1VmJkRXU3LW94RXpLNXkxWTlMWG5wUk5UM2Q5eV9vcE5JSTBiUVp3TG1QTG8tLWxVVkFvLTZYaVNseVBuYndEZFcyQ2hUVEE4WjJkT25Kb19GTlRjOFBmcF8tZEVJMUI3Q1kxTkdsOEJ2TDY?oc=5",
       "source": "Wildberries",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T15:03:56+00:00"
     },
@@ -2129,6 +2664,7 @@
       "title": "Работа с поставками по модели «Склад WB» (FBW)",
       "url": "https://news.google.com/rss/articles/CBMilAFBVV95cUxNRF9uS2RUb2xpclJWSU9TcHN4eXo1YlhvSVFjZWo0cGlZUWROWFYzWm10U1BQbkRfbVcxY0FSSWRNUW5qU183TEtzNlB0RS05bGhJb3ZRNkRSRFVPSVRDaUhVNndNbWtSeC1LVkhaVnNOcV9Vem54dUd2Ul80aVJSQTlfOGZoUHFFOFdzZWZETUZTVkE3?oc=5",
       "source": "Wildberries Seller",
+      "publisher": "https://seller.wildberries.ru",
       "category": "ПВЗ",
       "date": "2025-09-04T14:42:28+00:00"
     },
@@ -2136,151 +2672,13 @@
       "title": "Wildberries внезапно сделал доставку платной: покупатели и продавцы в ярости",
       "url": "https://news.google.com/rss/articles/CBMiswFBVV95cUxQeEZKaDE5VjRjYkw3azNXNUlXeHByMURWZ1Nka3BpRTA5TEFCSjc2SnN5RmJ1OXZIQWU3S05IMmpXYVZsZnZwUjRvU2tMSUwtenIzNmRpUWhGV2hXS2hST2VuSFc1MUlyRnJYSHdaeU5BV1RMNDFNWUQ3Uk5ENnBjd3FiZHNBUXNDTXZhMHFBdjEtbXJiWmlHdXZsUXJ3cEhTQ1Z3dHoySXNqcmw2bThYTXdDUQ?oc=5",
       "source": "Malls.Ru",
+      "publisher": "https://www.malls.ru",
       "category": "Продавцы",
       "date": "2025-08-22T07:00:00+00:00"
-    },
-    {
-      "title": "Менеджеров ПВЗ Wildberries запретили снимать на видео",
-      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTFB0VmJTdTh6MTZSSVlZRUtWbm5DYXZiLXB1ZWZwQ0JiVEdyVm1oMDV2NjhjZzJrUmQ2bXVPVFM1Z24td2FYLXA0M3B6c3NjQnRvY0Y1czlGTzhiQ3diV2RF?oc=5",
-      "source": "Т-Бизнес секреты",
-      "category": "ПВЗ",
-      "date": "2025-06-30T07:00:00+00:00"
-    },
-    {
-      "title": "Wildberries откроет для предпринимателей университет RWB",
-      "url": "https://news.google.com/rss/articles/CBMiXkFVX3lxTFBjN3EzU0I1RTdoeHh0TG9yQlEyZThmaEMxZ25zQUt4VkFOUzFicGNCdmcwU0tVdWZFb3hGU09WcGhxV25ma0lBSGNDNndXQU4xLUZ2S1laUmZRYWI1UEE?oc=5",
-      "source": "Т-Бизнес секреты",
-      "category": "Компания",
-      "date": "2025-05-07T07:00:00+00:00"
-    },
-    {
-      "title": "Выгрузка карточек товаров на Wildberries через API",
-      "url": "https://news.google.com/rss/articles/CBMiTEFVX3lxTE5yUGJpTWpPQjdINm1wUGUzNmk2c0NaTm9NR1J5bFFzRjdfT213VUVvaWJWYTExdzhzTXdJaVB5eExqVURGYlFBNmZmQUPSAVdBVV95cUxQb2QxWFFMTWg4MGFkVk5MdnNueVJkMkVJTjBiNkthRDBUTlUyLUxDRnI5enNoYXdKMTRGTkJsUU9pNmR6QnNwcm9NYWpCWWtnam1nb3dZOXc?oc=5",
-      "source": "Хабр",
-      "category": "API",
-      "date": "2025-04-07T07:00:00+00:00"
-    },
-    {
-      "title": "За что владелец ПВЗ может получить штраф от маркетплейса Wildberries",
-      "url": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE5kU19SQkY0RC12TDVyTGJweHNjeWgwN25sNU5MZ1JWeHF1Si05cWo5U0RNLTlmTnVUME9ic1NtcHE1Y3RiR0VNX2N6a2E5amlSTjM2Sw?oc=5",
-      "source": "Клерк.ру",
-      "category": "ПВЗ",
-      "date": "2025-03-12T07:00:00+00:00"
-    },
-    {
-      "title": "Справочный центр",
-      "url": "https://news.google.com/rss/articles/CBMia0FVX3lxTE1valVfYXFrWVhvNVBrcmJkMTd2enJrQUFTamM1bUh3Smdtd3Y1QzJ3amhtZUllQVM0YkFFdDJRczgwX0FHLUpGUVpqYy1PRzNjVEJIc3pDQzVNa2d1OTdjV21jTmd2MzVHYVlN?oc=5",
-      "source": "Wildberries",
-      "category": "ПВЗ",
-      "date": "2025-03-06T15:41:54+00:00"
-    },
-    {
-      "title": "Как начать продавать на Wildberries",
-      "url": "https://news.google.com/rss/articles/CBMiogFBVV95cUxQN2RoTjJRMFh1WlMwNXl0ZkREQmVjM3ZkNkNhRXdxaHVvbTVDZWdrRmdfdzgwWDg1VnFXSEYxeFo0b19aWE9GcjE0bUNLT25aVlhIRTRhellnQnNOVEhUTGFXc2FZbTU4MjNZTjZFMUJMd0g2UkxLZGZueEZDMEJQZF9vT3NRcjRTVGp1NFQ4SDJINkJ0WXU5S1VpckJpVkZKSFE?oc=5",
-      "source": "Т-Бизнес секреты",
-      "category": "Продавцы",
-      "date": "2025-01-20T10:59:53+00:00"
-    },
-    {
-      "title": "Как начать продавать на Вайлдберриз с нуля: пошаговая инструкция для новичков — Блог",
-      "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxOeE5sRkJrRnRNeHI4M2JpWUVMZ0hqcU5QU3M5SURkRVplaER0WU1VYzJOMlJwQXFQSjFXQnN6a1lXZWJSOUxtMDRJRHgyaDRIMUgwRVF1MXRiNFdUVWs4cGh4MkVzTG9PaDJhUHRsVWpwTmlLSm1heGVTcmZMSG02QUdRRTFOTGVvdFlqRlhtUlY4endBa3hPa0kyeVJ3S3VYMVcyOEI3OUF5OGdETl84bA?oc=5",
-      "source": "Альфа-Банк",
-      "category": "Продавцы",
-      "date": "2024-12-19T08:00:00+00:00"
-    },
-    {
-      "title": "Компания Wildberries&Russ представила корпоративный бренд и логотип RWB",
-      "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxNaVpPMmJCajRDbGctZVFENUw5VUdVNExDNmJhUjJ3a2NZOGliRk4yR05ZOTdYVEc3MzNkUEJwTGN1aUNWTjktR3RFNTEyNW1sTldBQTJlOUNac1Z1TjBubXZoVldFRmtZQ2M5T1d6bGhHcktqdG1WZWVFaEJrRW9JVG0xcFRsMlpadlIxVmZaTm84dVF1TGwzTF8yNmJqZEJZMWg4RVdELTNIYjhWeHNYbHVxU1ZSNmdlVzlBX0k2S3FpQQ?oc=5",
-      "source": "Retail.ru",
-      "category": "Компания",
-      "date": "2024-12-10T08:00:00+00:00"
-    },
-    {
-      "title": "Wildberries и Russ представили корпоративный бренд и логотип RWB",
-      "url": "https://news.google.com/rss/articles/CBMiTEFVX3lxTE55VXdRVkd2b21JOFJNQmpJdGtLdlp1SFBKa3BYakp1WkoyVTl1M3BBbVItR25URUQxTUtGQndCV2tPYVRRRHpIWlRfTTg?oc=5",
-      "source": "PLUSworld",
-      "category": "Компания",
-      "date": "2024-12-10T08:00:00+00:00"
-    },
-    {
-      "title": "Как устроен ПВЗ и какая техника нужна для его открытия",
-      "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQNlE3T1MxNUE0aDB4dVJIQ1pBejVDaktmMHdQUG1RaDNJbGlrRGFzTm5DZDBXU1RlZ3dIQWxfdFlDSlg0RnMxZFZhaGxNUjU5dEZFZE9PdU13dDI0eFExOTlwY3M4MlhVanVnUkJkQkRvVnhKM2JCU29lNndyRnBZbkhwVzAxZ2xzRGY4Nno0WE9JZ1lMXy02bm1mYk1ydWJHNHdIWUNfVlpYc2Q1?oc=5",
-      "source": "Журнал Ситилинк",
-      "category": "ПВЗ",
-      "date": "2024-12-06T08:00:00+00:00"
-    },
-    {
-      "title": "Wildberries запустила новую платформу для разработчиков WB API",
-      "url": "https://news.google.com/rss/articles/CBMiR0FVX3lxTFBWZTFJaUdqb3UwUjBBczZEaURGOUJReHJQcjJTQWw4aG1CZFY5ZF90MTRWRW1MUVBQUV9RV0RtOGt4SXhXdDZZ0gFXQVVfeXFMT0NIV1ZGVGFjUDUzVFBrd2V5SGxoUXZDXzVJeHZfZGc2US11QzBVbTFwY0xsekotZ2JWTUpUSVhPc1VfZmlRdGRnRkZ6Wjk3OTdvLUVTMkNB?oc=5",
-      "source": "Хабр",
-      "category": "API",
-      "date": "2024-09-23T07:00:00+00:00"
-    },
-    {
-      "title": "Владислав Бакальчук подал заявку на регистрацию товарного знака RWB",
-      "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTFA0S0VpV0NIMmRtWTEyVU9ucXFwem51S3BBTThaZnk0VWEzNmpDZVBfd0N2bks1bjdWc1ZSQmVubUdIZ1dLOWpGajRtemY1TzBWS2I4V2g4aTNuQllEaTlXY0ZLcUFlS0xqbHhoWQ?oc=5",
-      "source": "Т-Бизнес секреты",
-      "category": "Компания",
-      "date": "2024-09-16T07:00:00+00:00"
-    },
-    {
-      "title": "Загрузка в 1С выкупов и списаний через API Wildberries | БУХ.1С - сайт для современного бухгалтера",
-      "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxOVldtMmJwcHZPclVnTjVBclp0eHRqR0FfZHRoQkU0QzJqTFVzZnQ5dkh4dzlzRFQ2QUU4bWROTkRUSjl5VWEwQldhclBEdjVfbDRmUWh1NXVNdGJrcndSQzJ4aE9RVkF0ZEZFM0l0SGc4Z0ZBQTFYVndKNzlPVEJ3ZFgxMDBiWWNuVzVqQlpGUEZwVmdURDA2NlU5eXh3N2dmd3pZYUxnSXZfTkU?oc=5",
-      "source": "BUH.RU",
-      "category": "API",
-      "date": "2024-09-09T07:00:00+00:00"
-    },
-    {
-      "title": "RWB займется развитием российских брендов",
-      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE80VlFkS3pwaHFuUFhKajZvb0FfOG9MODN6eGU4N1N4OTBqVlZqcjZhSDZKNE5yLWtkNVVSaDdXZVVuRnVpRmlLbVVZMy03WkhuOVFrbUUyMF9peXZaSFVtVzNZV0ZzcklKeWZSUzFMVkNOeExv?oc=5",
-      "source": "Эксперт",
-      "category": "Компания",
-      "date": "2024-09-05T07:00:00+00:00"
-    },
-    {
-      "title": "Как на Wildberries поменять пункт выдачи заказа",
-      "url": "https://news.google.com/rss/articles/CBMiQkFVX3lxTE1qYmFyQjEzNVlPRVpScC1EMVk3SkpYOWs2UFpFWDRacDN1UFNMRkhKeEJYWlg2NE9CeFY1UU1iR3Y3QQ?oc=5",
-      "source": "gogov.ru",
-      "category": "ПВЗ",
-      "date": "2023-11-13T08:00:00+00:00"
-    },
-    {
-      "title": "Оферта продавца",
-      "url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTFBZQS11bVh1RUZ4UTF2Q0FVVVVMUkRlMHRPYnpVUUtyWVdqMjZBaDJ1ZmtRM1dJcXBiRENRSGMxZmx6NEJQUnpMN2ZyWQ?oc=5",
-      "source": "Wildberries Seller",
-      "category": "ПВЗ",
-      "date": "2023-11-11T17:41:32+00:00"
-    },
-    {
-      "title": "Как владельцы ПВЗ Wildberries оценивают новую систему тарифов",
-      "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE1wRE5TUklfZDJwd0EzQ3F6QXdPek0wVks2TkJYYXR2eGFJRm02SDZ0V3Z2NlZsVHdsdXZfNWl1dW1tbjZqRUwzeUJpdFVCZjNpaE1vWXp4dEEwYXF6QjJTTTU0c1hiUjltR2R2dllR?oc=5",
-      "source": "Т-Бизнес секреты",
-      "category": "ПВЗ",
-      "date": "2023-10-26T07:00:00+00:00"
-    },
-    {
-      "title": "Wildberries компенсирует продавцам стоимость товара в случае его подмены",
-      "url": "https://news.google.com/rss/articles/CBMiowFBVV95cUxOdW82ZFNOUElmZnJDMHVwWGp1eFhDYXV1LXpqeGRaREVHUVYwUEhhNzZ6MzM3dFQ3QjE4aUFLUUt6TGJRRmtPSkVNaDRFSU5JcjhTZ21EY2hnenpmS055S21XTENrNEFYNmxfTG8zLS13S2Vad1psUzRXMXpRRjdabkh6T0lIQkFZZmg0QklWemNtVzF1dUxSY3ozcC1UTk1CRHFZ?oc=5",
-      "source": "Retail.ru",
-      "category": "Продавцы",
-      "date": "2023-10-16T07:00:00+00:00"
-    },
-    {
-      "title": "Wildberries изменил размер выплат собственникам ПВЗ с оборотом больше 6 млн рублей. Предприниматели будут получать меньше денег",
-      "url": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE5sSk5zOGpmS25KRDFCRTZaOEN4U3B2ZDNvR3BuSHplY2pNTVZmRjg1WVZ4U0czZTBFLXkxSEt5bHp2UTktaTZKN2lFUzZEUQ?oc=5",
-      "source": "Клерк.ру",
-      "category": "ПВЗ",
-      "date": "2023-09-13T07:00:00+00:00"
-    },
-    {
-      "title": "Владельцы пунктов выдачи заказов требуют у Wildberries полмиллиарда через суд",
-      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE1TZy1scFdFcWExZTNTd0c4ZkdCaEZwNS13VTducWVVVS1TMkdIYjJHT3lNTVNiLVBYNlBybVVfYjhEbVgxMEtxTnRnWmlaNHhVRXRmZ0RObUI4N29mbFkyU1cwLTdfVUNJZURZS2lQRGF5RV9s?oc=5",
-      "source": "CNews.ru",
-      "category": "ПВЗ",
-      "date": "2023-04-14T07:00:00+00:00"
     }
   ],
   "errors": [
-    "Компания: HTTP Error 429: Too Many Requests"
+    "API: HTTP Error 429: Too Many Requests",
+    "MAX: HTTP Error 429: Too Many Requests"
   ]
 }
