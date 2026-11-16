@@ -6,18 +6,12 @@ const sections = [
   ['withheld', 'Удержано'],
   ['paid', 'Доплачено']
 ];
-const archivePoint = '50034020';
-const archiveOrg = 'org01';
-const archiveQuery = 'edpvz_owner_stuck_history?wb_point_id=eq.' + archivePoint
-  + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid'
-  + '&order=operation_date.desc,operation_time.desc,source_row.desc&limit=1000';
 const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 2 });
 
 export function renderPointSections(point, active, disputes, tickets) {
-  const hasArchive = point.organization_research_id === archiveOrg && String(point.wb_point_id) === archivePoint;
-  const archive = hasArchive ? 'Загружаем историю WB…' : 'Для этого ПВЗ история WB пока не загружена.';
+  const archive = 'Загружаем историю WB…';
   const bodies = { disputes, tickets, paid: '<p class="empty">' + archive + '</p>', withheld: '<p class="empty">' + archive + '</p>' };
-  return `<div class="point-sections"${hasArchive ? ' data-point-archive' : ''}>
+  return `<div class="point-sections" data-point-archive data-archive-point="${String(point.wb_point_id).replace(/[^0-9]/g, '')}">
     <div class="point-section-tabs" role="group" aria-label="Разделы ПВЗ">
       ${sections.map(([id, label]) => `<button type="button" data-point-tab="${id}" aria-pressed="${id === active}">${label}</button>`).join('')}
     </div>
@@ -70,25 +64,31 @@ function paintArchive(panel, rows) {
 
 export function bindPointSections(root, account, pointKey) {
   const selected = new Map();
-  let archive;
+  const archive = new Map();
   let userId;
 
   async function hydrate() {
     const uid = account.user?.id;
     if (uid !== userId) {
       userId = uid;
-      archive = null;
+      archive.clear();
     }
     const panel = root.querySelector('[data-point-archive] > [data-point-panel="paid"]:not([hidden]), [data-point-archive] > [data-point-panel="withheld"]:not([hidden])');
     if (!uid || !panel || panel.dataset.loaded) return;
-    const request = archive ??= account.readTable(archiveQuery);
+    const pointId = panel.closest('[data-archive-point]')?.dataset.archivePoint;
+    if (!pointId) return;
+    const archiveQuery = 'edpvz_owner_stuck_history?wb_point_id=eq.' + encodeURIComponent(pointId)
+      + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid'
+      + '&order=operation_date.desc,operation_time.desc,source_row.desc&limit=1000';
+    const request = archive.get(pointId) ?? account.readTable(archiveQuery);
+    archive.set(pointId, request);
     try {
       const rows = await request;
       if (uid !== account.user?.id || !panel.isConnected) return;
       paintArchive(panel, rows);
       panel.dataset.loaded = 'true';
     } catch {
-      if (archive === request) archive = null;
+      if (archive.get(pointId) === request) archive.delete(pointId);
       if (uid === account.user?.id && panel.isConnected) {
         panel.replaceChildren(element('p', 'Не удалось загрузить историю WB. Открой вкладку ещё раз.', 'empty'));
       }
@@ -111,7 +111,7 @@ export function bindPointSections(root, account, pointKey) {
     hydrate,
     clear() {
       selected.clear();
-      archive = null;
+      archive.clear();
     }
   };
 }
