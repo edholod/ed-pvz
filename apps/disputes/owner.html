@@ -19,7 +19,7 @@
   <h1>Мои удержания</h1>
   <p id="owner-status" role="status">Проверяем доступ…</p>
   <a id="owner-login" href="../account/" hidden>Войти в аккаунт</a>
-  <section id="owner-workspace" hidden>
+  <section id="owner-workspace" hidden><p id="roz41-history-link" hidden><a href="./all-stuck-roz41.html" style="display:inline-flex;align-items:center;padding:12px 16px;border:1px solid #e7d5ed;border-radius:15px;background:linear-gradient(110deg,#f9e6f4,#eaf1ff);color:#713b93;font-weight:750;text-decoration:none">Все зависшие · Роз, 41 →</a></p>
     <nav class="tools">
       <label>Собственник <select id="owner-organization"></select></label>
       <button id="owner-refresh" type="button">Обновить</button>
@@ -39,5 +39,5 @@
     <div id="owner-cases"></div>
   </section>
 </main>
-</body>
+<script>window.addEventListener("load",()=>{const show=()=>{const a=window.EdPVZAccount;document.getElementById("roz41-history-link").hidden=!(a?.user?.id==="0f75065b-2b26-4a87-bf26-005f5a2284d4")};show();window.addEventListener("edpvz-auth-changed",show)})</script></body>
 </html>
