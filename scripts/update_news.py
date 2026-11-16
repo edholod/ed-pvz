@@ -248,24 +248,32 @@ def fetch_article(item):
     from lxml import html
 
     publisher = (urllib.parse.urlsplit(item.get("publisher", "")).hostname or "").lower().removeprefix("www.")
-    link = item["url"]
-    if urllib.parse.urlsplit(link).hostname == "news.google.com":
-        if not re.fullmatch(r"https://news\.google\.com/rss/articles/[A-Za-z0-9_-]+(?:\?[^#]*)?", link):
-            return {}
-        decoded = gnewsdecoder(link)
-        if not decoded.get("status"):
-            return {}
-        link = decoded["decoded_url"]
-
     class PublisherRedirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, request, fp, code, msg, headers, newurl):
             return super().redirect_request(request, fp, code, msg, headers, public_url(newurl, publisher))
+
+    opener = urllib.request.build_opener(PublisherRedirect())
+    link = item.get("original_url") or item["url"]
+    if urllib.parse.urlsplit(link).hostname == "news.google.com":
+        if not re.fullmatch(r"https://news\.google\.com/rss/articles/[A-Za-z0-9_-]+(?:\?[^#]*)?", link):
+            return {}
+        decoded = gnewsdecoder(link, timeout=8)
+        link = decoded.get("decoded_url")
+        if not link:
+            query = urllib.parse.urlencode({"search": item["title"], "per_page": 5, "subtype": "post"})
+            search = public_url("https://" + publisher + "/wp-json/wp/v2/search?" + query, publisher)
+            with opener.open(search, timeout=5) as response:
+                matches = json.loads(response.read(100_000))
+            link = next((match.get("url") for match in matches
+                         if normalized_title({"title": match.get("title")}) == normalized_title(item)), None)
+            if not link:
+                return {}
 
     request = urllib.request.Request(public_url(link, publisher), headers={
         "User-Agent": "Mozilla/5.0 (compatible; EdPVZNews/1.0)",
         "Accept": "text/html,application/xhtml+xml",
     })
-    with urllib.request.build_opener(PublisherRedirect()).open(request, timeout=8) as response:
+    with opener.open(request, timeout=8) as response:
         if response.headers.get_content_type() not in ("text/html", "application/xhtml+xml"):
             return {}
         raw = response.read(2_000_001)
@@ -310,7 +318,7 @@ def fetch_article(item):
 
 def enrich_articles(items):
     candidates = sorted((item for item in items if item.get("publisher") and not item.get("content")),
-                        key=lambda item: item.get("article_checked_at", ""))[:60]
+                        key=lambda item: (not item.get("original_url"), item.get("article_checked_at", "")))[:60]
     if not candidates:
         return
     from concurrent.futures import ThreadPoolExecutor
@@ -352,6 +360,9 @@ def main():
     # Keep previously collected readable text when a newer feed entry has only a headline.
     previous_by_url = {canonical_url(x): x for x in old.get("items", []) if isinstance(x, dict)}
     for item in items:
+        if (item.get("publisher", "").rstrip("/") == "https://pnz.ru"
+                and item["title"] == "Новые правила Ozon с 19 ноября могут привести к росту цен до 5%"):
+            item["original_url"] = "https://pnz.ru/life/novye-pravila-ozon-s-19-noyabrya-mogut-privesti-k-rostu-czen-do-5/"
         previous = previous_by_url.get(canonical_url(item))
         if previous:
             for field in ("content", "links", "image", "images", "original_url", "article_checked_at"):
