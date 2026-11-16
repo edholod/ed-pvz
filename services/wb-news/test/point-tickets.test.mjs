@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseHTML } from 'linkedom';
-import { groupPointTickets, renderPointTickets } from '../../../apps/disputes/point-tickets.mjs';
+import { groupPointTickets, renderPointTickets, renderUrgentTickets, replyCountdown } from '../../../apps/disputes/point-tickets.mjs';
 
 const point = { organization_research_id: 'org1', wb_point_id: '001' };
 const ticket = (number, title, created_local, fields = {}) => ({
@@ -42,4 +42,27 @@ test('old checks and failed requests are visible, and WB topics are escaped', ()
  assert.equal(document.querySelector('[data-open-ticket]').textContent, '<img src=bad>');
  assert.match(html, /Данные могут быть устаревшими/);
  assert.match(renderPointTickets(point, groups, scopes, true, 'other', escape), /Не удалось обновить тикеты/);
+});
+
+
+test('reply timer handles time remaining, expired deadlines and missing WB timestamps', () => {
+ const start = Date.parse('2026-11-16T00:00:00Z');
+ assert.equal(replyCountdown('2026-11-19T00:00:00Z', start), 'Осталось 72 ч 0 мин');
+ assert.equal(replyCountdown('2026-11-16T00:00:30Z', start), 'Осталось 1 мин');
+ assert.equal(replyCountdown('2026-11-16T00:00:00Z', start), '72 часа истекли');
+ assert.match(replyCountdown('', start), /Срок неизвестен/);
+});
+
+test('urgent tickets are scoped to visible points and ordered by deadline', () => {
+ const rows = [
+  ticket('3', 'Позже', '13.11.2026', {reply_state:'needs_reply', reply_due_at:'2026-11-18T01:00:00Z'}),
+  ticket('2', 'Раньше', '13.11.2026', {reply_state:'needs_reply', reply_due_at:'2026-11-17T01:00:00Z'}),
+  ticket('1', 'Отвечено', '13.11.2026', {reply_state:'answered'}),
+  ticket('4', 'Другой ПВЗ', '13.11.2026', {wb_point_id:'009',reply_state:'needs_reply'})
+ ];
+ const groups = groupPointTickets(rows, []);
+ const { document } = parseHTML(renderUrgentTickets(groups, [point], escape, false));
+ assert.deepEqual([...document.querySelectorAll('[data-open-ticket]')].map(item => item.textContent), ['Раньше','Позже']);
+ assert.equal(document.querySelectorAll('[data-reply-due]').length, 2);
+ assert.match(renderPointTickets(point, groups, [], false, 'other', escape), /Мы ответили · ждём WB/);
 });

@@ -1,5 +1,5 @@
 import { createTicketHistory } from './ticket-history.mjs';
-import { groupPointTickets, renderPointTickets } from './point-tickets.mjs?v=3';
+import { groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=4';
 import { STATUSES, STATUS_CLASSES, initialNote, monthKey, monthGroups, photoPath, sourceMatches } from './cards-model.mjs?v=manual-hanging-1';
 
 const $ = id => document.getElementById(id);
@@ -177,6 +177,10 @@ function render() {
   });
 
   cases.replaceChildren(...sections);
+  const ticketPoints = points.map(point => ({
+    organization_research_id: displayedOrganization, wb_point_id: point.id, name: point.name
+  }));
+  cases.insertAdjacentHTML('afterbegin', renderUrgentTickets(pointTickets, ticketPoints, escapeHTML, ticketsFailed));
   if (filtering && !count) cases.append(node('p', 'По выбранным условиям удержаний нет.', 'empty'));
   $('owner-reset').hidden = !filtering;
   $('owner-count').textContent = 'Показано: ' + count + ' из ' + rows.length;
@@ -300,3 +304,5 @@ window.addEventListener('focus', () => loadAccess(true));
 window.addEventListener('pageshow', () => loadAccess(true));
 setInterval(() => { if (!document.hidden) void loadAccess(true); }, 30000);
 void loadAccess();
+
+setInterval(() => { if (!document.hidden) updateReplyCountdowns(); }, 1000);

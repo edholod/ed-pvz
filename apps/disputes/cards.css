@@ -28,3 +28,11 @@
 .ticket-history-messages small{display:block;margin-top:3px;color:#695969}
 .ticket-history-messages p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .ticket-history-messages a{display:block;margin-top:5px}
+
+.ticket-urgent{margin:0 0 14px;padding:12px;border:1px solid #efb2c0;border-radius:14px;background:#fff4f6}
+.ticket-urgent h3,.ticket-group-title{margin:0 0 6px;font-size:.94rem}
+.ticket-urgent p{margin:0;color:#695969;font-size:.84rem}
+.ticket-group-title{margin-top:12px}
+.point-ticket-list .ticket-needs-reply{border-color:#efb2c0}
+.ticket-reply-clock{display:block;grid-column:1/-1;color:#a41943;font-size:.82rem;font-weight:700}
+.ticket-reply-clock[data-overdue="true"]{color:#922332}

@@ -54,10 +54,62 @@ export function renderPointTickets(point, groups, scopes, failed, activeTab = 'w
    `<button type="button" data-ticket-tab="${id}" aria-pressed="${id === activeTab}">${label} <span>${tickets[id].length}</span></button>`
   ).join('')}</div>
   ${tabs.map(({ id, label }) => `<div data-ticket-panel="${id}" aria-label="${label}"${id !== activeTab ? ' hidden' : ''}>${
-   tickets[id].length ? `<ul class="point-ticket-list">${tickets[id].map(ticket => `<li><button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
-    <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)}</span><span>${ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'}</span><span>${esc(ticket.created_local || '')}</span></div>
-    <span class="point-ticket-state">${esc(ticket.status)}</span></li>`).join('')}</ul>`
+   tickets[id].length ? renderTicketGroups(tickets[id], esc)
    : '<p class="empty">Активные тикеты в этой вкладке пока не найдены.</p>'
   }</div>`).join('')}
  </section>`;
+}
+
+
+export function replyCountdown(due, now = Date.now()) {
+ const remaining = Date.parse(due) - now;
+ if (!Number.isFinite(remaining)) return 'Срок неизвестен: WB не передал время ответа';
+ if (remaining <= 0) return '72 часа истекли';
+ const minutes = Math.ceil(remaining / 60000);
+ return minutes < 60 ? `Осталось ${minutes} мин` : `Осталось ${Math.floor(minutes / 60)} ч ${minutes % 60} мин`;
+}
+
+export function updateReplyCountdowns(root = document) {
+ for (const clock of root.querySelectorAll('[data-reply-due]')) {
+  clock.textContent = replyCountdown(clock.dataset.replyDue);
+  clock.dataset.overdue = String(Date.parse(clock.dataset.replyDue) <= Date.now());
+ }
+}
+
+function tile(ticket, esc, place = '') {
+ const urgent = ticket.reply_state === 'needs_reply';
+ const due = ticket.reply_due_at || '';
+ return `<li${urgent ? ' class="ticket-needs-reply"' : ''}>
+  <button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
+  <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)}</span><span>${esc(place || (ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'))}</span><span>${esc(ticket.created_local || '')}</span></div>
+  <span class="point-ticket-state">${esc(ticket.status)}</span>
+  ${urgent ? `<span class="ticket-reply-clock" data-reply-due="${esc(due)}">${esc(replyCountdown(due))}</span>` : ''}
+ </li>`;
+}
+
+function byDeadline(a, b) {
+ return (Date.parse(a.reply_due_at) || Infinity) - (Date.parse(b.reply_due_at) || Infinity);
+}
+
+function renderTicketGroups(tickets, esc) {
+ const urgent = tickets.filter(ticket => ticket.reply_state === 'needs_reply').sort(byDeadline);
+ const answered = tickets.filter(ticket => ticket.reply_state === 'answered');
+ const others = tickets.filter(ticket => !['needs_reply', 'answered'].includes(ticket.reply_state));
+ return [
+  ['Нужно ответить', urgent],
+  ['Мы ответили · ждём WB', answered],
+  ['Остальные активные', others]
+ ].filter(([, list]) => list.length).map(([title, list]) =>
+  `<h4 class="ticket-group-title">${title}</h4><ul class="point-ticket-list">${list.map(ticket => tile(ticket, esc)).join('')}</ul>`
+ ).join('');
+}
+
+export function renderUrgentTickets(groups, points, esc, failed) {
+ const addresses = new Map(points.map(point => [pointKey(point), point.address_observed || point.name]));
+ const urgent = [...groups.values()].flatMap(group => [...group.withholding, ...group.other])
+  .filter(ticket => addresses.has(pointKey(ticket)) && ticket.reply_state === 'needs_reply').sort(byDeadline);
+ return `<section class="ticket-urgent"><h3>Горящие тикеты · нужно ответить${urgent.length ? ' · ' + urgent.length : ''}</h3>${
+  urgent.length ? `<ul class="point-ticket-list">${urgent.map(ticket => tile(ticket, esc, addresses.get(pointKey(ticket)) || 'ПВЗ ' + ticket.wb_point_id)).join('')}</ul>`
+   : `<p>${failed ? 'Не удалось проверить ответы WB.' : 'В загруженных переписках тикетов, требующих ответа, нет.'}</p>`
+ }</section>`;
 }
