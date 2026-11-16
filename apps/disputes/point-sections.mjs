@@ -81,7 +81,15 @@ export function bindPointSections(root, account, pointKey) {
       const archiveQuery = 'edpvz_owner_stuck_history?wb_point_id=eq.' + encodeURIComponent(pointId)
         + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid'
         + '&order=operation_date.desc,operation_time.desc,source_row.desc&limit=1000';
-      const request = archive.get(pointId) ?? account.readTable(archiveQuery);
+      const request = archive.get(pointId) ?? (async () => {
+        const all = [];
+        for (let offset = 0; offset < 100000; offset += 1000) {
+          const page = await account.readTable(archiveQuery + '&offset=' + offset);
+          all.push(...page);
+          if (page.length < 1000) return all;
+        }
+        throw Error('Превышен лимит истории');
+      })();
       archive.set(pointId, request);
       try {
         const rows = await request;
