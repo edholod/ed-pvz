@@ -73,26 +73,28 @@ export function bindPointSections(root, account, pointKey) {
       userId = uid;
       archive.clear();
     }
-    const panel = root.querySelector('[data-point-archive] > [data-point-panel="paid"]:not([hidden]), [data-point-archive] > [data-point-panel="withheld"]:not([hidden])');
-    if (!uid || !panel || panel.dataset.loaded) return;
-    const pointId = panel.closest('[data-archive-point]')?.dataset.archivePoint;
-    if (!pointId) return;
-    const archiveQuery = 'edpvz_owner_stuck_history?wb_point_id=eq.' + encodeURIComponent(pointId)
-      + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid'
-      + '&order=operation_date.desc,operation_time.desc,source_row.desc&limit=1000';
-    const request = archive.get(pointId) ?? account.readTable(archiveQuery);
-    archive.set(pointId, request);
-    try {
-      const rows = await request;
-      if (uid !== account.user?.id || !panel.isConnected) return;
-      paintArchive(panel, rows);
-      panel.dataset.loaded = 'true';
-    } catch {
-      if (archive.get(pointId) === request) archive.delete(pointId);
-      if (uid === account.user?.id && panel.isConnected) {
-        panel.replaceChildren(element('p', 'Не удалось загрузить историю WB. Открой вкладку ещё раз.', 'empty'));
+    const panels = root.querySelectorAll('[data-point-archive] > [data-point-panel="paid"]:not([hidden]), [data-point-archive] > [data-point-panel="withheld"]:not([hidden])');
+    await Promise.all([...panels].map(async panel => {
+      if (!uid || panel.dataset.loaded) return;
+      const pointId = panel.closest('[data-archive-point]')?.dataset.archivePoint;
+      if (!pointId) return;
+      const archiveQuery = 'edpvz_owner_stuck_history?wb_point_id=eq.' + encodeURIComponent(pointId)
+        + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid'
+        + '&order=operation_date.desc,operation_time.desc,source_row.desc&limit=1000';
+      const request = archive.get(pointId) ?? account.readTable(archiveQuery);
+      archive.set(pointId, request);
+      try {
+        const rows = await request;
+        if (uid !== account.user?.id || !panel.isConnected) return;
+        paintArchive(panel, rows);
+        panel.dataset.loaded = 'true';
+      } catch {
+        if (archive.get(pointId) === request) archive.delete(pointId);
+        if (uid === account.user?.id && panel.isConnected) {
+          panel.replaceChildren(element('p', 'Не удалось загрузить историю WB. Открой вкладку ещё раз.', 'empty'));
+        }
       }
-    }
+    }));
   }
 
   root.addEventListener('click', event => {
