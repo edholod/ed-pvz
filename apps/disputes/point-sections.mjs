@@ -7,7 +7,7 @@ const sections = [
   ['paid', 'Доплачено']
 ];
 const moneyFormats = new Map();
-function currencyCode(row) { return ['RUB', 'BYN', 'KGS'].includes(row.currency) ? row.currency : 'RUB'; }
+function currencyCode(row) { return ['RUB', 'BYN', 'KGS', 'AMD'].includes(row.currency) ? row.currency : 'RUB'; }
 function money(amount, currency) {
   if (!moneyFormats.has(currency)) moneyFormats.set(currency, new Intl.NumberFormat('ru-RU', { style: 'currency', currency, maximumFractionDigits: 2 }));
   return moneyFormats.get(currency).format(Number(amount));
