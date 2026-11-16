@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Aggregate public RSS headlines without authentication or third-party dependencies."""
+"""Aggregate public news and extract article content when available."""
 import datetime as dt
 import difflib
 import email.utils
 from html.parser import HTMLParser
+import ipaddress
 import json
 import pathlib
 import re
+import socket
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -53,7 +55,7 @@ def fetch(category, query):
         if not title or not link.startswith("https://"):
             continue
         title = re.sub(r"\s+[-—]\s+" + re.escape(source_name) + r"$", "", title)
-        result.append({"title": title[:250], "url": link, "source": source_name[:100], "category": category, "date": parse_date(entry.findtext("pubDate") or "")})
+        result.append({"title": title[:250], "url": link, "source": source_name[:100], "publisher": source.get("url", "") if source is not None else "", "category": category, "date": parse_date(entry.findtext("pubDate") or "")})
     return result
 
 class TelegramParser(HTMLParser):
@@ -73,7 +75,7 @@ class TelegramParser(HTMLParser):
         classes = a.get("class", "").split()
         if self.message is None:
             if tag == "div" and "tgme_widget_message_wrap" in classes:
-                self.message = {"url": "", "date": "", "text": "", "links": [], "image": ""}
+                self.message = {"url": "", "date": "", "text": "", "links": [], "images": []}
                 self.depth = 1
             return
         if tag == "div":
@@ -84,16 +86,15 @@ class TelegramParser(HTMLParser):
             self.message["url"] = a.get("href", "")
         if tag == "time":
             self.message["date"] = a.get("datetime", "")
-        if not self.message["image"]:
-            if tag == "a" and ("tgme_widget_message_photo_wrap" in classes or "tgme_widget_message_video_thumb" in classes):
-                style = a.get("style", "")
-                match = re.search(r"""background-image:\s*url\(['"]?(https://[^'")]+)""", style)
-                if match and match.group(1).startswith("https://"):
-                    self.message["image"] = match.group(1)
-            if tag == "img" and ("tgme_widget_message_photo" in classes or "tgme_widget_message_video_thumb" in classes):
-                src = a.get("src", "")
-                if src.startswith("https://"):
-                    self.message["image"] = src
+        image = ""
+        if tag == "a" and ("tgme_widget_message_photo_wrap" in classes or "tgme_widget_message_video_thumb" in classes):
+            match = re.search(r"""background-image:\s*url\(['"]?(https://[^'")]+)""", a.get("style", ""))
+            if match:
+                image = match.group(1)
+        if tag == "img" and ("tgme_widget_message_photo" in classes or "tgme_widget_message_video_thumb" in classes):
+            image = a.get("src", "")
+        if image.startswith("https://") and image not in self.message["images"]:
+            self.message["images"].append(image)
         if self.text_depth and tag == "a":
             href = a.get("href", "")
             if href.startswith(("https://", "http://", "tg://")):
@@ -141,18 +142,18 @@ def fetch_telegram(channel, source_name):
         if not re.fullmatch(r"https://t\.me/" + re.escape(channel) + r"/\d+", link, flags=re.IGNORECASE):
             continue
         body = msg["text"]
-        if not body:
+        if not body and not msg["images"]:
             continue
         title = body[:180].rsplit(" ", 1)[0] if len(body) > 180 else body
         if len(body) > 180:
             title += "…"
         result.append({
-            "title": title, "url": link, "source": source_name,
+            "title": title or "Фото из канала «" + source_name + "»", "url": link, "source": source_name,
             "category": "Каналы", "date": msg["date"],
             "channel": channel,
             "content": body,
             "links": msg["links"],
-            "image": msg["image"],
+            "images": msg["images"],
         })
     if not result:
         raise ValueError("Публичные сообщения не обнаружены")
@@ -197,6 +198,8 @@ def within_days(a, b, days=7):
 def same_news(a, b):
     if canonical_url(a) == canonical_url(b):
         return True
+    if any(item.get('channel') and not item.get('content') for item in (a, b)):
+        return False
     left, right = normalized_title(a), normalized_title(b)
     if not left or not right:
         return False
@@ -225,6 +228,102 @@ def deduplicate(items):
             continue
         unique.append(item)
     return unique
+
+def public_url(url, publisher):
+    parts = urllib.parse.urlsplit(url)
+    host = (parts.hostname or "").lower().removeprefix("www.")
+    if (parts.scheme != "https" or not publisher or not host or
+            not (host == publisher or host.endswith("." + publisher)) or
+            parts.username or parts.password or parts.port not in (None, 443)):
+        raise ValueError("Unexpected publisher URL")
+    if not all(ipaddress.ip_address(entry[4][0]).is_global
+               for entry in socket.getaddrinfo(parts.hostname, 443, type=socket.SOCK_STREAM)):
+        raise ValueError("Non-public publisher")
+    return url
+
+
+def fetch_article(item):
+    from googlenewsdecoder import gnewsdecoder
+    from trafilatura import extract
+    from lxml import html
+
+    publisher = (urllib.parse.urlsplit(item.get("publisher", "")).hostname or "").lower().removeprefix("www.")
+    link = item["url"]
+    if urllib.parse.urlsplit(link).hostname == "news.google.com":
+        if not re.fullmatch(r"https://news\.google\.com/rss/articles/[A-Za-z0-9_-]+(?:\?[^#]*)?", link):
+            return {}
+        decoded = gnewsdecoder(link)
+        if not decoded.get("status"):
+            return {}
+        link = decoded["decoded_url"]
+
+    class PublisherRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, request, fp, code, msg, headers, newurl):
+            return super().redirect_request(request, fp, code, msg, headers, public_url(newurl, publisher))
+
+    request = urllib.request.Request(public_url(link, publisher), headers={
+        "User-Agent": "Mozilla/5.0 (compatible; EdPVZNews/1.0)",
+        "Accept": "text/html,application/xhtml+xml",
+    })
+    with urllib.request.build_opener(PublisherRedirect()).open(request, timeout=8) as response:
+        if response.headers.get_content_type() not in ("text/html", "application/xhtml+xml"):
+            return {}
+        raw = response.read(2_000_001)
+        final_url = response.geturl()
+    if len(raw) > 2_000_000:
+        return {}
+    page = html.fromstring(raw)
+    for image in page.xpath("//img"):
+        lazy = image.get("data-src") or image.get("data-lazy-src") or image.get("data-original")
+        if lazy:
+            image.set("src", lazy)
+    parsed = extract(html.tostring(page, encoding="unicode"), url=final_url,
+                     output_format="xml", include_images=True, include_comments=False,
+                     include_links=True, include_tables=True, include_formatting=True)
+    if not parsed:
+        return {}
+    main = ET.fromstring(parsed).find("main")
+    if main is None:
+        return {}
+    images = []
+    for value in page.xpath('//meta[@property="og:image" or @property="og:image:secure_url"]/@content') + [
+        node.get("src", "") for node in main.iter("graphic")
+    ]:
+        if value:
+            image_url = urllib.parse.urljoin(final_url, value)
+            if image_url.startswith("https://") and image_url not in images:
+                images.append(image_url)
+    paragraphs = []
+    for node in main.iter():
+        if node.tag not in ("p", "head", "item", "row", "quote"):
+            continue
+        if any(child.tag in ("p", "head", "item", "row", "quote") for child in list(node.iter())[1:]):
+            continue
+        text = re.sub(r"\s+", " ", " ".join(node.itertext()) if node.tag == "row" else "".join(node.itertext())).strip()
+        if text and text != item["title"]:
+            paragraphs.append(text)
+    body = "\n\n".join(paragraphs)
+    if len(body) < 120:
+        return {"original_url": final_url, "images": images}
+    return {"original_url": final_url, "content": body, "images": images}
+
+
+def enrich_articles(items):
+    candidates = sorted((item for item in items if item.get("publisher") and not item.get("content")),
+                        key=lambda item: item.get("article_checked_at", ""))[:60]
+    if not candidates:
+        return
+    from concurrent.futures import ThreadPoolExecutor
+    socket.setdefaulttimeout(8)
+    def enrich(item):
+        item["article_checked_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
+        try:
+            item.update({k: v for k, v in fetch_article(item).items() if v})
+        except Exception as error:
+            print("Article unavailable:", item["source"], type(error).__name__)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(enrich, candidates))
+
 
 def main():
     old = {}
@@ -255,10 +354,11 @@ def main():
     for item in items:
         previous = previous_by_url.get(canonical_url(item))
         if previous:
-            for field in ("content", "links", "image"):
+            for field in ("content", "links", "image", "images", "original_url", "article_checked_at"):
                 if not item.get(field) and previous.get(field):
                     item[field] = previous[field]
     unique = deduplicate(items)
+    enrich_articles(unique[:MAX_ITEMS])
     data = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(), "items": unique[:MAX_ITEMS], "errors": errors}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")

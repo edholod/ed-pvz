@@ -44,6 +44,9 @@ export function extractCards() {
       dateText: dateNode.textContent.trim(),
       links: Array.from(body.querySelectorAll('a[href]')).map(a => ({text: a.textContent.trim(), url: a.href})),
       image: card.querySelector('img[alt="news image"]')?.src || '',
+      images: Array.from(card.querySelectorAll('img[alt="news image"]'))
+        .concat(Array.from(body.querySelectorAll('img')))
+        .map(img => img.currentSrc || img.src),
     });
   }
   return result;
@@ -61,7 +64,9 @@ export function normalizeCards(cards, section) {
       url: `${WB_ORIGIN}/news/${section}#ed-news-${id}`,
       source: 'WB Мой ПВЗ', category: 'Мой ПВЗ', audience: [section],
       links: (card.links || []).map(link => ({text: String(link.text || '').slice(0, 500), url: safeURL(link.url)})).filter(link => link.url),
-      image: safeURL(card.image), origin: 'my-pvz',
+      image: safeURL(card.image),
+      images: [...new Set((card.images || []).map(safeURL).filter(Boolean))],
+      origin: 'my-pvz',
     }];
   });
 }
