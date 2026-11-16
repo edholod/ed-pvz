@@ -33,6 +33,16 @@ CHANNELS = [
     ("ozonapvz", "Ozon и партнёры ПВЗ"),
 ]
 MAX_ITEMS = 200
+# Backfill the article reported missing during the RSS outage.
+ARTICLE_BACKFILL = {
+    "title": "Новые правила Ozon с 19 ноября могут привести к росту цен до 5%",
+    "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNWDdpeUVQTWNxMEVZRzJDWXp3N2U0QzlqYktDVjBsRkdNcUxkdVNIUmtMTWJYVnAwR1hRMDJmWVJZU09UNEl5ZVZiYnJrTkNsdzhTZHlzYW9nWUpBYktFSWIybkZ1b0ZHMUZucmVaSW5xd25DOUhqZmtoS2dha3ZrQUdYR0MybUd5Mmc0cnNXcw?oc=5",
+    "source": "PNZ.RU",
+    "publisher": "https://pnz.ru",
+    "category": "Продавцы",
+    "date": "2026-11-15T15:00:00+00:00",
+    "original_url": "https://pnz.ru/life/novye-pravila-ozon-s-19-noyabrya-mogut-privesti-k-rostu-czen-do-5/"
+}
 def parse_date(value):
     try:
         d = email.utils.parsedate_to_datetime(value)
@@ -352,23 +362,26 @@ def main():
             items.extend(fetch_telegram(channel, source_name))
         except Exception as e:
             errors.append('@' + channel + ': ' + str(e)[:150])
-    if not items and old.get("items"):
+    if not items and old.get("items") and not any(item.get("publisher") and not item.get("content") for item in old["items"]):
         # Do not erase the last usable feed when all sources fail.
         old["errors"] = errors or ["Источники временно недоступны"]
         OUT.write_text(json.dumps(old, ensure_ascii=False, indent=2), encoding="utf-8")
         return
+    # A partial RSS outage must not remove recently collected articles.
+    cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)
+    if ARTICLE_BACKFILL["date"] >= cutoff.isoformat():
+        items.append(ARTICLE_BACKFILL.copy())
+    recent = [item for item in old.get("items", []) if isinstance(item, dict)
+              and (item.get("date") or "") >= cutoff.isoformat()]
     # Keep previously collected readable text when a newer feed entry has only a headline.
     previous_by_url = {canonical_url(x): x for x in old.get("items", []) if isinstance(x, dict)}
     for item in items:
-        if (item.get("publisher", "").rstrip("/") == "https://pnz.ru"
-                and item["title"] == "Новые правила Ozon с 19 ноября могут привести к росту цен до 5%"):
-            item["original_url"] = "https://pnz.ru/life/novye-pravila-ozon-s-19-noyabrya-mogut-privesti-k-rostu-czen-do-5/"
         previous = previous_by_url.get(canonical_url(item))
         if previous:
             for field in ("content", "links", "image", "images", "original_url", "article_checked_at"):
                 if not item.get(field) and previous.get(field):
                     item[field] = previous[field]
-    unique = deduplicate(items)
+    unique = deduplicate(items + recent)
     enrich_articles(unique[:MAX_ITEMS])
     data = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(), "items": unique[:MAX_ITEMS], "errors": errors}
     OUT.parent.mkdir(parents=True, exist_ok=True)
