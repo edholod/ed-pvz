@@ -7,7 +7,7 @@ const sections = [
 const archivePoint = '50034020';
 const archiveOrg = 'org01';
 const archiveQuery = 'edpvz_owner_stuck_history?wb_point_id=eq.' + archivePoint
-  + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid,payment_date'
+  + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid'
   + '&order=operation_date.desc,operation_time.desc,source_row.desc&limit=1000';
 const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 2 });
 
@@ -36,7 +36,8 @@ function formatDate(value) {
 
 function paintArchive(panel, rows) {
   const label = panel.getAttribute('aria-label');
-  const operations = rows.filter(row => row.operation_type === label);
+  const isWithheld = panel.dataset.pointPanel === 'withheld';
+  const operations = rows.filter(row => row.operation_type === label && (!isWithheld || !row.paid));
   if (!operations.length) {
     panel.replaceChildren(element('p', 'Операций в загруженной истории нет.', 'empty'));
     return;
@@ -50,8 +51,7 @@ function paintArchive(panel, rows) {
     const details = [
       row.cell && 'Ячейка ' + row.cell,
       row.return_box && 'Коробка возврата ' + row.return_box,
-      row.accept_box && 'Коробка приёмки ' + row.accept_box,
-      label === 'Удержано' && (row.paid ? ['Доплачено', formatDate(row.payment_date)].filter(Boolean).join(' ') : 'Доплата в истории не найдена')
+      row.accept_box && 'Коробка приёмки ' + row.accept_box
     ].filter(Boolean);
     if (details.length) item.append(element('small', details.join(' · ')));
     list.append(item);

@@ -45,5 +45,7 @@
 .point-archive-total { margin: 12px; font-weight: 700; }
 .point-archive-list { display: grid; gap: 6px; padding: 0 12px 12px; margin: 0; list-style: none; }
 .point-archive-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 9px 12px; border: 1px solid #e8dae7; background: #fff; border-radius: 10px; }
+[data-point-panel="withheld"] .point-archive-row { border-color: #df9ca5; background: #fff0f1; }
+[data-point-panel="paid"] .point-archive-row { border-color: #8cbe9c; background: #edf8ef; }
 .point-archive-row small { grid-column: 1 / -1; overflow-wrap: anywhere; }
 @media (max-width: 500px) { .point-section-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
