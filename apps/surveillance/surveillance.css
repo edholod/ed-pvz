@@ -35,3 +35,15 @@ form button{margin-top:12px}
 .note,#camera-status{font-size:.86rem}
 :focus-visible{outline:3px solid #74a2f4;outline-offset:2px}
 @media(max-width:650px){.workspace{grid-template-columns:1fr}.player{min-height:180px}}
+
+.provider-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:12px}
+.provider{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:12px;color:inherit;margin-top:0}
+.provider:hover{border-color:#82a2d6}
+.provider p{margin-top:4px}
+.provider img,.provider-icon{width:44px;height:44px;border-radius:10px}
+.provider img{object-fit:contain}
+.provider-icon{display:grid;place-items:center;background:#e9f3ff;color:#2455a6}
+.provider-icon svg{width:23px;height:23px}
+.shortcut-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.shortcut-list li{margin:0;padding:7px 10px;border:1px solid #dce5f1;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.shortcut-list a{overflow-wrap:anywhere;min-width:0;padding:8px 0}
