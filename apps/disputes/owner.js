@@ -9,6 +9,7 @@ const workspace = $('owner-workspace');
 const picker = $('owner-organization');
 const roz41History = $('roz41-history-link');
 const roz41OrganizationId = 'org01';
+const adminUserId = '0f75065b-2b26-4a87-bf26-005f5a2284d4';
 const cases = $('owner-cases');
 const filterIds = ['owner-search', 'owner-point', 'owner-month', 'owner-state', 'owner-wb'];
 const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' });
@@ -254,7 +255,8 @@ async function loadAccess(reload = false) {
     workspace.hidden = true;
   }
   userId = uid;
-  roz41History.hidden = true;
+  // The admin has access independently of invitation redemption.
+  roz41History.hidden = uid !== adminUserId;
   const version = ++listVersion;
   $('owner-login').hidden = !!uid;
   if (!uid) {
@@ -267,7 +269,7 @@ async function loadAccess(reload = false) {
     const previous = picker.value;
     const wasHidden = workspace.hidden;
     picker.replaceChildren(...access.map(org => new Option(org.name, org.id)));
-    roz41History.hidden = !access.some(org => org.id === roz41OrganizationId);
+    roz41History.hidden = uid !== adminUserId && !access.some(org => org.id === roz41OrganizationId);
     workspace.hidden = access.length === 0;
     if (!access.length) {
       clearCases();
