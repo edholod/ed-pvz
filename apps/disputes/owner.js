@@ -8,6 +8,8 @@ const status = $('owner-status');
 const workspace = $('owner-workspace');
 const picker = $('owner-organization');
 const cases = $('owner-cases');
+const historyLink = $('roz41-history-link');
+const admin = '0f75065b-2b26-4a87-bf26-005f5a2284d4';
 const filterIds = ['owner-search', 'owner-point', 'owner-month', 'owner-state', 'owner-wb'];
 const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' });
 const photoBase = 'https://raw.githubusercontent.com/edholod/ed-pvz/main/';
@@ -246,7 +248,8 @@ async function loadRows() {
 
 async function loadAccess(reload = false) {
   const uid = account.user?.id || null;
-  if (uid !== userId) {
+  const previousUser = userId;
+  if (uid !== previousUser) {
     clearCases();
     picker.replaceChildren();
     workspace.hidden = true;
@@ -254,6 +257,8 @@ async function loadAccess(reload = false) {
   userId = uid;
   const version = ++listVersion;
   $('owner-login').hidden = !!uid;
+  if (uid === admin) historyLink.hidden = false;
+  else if (uid !== previousUser) historyLink.hidden = true;
   if (!uid) {
     status.textContent = 'Войди в аккаунт, в котором активирован доступ.';
     return;
@@ -261,19 +266,20 @@ async function loadAccess(reload = false) {
   try {
     const access = await account.rpc('edpvz_dispute_owner_access', { p_action: 'list' });
     if (version !== listVersion || uid !== account.user?.id) return;
+    historyLink.hidden = uid !== admin && !access.some(org => org.id === 'org01');
     const previous = picker.value;
     const wasHidden = workspace.hidden;
     picker.replaceChildren(...access.map(org => new Option(org.name, org.id)));
     workspace.hidden = access.length === 0;
     if (!access.length) {
       clearCases();
-      status.textContent = 'Введи код доступа в поиске на главной странице.';
+      status.textContent = uid === admin ? '' : 'Введи код доступа в поиске на главной странице.';
       return;
     }
     if (access.some(org => org.id === previous)) picker.value = previous;
     if (reload || wasHidden || previous !== picker.value) void loadRows();
   } catch {
-    if (version === listVersion && workspace.hidden) status.textContent = 'Не удалось проверить доступ. Обнови страницу.';
+    if (version === listVersion && workspace.hidden) status.textContent = uid === admin ? '' : 'Не удалось проверить доступ. Обнови страницу.';
   }
 }
 
