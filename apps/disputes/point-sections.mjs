@@ -33,7 +33,8 @@ function formatDate(value) {
 function paintArchive(panel, rows) {
   const label = panel.getAttribute('aria-label');
   const isWithheld = panel.dataset.pointPanel === 'withheld';
-  const operations = rows.filter(row => row.operation_type === label && (!isWithheld || !row.paid));
+  const compensated = new Set(rows.filter(row => row.operation_type === 'Доплачено').map(row => String(row.shk) + '|' + Number(row.amount)));
+  const operations = rows.filter(row => row.operation_type === label && (!isWithheld || (!row.paid && !compensated.has(String(row.shk) + '|' + Number(row.amount)))));
   if (!operations.length) {
     panel.replaceChildren(element('p', 'Операций в загруженной истории нет.', 'empty'));
     return;
