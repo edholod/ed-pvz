@@ -1,4 +1,4 @@
-import { bindPointSections, renderPointSections } from './point-sections.mjs?v=5';
+import { bindPointSections, renderPointSections } from './point-sections.mjs?v=6';
 import { createTicketHistory } from './ticket-history.mjs';
 import { groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=point-sections-1';
 import { STATUSES, STATUS_CLASSES, initialNote, monthKey, monthGroups, photoPath, sourceMatches } from './cards-model.mjs?v=manual-hanging-1';
