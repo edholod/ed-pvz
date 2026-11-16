@@ -37,3 +37,7 @@
 .ticket-reply-clock{display:block;grid-column:1/-1;color:#a41943;font-size:.82rem;font-weight:700}
 .ticket-reply-clock[data-overdue="true"]{color:#922332}
 .ticket-urgent .ticket-coverage{margin:0 0 8px}
+
+.owner-views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:500px}
+.owner-views button[aria-pressed="true"]{background:#f4e6f0;color:#713354;border-color:#dfb6d1}
+.owner-filter-panel summary{color:#713354;cursor:pointer}

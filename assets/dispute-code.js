@@ -5,31 +5,9 @@
   const panel = document.getElementById('dispute-code-panel');
   const status = document.getElementById('dispute-code-status');
   const submit = document.getElementById('dispute-code-submit');
-  const section = document.getElementById('owner-disputes');
   const searchPlaceholder = input.placeholder;
-  const admin = '0f75065b-2b26-4a87-bf26-005f5a2284d4';
   const validCode = /^PVZ-[0-9A-F]{32}$/i;
-  let checkedUser = null;
-  let lookup = 0;
   let passwordMode = false;
-
-  async function refreshAccess() {
-    const uid = account.user?.id || null;
-    if (uid !== checkedUser) section.hidden = true;
-    checkedUser = uid;
-    const version = ++lookup;
-    if (!uid) return;
-    if (uid === admin) {
-      section.hidden = false;
-      return;
-    }
-    try {
-      const access = await account.rpc('edpvz_dispute_owner_access', { p_action: 'list' });
-      if (version === lookup && uid === account.user?.id) section.hidden = access.length === 0;
-    } catch {
-      // The owner page checks access independently on every request.
-    }
-  }
 
   function inspectInput() {
     if (passwordMode) {
@@ -88,11 +66,11 @@
       if (uid !== account.user?.id) return;
       if (result.error) throw new Error(result.error);
       setPasswordMode(false);
-      lookup++;
-      checkedUser = uid;
-      section.hidden = false;
       panel.hidden = false;
-      status.textContent = 'Доступ открыт. На главной появился раздел «Мои удержания».';
+      const link = document.createElement('a');
+      link.href = './apps/account/#owner-disputes';
+      link.textContent = 'Открыть профиль';
+      status.replaceChildren('Доступ открыт. «Мои удержания» теперь в твоём профиле. ', link);
     } catch (error) {
       const messages = {
         invalid_password: 'Пароль не подошёл.',
@@ -116,8 +94,4 @@
     }
   });
   submit.addEventListener('click', redeem);
-  window.addEventListener('edpvz-auth-changed', refreshAccess);
-  window.addEventListener('pageshow', refreshAccess);
-  window.addEventListener('focus', refreshAccess);
-  void refreshAccess();
 })();

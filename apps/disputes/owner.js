@@ -18,6 +18,7 @@ let listVersion = 0;
 let pageVersion = 0;
 let points = [];
 let rows = [];
+let stuckOnly = false;
 let displayedOrganization = null;
 let ticketSnapshot = null;
 let ticketsFailed = false;
@@ -138,9 +139,10 @@ function render() {
   const expanded = new Set([...cases.querySelectorAll('details[open]')].map(point => point.dataset.point));
   const addresses = new Map(points.map(point => [point.id, point.name]));
   const grouped = new Map();
+  const visibleRows = stuckOnly ? rows.filter(row => row.category === 'Зависший') : rows;
   let count = 0;
 
-  for (const row of rows) {
+  for (const row of visibleRows) {
     const note = rowNote(row.id);
     if (pointId && row.point_id !== pointId) continue;
     if (month && monthKey(note) !== month) continue;
@@ -162,7 +164,7 @@ function render() {
     const summary = node('summary');
     summary.append(node('span', (point.name || 'ПВЗ') + ' · ' + point.id), node('span', String(pointRows.length), 'point-count'));
     const content = node('div', null, 'point-months');
-    if (!pointRows.length) content.append(node('p', 'Удержаний в работе нет.', 'empty'));
+    if (!pointRows.length) content.append(node('p', stuckOnly ? 'Зависших товаров по этому ПВЗ нет.' : 'Удержаний в работе нет.', 'empty'));
     for (const group of monthGroups(pointRows, rowNote)) {
       const heading = node('h3', group.label + ' · ' + group.rows.length, 'month-heading');
       const cards = node('div', null, 'cases');
@@ -185,7 +187,7 @@ function render() {
   cases.insertAdjacentHTML('afterbegin', renderUrgentTickets(pointTickets, ticketPoints, escapeHTML, ticketsFailed, ticketSnapshot?.scopes));
   if (filtering && !count) cases.append(node('p', 'По выбранным условиям удержаний нет.', 'empty'));
   $('owner-reset').hidden = !filtering;
-  $('owner-count').textContent = 'Показано: ' + count + ' из ' + rows.length;
+  $('owner-count').textContent = 'Показано товаров: ' + count + ' из ' + visibleRows.length;
 }
 
 async function loadRows() {
@@ -282,6 +284,16 @@ async function loadAccess(reload = false) {
     if (version === listVersion && workspace.hidden) status.textContent = uid === admin ? '' : 'Не удалось проверить доступ. Обнови страницу.';
   }
 }
+
+function selectGoodsView(stuck) {
+  stuckOnly = stuck;
+  $('owner-all-goods').setAttribute('aria-pressed', String(!stuck));
+  $('owner-stuck-goods').setAttribute('aria-pressed', String(stuck));
+  $('owner-view-help').hidden = !stuck;
+  render();
+}
+$('owner-all-goods').addEventListener('click', () => selectGoodsView(false));
+$('owner-stuck-goods').addEventListener('click', () => selectGoodsView(true));
 
 setOptions($('owner-state'), 'Все статусы', STATUSES.map(state => ({ label: state, value: state })));
 for (const id of filterIds) $(id).addEventListener(id === 'owner-search' ? 'input' : 'change', render);
