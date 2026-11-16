@@ -1,0 +1,37 @@
+:root{font-family:system-ui,-apple-system,sans-serif;color:#18253a;background:#f3f6fb;color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+main{max-width:1050px;margin:auto;padding:22px 16px 60px}
+nav,.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+nav{justify-content:space-between}
+a{color:#2957a4;text-decoration:none}
+header{display:flex;align-items:center;gap:14px;margin:30px 0 20px}
+header img{object-fit:contain;background:#fff;border:1px solid #dfe7f1;border-radius:16px}
+h1,h2,p{margin:0}
+h1{font-size:clamp(1.65rem,5vw,2.5rem);line-height:1.15;letter-spacing:-.03em}
+h2{font-size:1.15rem}
+p,li{line-height:1.5}
+header p,.panel p{color:#47566d;margin-top:8px}
+.panel{margin-top:14px;padding:clamp(14px,3vw,23px);border:1px solid #dce5f1;border-radius:18px;background:#fff}
+.actions{margin-top:12px}
+button,input,textarea,select{font:inherit}
+.primary,.secondary,.text-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 12px;border:1px solid transparent;border-radius:10px;font-weight:650;cursor:pointer}
+.primary{background:#2455a6;color:white}
+.secondary{background:#eef4ff;color:#204681;border-color:#d6e3fa}
+.text-button{background:white;color:#8a2646}
+details{margin-top:16px}
+summary{cursor:pointer;font-weight:650;color:#244980}
+ol{padding-left:22px}
+li+li{margin-top:4px}
+label{display:block;margin:12px 0 5px;font-size:.9rem;font-weight:650}
+input,textarea,select{display:block;width:100%;min-width:0;padding:9px 10px;border:1px solid #ccd9eb;border-radius:9px;color:inherit;background:#fff;font-size:16px}
+textarea{resize:vertical}
+form button{margin-top:12px}
+.workspace{display:grid;grid-template-columns:minmax(180px,1fr) minmax(0,2.5fr);gap:14px;margin-top:12px}
+.player{display:grid;place-items:center;min-width:0;min-height:220px;overflow:hidden;border-radius:12px;background:#142032}
+.player p{margin:0;padding:12px;color:#d7e1f3;text-align:center}
+.player iframe{display:block;width:100%;min-height:240px;aspect-ratio:16/9;border:0}
+.note,#camera-status{font-size:.86rem}
+:focus-visible{outline:3px solid #74a2f4;outline-offset:2px}
+@media(max-width:650px){.workspace{grid-template-columns:1fr}.player{min-height:180px}}

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f3f6fb">
+  <title>Видеонаблюдение — Эд ПВЗ</title>
+  <link rel="stylesheet" href="surveillance.css?v=1">
+  <script defer src="../../assets/account.js?v=dispute-access-1"></script>
+  <script type="module" src="surveillance.mjs?v=1"></script>
+</head>
+<body>
+<main>
+  <nav aria-label="Навигация">
+    <a href="../../">← Главная</a>
+    <a href="../cameras/">Настройка камер</a>
+  </nav>
+  <header>
+    <img src="../../logos/ipeye.webp" alt="IPEYE" width="64" height="64">
+    <div><h1>Видеонаблюдение</h1><p>Камеры ПВЗ, прямой эфир и облачные записи IPEYE</p></div>
+  </header>
+
+  <section class="panel" aria-labelledby="cabinet-title">
+    <h2 id="cabinet-title">Кабинет IPEYE</h2>
+    <p>Войди на сайте IPEYE, чтобы увидеть все камеры своего аккаунта.</p>
+    <div class="actions">
+      <a class="primary" href="https://www.ipeye.ru/" target="_blank" rel="noopener noreferrer">Войти в IPEYE ↗</a>
+      <a class="secondary" href="https://ipeye.ru/ipeye_service/index.php?route=page_index" target="_blank" rel="noopener noreferrer">Открыть камеры ↗</a>
+    </div>
+    <details>
+      <summary>Как скачать фрагмент</summary>
+      <ol>
+        <li>Открой нужную камеру в кабинете IPEYE и выбери «Архив».</li>
+        <li>Укажи дату, начало и конец фрагмента.</li>
+        <li>Нажми «Скачать» и дождись подготовки файла.</li>
+      </ol>
+    </details>
+  </section>
+
+  <section class="panel" aria-labelledby="viewer-title">
+    <h2 id="viewer-title">Камеры в «Эд ПВЗ»</h2>
+    <p id="access-status" role="status">Проверяем доступ…</p>
+    <a id="account-link" href="../account/" hidden>Войти в «Эд ПВЗ»</a>
+    <div id="viewer" hidden>
+      <div class="workspace">
+        <div>
+          <label for="camera-picker">Камера</label>
+          <select id="camera-picker" disabled></select>
+          <div class="actions" id="camera-actions" hidden>
+            <a id="external-player" class="secondary" target="_blank" rel="noopener noreferrer">Открыть плеер ↗</a>
+            <a id="archive-link" class="secondary" target="_blank" rel="noopener noreferrer">Архив и скачивание ↗</a>
+            <button type="button" id="stop-camera" class="secondary">Остановить</button>
+            <button type="button" id="remove-camera" class="text-button">Убрать</button>
+          </div>
+        </div>
+        <div id="player" class="player"><p>Выбери добавленную камеру</p></div>
+      </div>
+      <details id="add-camera">
+        <summary>Добавить камеру IPEYE</summary>
+        <form id="camera-form">
+          <p>В IPEYE открой «Устройства» → «Опции» → «Код для сайта». Скопируй код камеры. Используй код HTML-плеера с архивом, если он доступен для камеры.</p>
+          <label for="camera-name">Название камеры</label>
+          <input id="camera-name" maxlength="100" required placeholder="Например, ПВЗ на Ленина · вход">
+          <label for="camera-code">Код для сайта или ссылка на плеер</label>
+          <textarea id="camera-code" required rows="3" maxlength="12000" autocapitalize="off" spellcheck="false" placeholder="Вставь код из кабинета IPEYE"></textarea>
+          <button class="primary" type="submit">Добавить</button>
+        </form>
+      </details>
+      <p class="note">Добавленные камеры доступны в этой вкладке до выхода из аккаунта. В ссылке на плеер может быть доступ к видео, поэтому передавай её только тем, кому разрешён просмотр.</p>
+      <p id="camera-status" role="status"></p>
+    </div>
+  </section>
+</main>
+</body>
+</html>
