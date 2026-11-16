@@ -121,8 +121,16 @@ test('hanging group extraction preserves stable labels for virtual group paginat
 test('opening an earlier hanging group scrolls back to remount its virtual row',async()=>{
  const {revealVirtualText}=await import('../disputes-browser.mjs');let top=900;
  const target={count:async()=>top===120?1:0},scroller={count:async()=>1,evaluate:async fn=>{const e={scrollTop:top,clientHeight:100,scrollHeight:1000};const out=fn(e);top=e.scrollTop;return out}};
- const root={getByText:()=>({first:()=>target}),getByTestId:()=>({filter:()=>({last:()=>scroller})})};
+ const root={getByText:()=>({filter:()=>({first:()=>target})}),getByTestId:()=>({filter:()=>({last:()=>scroller})})};
  assert.equal(await revealVirtualText(root,'№ 123',{wait:async()=>{}}),target);assert.equal(top,120);
 });
 
 test('a linked ticket in the product footer is retained without confusing its box number',()=>{const{document}=parseHTML('<main><h2>№ 999999</h2><div data-index="1"><article><img src="https://basket-1.wbbasket.ru/a.webp"><button>ШК 12345678</button><div>100 ₽</div><div>до 20.11.2026</div></article><footer><button>В тикет</button><button>№ 777777</button></footer></div></main>');const[row]=extractGoods(document.querySelector('main'));assert.equal(row.ticketNumber,'777777');assert.equal(row.dateLabel,'до 20.11.2026')});
+
+test('future withholding date stays distinct from the appeal deadline',()=>{
+ const {document}=parseHTML('<main><div data-index="1"><article><img src="https://basket-1.wbbasket.ru/a.webp"><button>ШК 57344527509</button><div>120 ₽</div></article><footer><p>Будет удержано 22.11.2026</p></footer></div></main>');
+ const [row]=extractGoods(document.querySelector('main'));
+ assert.equal(row.barcode,'57344527509');
+ assert.equal(row.withholdLabel,'Будет удержано 22.11.2026');
+ assert.equal(row.dateLabel,'');
+});

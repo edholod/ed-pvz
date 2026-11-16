@@ -84,7 +84,7 @@ export function extractGoods(root){
   // WB can put the appeal deadline in a sibling footer outside the price block.
   // Stay inside this virtual row and never borrow a neighbouring product's date.
   const boundary=chosen.closest('[data-index],[data-item-index]');
-  let dateLabel='';
+  let dateLabel='',withholdLabel='';
   for(let node=chosen,depth=0;node&&depth<9;node=node.parentElement,depth++){
    const text=node.innerText||'';
    if((text.match(/ШК\s*\d{4,40}/g)||[]).length!==1)break;
@@ -92,6 +92,8 @@ export function extractGoods(root){
    const dates=text.split('\n').map(x=>x.trim()).filter(x=>/^(?:(?:Оспорить|Срок (?:обращения|оспаривания))\s+)?до\s+\d{2}\.\d{2}\.\d{4}(?:,?\s+\d{2}:\d{2})?$/i.test(x));
    const unique=[...new Set(dates.map(x=>x.replace(/^.*?до\s+/i,'до ')))];
    if(unique.length===1&&!dateLabel)dateLabel=unique[0];
+   const scheduled=text.match(/Будет удержано\s+\d{2}\.\d{2}\.\d{4}(?:,? *\d{2}:\d{2})?/i);
+   if(scheduled&&!withholdLabel)withholdLabel=scheduled[0].replace(/\s+/g,' ');
    if(unique.length>1||node===boundary||node===root)break;
   }
   const start=lines.indexOf(title),end=lines.findIndex(x=>/^(В тикет|Оспорить)$/.test(x));
@@ -99,7 +101,7 @@ export function extractGoods(root){
   const wrapper=chosen.closest('[data-index],[data-item-index]');
   let eventId=null;
   for(const el of [chosen,button])for(const key of ['eventId','recordId','defectId','hangingId'])if(el.dataset?.[key])eventId=el.dataset[key];
-  out.push({barcode:m[1],title,photo:img?.getAttribute('src'),amount,reason,dateLabel,ticketNumber:ticket?.[1]||null,eventId,
+  out.push({barcode:m[1],title,photo:img?.getAttribute('src'),amount,reason,dateLabel,withholdLabel,ticketNumber:ticket?.[1]||null,eventId,
     position:wrapper?.getAttribute('data-index')??wrapper?.getAttribute('data-item-index')??null});
  }
  return out;
@@ -127,12 +129,18 @@ export function extractHangingGroups(root){
  return labels.map(label=>({label,position:'group:'+label}));
 }
 export async function revealVirtualText(root,text,{wait=sleep,maxWindows=150}={}){
- const target=root.getByText(text,{exact:true}).first();if(await target.count())return target;
- const scroller=root.getByTestId('virtuoso-scroller').filter({visible:true}).last();if(!await scroller.count())return null;
+ const target=root.getByText(text,{exact:true}).filter({visible:true}).first();if(await target.count())return target;
+ const scroller=root.getByTestId('virtuoso-scroller').filter({visible:true}).last();
+ if(!await scroller.count()){
+  try{await target.waitFor({state:'visible',timeout:2000});return target}catch{return null}
+ }
  await scroller.evaluate(e=>{e.scrollTop=0});
  for(let n=0;n<maxWindows;n++){
   await wait(180);if(await target.count())return target;
-  const bottom=await scroller.evaluate(e=>e.scrollTop+e.clientHeight>=e.scrollHeight-3);if(bottom)return null;
+  const bottom=await scroller.evaluate(e=>e.scrollTop+e.clientHeight>=e.scrollHeight-3);
+  if(bottom){
+   try{await target.waitFor({state:'visible',timeout:1200});return target}catch{return null}
+  }
   await scroller.evaluate(e=>{e.scrollTop+=Math.max(120,e.clientHeight*.75)});
  }return null;
 }
@@ -160,58 +168,68 @@ export async function expandVisibleReasons(root){
 }
 export async function waitGoodsDrawer(page,{groups=false}={}){
  await page.waitForFunction(({groups})=>{
-  const dialogs=[...document.querySelectorAll('[role="dialog"]')];
+  const dialogs=[...document.querySelectorAll('[role="dialog"]')].filter(el=>!el.getClientRects||el.getClientRects().length);
   const text=dialogs.at(-1)?.innerText||'';
   return /ШК\s*\d{4,40}|Нет товаров|Раздел недоступен/.test(text)||(groups&&/Товары из ПВЗ|№\s*\d+/.test(text));
  },{groups},{timeout:25000});
 }
 async function collectPoint(page,point,section){
  await closeDrawers(page);
- const group=page.locator('body').getByText('ID '+point,{exact:true});
- // A previous complete scan can leave earlier point rows unmounted at the bottom.
- if(!await group.count()){
-  const scroller=page.locator('body').getByTestId('virtuoso-scroller').last();
-  if(await scroller.count()){
-   await scroller.evaluate(e=>{e.scrollTop=0});
-   for(let window=0;window<150;window++){
-    await sleep(180);if(await group.count())break;
-    const atBottom=await scroller.evaluate(e=>e.scrollTop+e.clientHeight>=e.scrollHeight-3);
-    if(atBottom)break;
-    await scroller.evaluate(e=>{e.scrollTop+=Math.max(120,e.clientHeight*.75)});
-   }
-  }
- }
- if(!await group.count())throw new WBReadError('point_group_missing');
- await group.first().click({timeout:5000});
- const dialog=page.getByRole('dialog').last();await dialog.waitFor({state:'visible',timeout:12000});
- await waitGoodsDrawer(page,{groups:section.key==='hanging'});
+ const openPointDrawer=async()=>{
+  const pointRow=await revealVirtualText(page.locator('body'),'ID '+point);
+  if(!pointRow)throw new WBReadError('point_group_missing');
+  await pointRow.click({timeout:5000});
+  const opened=page.getByRole('dialog').filter({visible:true}).last();
+  await opened.waitFor({state:'visible',timeout:12000});
+  await waitGoodsDrawer(page,{groups:section.key==='hanging'});
+  return opened;
+ };
+ let dialog=await openPointDrawer();
  const direct=await dialog.evaluate(extractGoods);
  let goods={rows:direct,complete:false};
  if(section.key==='hanging'&&!direct.length){
   const groupsScan=await scanVirtual(page,dialog,extractHangingGroups);
   const groups=groupsScan.rows.map(row=>row.label);
   if(!groups.length)throw new WBReadError('hanging_groups_not_found');
-  const outerCount=await page.getByRole('dialog').count();
   const items=[];let complete=groupsScan.complete;
   for(const label of groups){
-   const target=await revealVirtualText(page.getByRole('dialog').last(),label);
-   if(!target)throw new WBReadError('hanging_group_not_mounted');
-   await target.click({timeout:5000});
-   await page.waitForFunction(n=>document.querySelectorAll('[role="dialog"]').length>n,outerCount,{timeout:10000});
-   const inner=page.getByRole('dialog').last();await waitGoodsDrawer(page);
-   const reasonsComplete=await expandVisibleReasons(inner);
-   const batch=await scanVirtual(page,inner,extractGoods);
-   items.push(...batch.rows.map(x=>({...x,groupLabel:label})));complete&&=batch.complete&&reasonsComplete;
-   // Close only the inner drawer. If WB closes both, reopen the original point.
-   await closeTopDrawer(page);await sleep(100);
-   if(!await page.getByRole('dialog').count()){
-    await page.locator('body').getByText('ID '+point,{exact:true}).first().click();
-    await page.getByRole('dialog').last().waitFor({state:'visible'});await sleep(300);
+   let batch;
+   for(let attempt=0;attempt<2;attempt++){
+    try{
+     const target=await revealVirtualText(dialog,label);
+     if(!target)throw new WBReadError('hanging_group_not_mounted');
+     await target.click({timeout:5000});
+     await waitGoodsDrawer(page);
+     const inner=page.getByRole('dialog').filter({visible:true}).last();
+     const reasonsComplete=await expandVisibleReasons(inner);
+     batch=await scanVirtual(page,inner,extractGoods);
+     batch.complete&&=reasonsComplete;
+     break;
+    }catch(error){
+     if(['blocked','authentication_required'].includes(error.code))throw error;
+     if(attempt===0){
+      await closeDrawers(page).catch(()=>{});
+      try{dialog=await openPointDrawer()}catch{break}
+     }
+    }
+   }
+   if(batch)items.push(...batch.rows.map(row=>({...row,groupLabel:label})));
+   else complete=false;
+   complete&&=batch?.complete===true;
+   if(label===groups.at(-1))break;
+   await closeTopDrawer(page).catch(()=>{complete=false});
+   dialog=page.getByRole('dialog').filter({visible:true}).last();
+   try{
+    if(!await dialog.count())dialog=await openPointDrawer();
+    else await waitGoodsDrawer(page,{groups:true});
+   }catch{
+    await closeDrawers(page).catch(()=>{});
+    try{dialog=await openPointDrawer()}catch{complete=false;break}
    }
   }
   goods={rows:items,complete};
  }else goods=await scanVirtual(page,dialog,extractGoods);
- await closeDrawers(page);return goods;
+ await closeDrawers(page).catch(()=>{goods.complete=false});return goods;
 }
 export function extractTicketRows(root){
  const result=[];

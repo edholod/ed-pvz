@@ -33,7 +33,7 @@ export function observationRows(items,{organization,point,category,state,group='
       identity_kind:native?'native':'observed_card',wb_state:state,barcode,
       title:String(item.title||'').slice(0,500),photo_url:safeImage(item.photo),amount:money(item.amount),
       provenance:'wb_browser_read_only',raw:{reason:String(item.reason||'').slice(0,10000),
-        date_label:String(item.dateLabel||''),collection_since:date_range_verified?'2026-10-01':null,ticket_number:item.ticketNumber||null,group:itemGroup,
+        date_label:String(item.dateLabel||''),...(item.withholdLabel?{withhold_label:item.withholdLabel}:{}),collection_since:date_range_verified?'2026-10-01':null,ticket_number:item.ticketNumber||null,group:itemGroup,
         native_event_id:native,occurrence,identity_warning:native?null:'Идентичность события WB не подтверждена',
         amount_kind:state==='to-hold'?'expected':state==='paid'?'refund':'withholding'}};
   });
