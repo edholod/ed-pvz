@@ -104,12 +104,25 @@ function renderTicketGroups(tickets, esc) {
  ).join('');
 }
 
-export function renderUrgentTickets(groups, points, esc, failed) {
+export function renderUrgentTickets(groups, points, esc, failed, scopes = []) {
  const addresses = new Map(points.map(point => [pointKey(point), point.address_observed || point.name]));
- const urgent = [...groups.values()].flatMap(group => [...group.withholding, ...group.other])
-  .filter(ticket => addresses.has(pointKey(ticket)) && ticket.reply_state === 'needs_reply').sort(byDeadline);
- return `<section class="ticket-urgent"><h3>Горящие тикеты · нужно ответить${urgent.length ? ' · ' + urgent.length : ''}</h3>${
-  urgent.length ? `<ul class="point-ticket-list">${urgent.map(ticket => tile(ticket, esc, addresses.get(pointKey(ticket)) || 'ПВЗ ' + ticket.wb_point_id)).join('')}</ul>`
-   : `<p>${failed ? 'Не удалось проверить ответы WB.' : 'В загруженных переписках тикетов, требующих ответа, нет.'}</p>`
- }</section>`;
+ const tickets = [...groups.values()].flatMap(group => [...group.withholding, ...group.other])
+  .filter(ticket => addresses.has(pointKey(ticket)));
+ const urgent = tickets.filter(ticket => ticket.reply_state === 'needs_reply').sort(byDeadline);
+ const unknown = tickets.filter(ticket => ticket.reply_state === 'unknown').length;
+ const scopeMap = new Map(scopes.map(scope => [scope.scope, scope]));
+ const now = Date.now();
+ const uncheckedPoints = points.filter(point => ['legacy', 'new'].some(namespace => {
+  const scope = scopeMap.get(`wb:${point.organization_research_id}:${point.wb_point_id}:tickets:${namespace}`);
+  return scope?.state !== 'ok' || !(now - Date.parse(scope.last_success) <= 6 * 3600000);
+ })).length;
+ const coverage = [
+  unknown ? `Тикетов с неподтверждённым ответом: ${unknown}.` : '',
+  uncheckedPoints ? `ПВЗ без полной свежей проверки списков: ${uncheckedPoints} из ${points.length}.` : ''
+ ].filter(Boolean).join(' ');
+ return `<section class="ticket-urgent"><h3>Горящие тикеты · нужно ответить${urgent.length ? ' · ' + urgent.length : ''}</h3>
+  ${coverage || failed ? `<p class="ticket-coverage">${esc(failed ? 'Не удалось обновить данные WB. ' + coverage : coverage)}</p>` : ''}
+  ${urgent.length ? `<ul class="point-ticket-list">${urgent.map(ticket => tile(ticket, esc, addresses.get(pointKey(ticket)) || 'ПВЗ ' + ticket.wb_point_id)).join('')}</ul>`
+   : '<p>В загруженных переписках тикетов, требующих ответа, нет.</p>'}
+ </section>`;
 }

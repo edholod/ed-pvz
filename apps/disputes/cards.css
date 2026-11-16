@@ -36,3 +36,4 @@
 .point-ticket-list .ticket-needs-reply{border-color:#efb2c0}
 .ticket-reply-clock{display:block;grid-column:1/-1;color:#a41943;font-size:.82rem;font-weight:700}
 .ticket-reply-clock[data-overdue="true"]{color:#922332}
+.ticket-urgent .ticket-coverage{margin:0 0 8px}

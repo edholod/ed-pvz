@@ -262,23 +262,41 @@ export async function chooseTicketPoint(page,point){
  const option=page.getByText('ID '+point,{exact:true}).last();await option.click();await sleep(500);
  if(await select.count()&&!(await select.innerText()).includes(point))throw new WBReadError('ticket_point_mismatch');
 }
-async function openTicket(page,number){
+async function openTicket(page,{number,point}){
  await closeDrawers(page);
  const button=page.getByRole('button',{name:'№ '+number,exact:true}).first();
  await button.waitFor({state:'visible',timeout:8000});
- const handle=await button.evaluateHandle(button=>{
+ const handle=await button.evaluateHandle((button,expectedPoint)=>{
   let el=button.parentElement;
   for(let n=0;el&&n<9;n++,el=el.parentElement){
    const text=el.innerText||'';
    if((text.match(/№\s*\d+/g)||[]).length>1)return null;
-   if(/\bID\s+\d+/.test(text)&&/\d{2}\.\d{2}\.\d{4}/.test(text))return el;
+   const point=text.match(/\bID\s+(\d+)/)?.[1];
+   if(point&&/\d{2}\.\d{2}\.\d{4}/.test(text))return point===expectedPoint?el:null;
   }return null;
- });
- const element=handle.asElement();if(!element)throw new WBReadError('ticket_card_not_found');
- await element.click({timeout:5000});await handle.dispose();
- await page.getByRole('dialog').last().waitFor({state:'visible',timeout:10000});
- const banner=await page.getByRole('dialog').last().innerText();
- if(!banner.includes(number))throw new WBReadError('ticket_number_mismatch');
+ },point);
+ try{
+  const element=handle.asElement();if(!element)throw new WBReadError('ticket_card_not_found');
+  const drawer=page.getByRole('dialog').last();
+  try{
+   await element.click({timeout:2500});
+   await drawer.waitFor({state:'visible',timeout:3000});
+  }catch(error){
+   if(error.name!=='TimeoutError')throw error;
+   // Sticky controls can cover the center of a virtual card. Click only the
+   // already matched card, checking that virtualization did not recycle it.
+   if(!await drawer.isVisible())await element.evaluate((card,{number,point})=>{
+    const text=card.innerText||'';
+    if(!card.isConnected||text.match(/№\s*(\d+)/)?.[1]!==number||text.match(/\bID\s+(\d+)/)?.[1]!==point)throw Error('ticket_card_recycled');
+    card.click();
+   },{number,point});
+   await drawer.waitFor({state:'visible',timeout:10000});
+  }
+  const banner=await drawer.innerText();
+  const heading=await drawer.getByRole('heading').first().textContent({timeout:2000}).catch(()=>null);
+  const visibleNumber=(heading||banner).match(/№\s*(\d+)/)?.[1]||banner.match(/№\s*(\d+)/)?.[1];
+  if(visibleNumber!==number&&!(!visibleNumber&&banner.split(/[^0-9]+/).includes(number)))throw new WBReadError('ticket_number_mismatch');
+ }finally{await handle.dispose()}
 }
 export function extractMessages(root){
  const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -313,7 +331,7 @@ export function extractMessages(root){
  return result;
 }
 async function ticketDetail(page,row){
- await openTicket(page,row.number);
+ await openTicket(page,row);
  const dialog=page.getByRole('dialog').last();
  const all=await scanVirtual(page,dialog,extractMessages);
  if(!all.rows.length)throw new WBReadError('messages_not_mapped');
@@ -491,11 +509,26 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
    if(Date.now()-started>budgetMs){report.sections.push({key:'budget:tickets',state:'partial'});break}
    const scope=`wb:${org.research_id}:${point.wb_point_id}:tickets:${namespace}`;
    try{
-    await openScope(ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org);
-    const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();if(await search.count())await search.fill('',{timeout:5000});
-    await chooseTicketPoint(page,point.wb_point_id);
-    await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(button=>/^№\s*\d+$/.test(button.innerText.trim()))||/Нет данных|Нет обращений|Нет тикетов|Ничего не найдено|Обращений пока нет/.test(document.body?.innerText||''),null,{timeout:20000});
-    const list=await scanVirtual(page,page.locator('body'),extractTicketRows);
+    const readList=async()=>{
+     await openScope(ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org);
+     const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();if(await search.count())await search.fill('',{timeout:5000});
+     await chooseTicketPoint(page,point.wb_point_id);
+     await page.waitForFunction(point=>[...document.querySelectorAll('button')].some(button=>{
+      if(!/^№\s*\d+$/.test(button.innerText.trim()))return false;
+      for(let el=button.parentElement,i=0;el&&i<9;el=el.parentElement,i++){
+       const text=el.innerText||'';
+       if((text.match(/№\s*\d+/g)||[]).length>1)break;
+       if(text.match(/\bID\s+(\d+)/)?.[1]===point)return true;
+      }
+      return false;
+     })||/Нет данных|Нет обращений|Нет тикетов|Ничего не найдено|Обращений пока нет|Тикетов пока нет/.test(document.body?.innerText||''),point.wb_point_id,{timeout:20000});
+     return scanVirtual(page,page.locator('body'),extractTicketRows);
+    };
+    let list;
+    try{list=await readList()}catch(error){
+     if(error.name!=='TimeoutError'&&error.code!=='ticket_point_filter_open')throw error;
+     list=await readList();
+    }
     const found=list.rows.filter(x=>x.point===point.wb_point_id);
     const cacheFor=row=>tickets.find(x=>x.organization_research_id===org.research_id&&x.namespace===namespace&&x.ticket_number===row.number);
     found.sort((a,b)=>Date.parse(cacheFor(a)?.last_attempt_at||'1970-01-01')-Date.parse(cacheFor(b)?.last_attempt_at||'1970-01-01'));
@@ -511,7 +544,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      saved.push(ticket);report.tickets++;
      if(saved.length){await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved.splice(0),complete:false,status:'running'});onProgress(report)}
     }
-    if(!found.length&&!/Нет данных|Нет обращений|Нет тикетов|Ничего не найдено|Обращений пока нет/.test(await page.locator('body').innerText()))throw new WBReadError('ticket_list_not_mapped');
+    if(!found.length&&!/Нет данных|Нет обращений|Нет тикетов|Ничего не найдено|Обращений пока нет|Тикетов пока нет/.test(await page.locator('body').innerText()))throw new WBReadError('ticket_list_not_mapped');
     await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved,
       complete:list.complete&&detailsComplete,status:list.complete&&detailsComplete?'ok':'partial'});
     report.sections.push({key:scope,state:list.complete&&detailsComplete?'ok':'partial'});onProgress(report);
