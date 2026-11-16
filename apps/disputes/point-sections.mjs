@@ -6,7 +6,13 @@ const sections = [
   ['withheld', 'Удержано'],
   ['paid', 'Доплачено']
 ];
-const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 2 });
+const moneyFormats = new Map();
+function currencyCode(row) { return ['RUB', 'BYN', 'KGS'].includes(row.currency) ? row.currency : 'RUB'; }
+function money(amount, currency) {
+  if (!moneyFormats.has(currency)) moneyFormats.set(currency, new Intl.NumberFormat('ru-RU', { style: 'currency', currency, maximumFractionDigits: 2 }));
+  return moneyFormats.get(currency).format(Number(amount));
+}
+function operationKey(row) { return [row.shk, Number(row.amount), currencyCode(row)].join('|'); }
 
 export function renderPointSections(point, active, disputes, tickets) {
   const archive = 'Загружаем историю WB…';
@@ -33,20 +39,34 @@ function formatDate(value) {
 function paintArchive(panel, rows) {
   const label = panel.getAttribute('aria-label');
   const isWithheld = panel.dataset.pointPanel === 'withheld';
-  const compensated = new Set(rows.filter(row => row.operation_type === 'Доплачено').map(row => String(row.shk) + '|' + Number(row.amount)));
-  const operations = rows.filter(row => row.operation_type === label && (!isWithheld || (!row.paid && !compensated.has(String(row.shk) + '|' + Number(row.amount)))));
+  const compensations = new Map();
+  for (const row of rows.filter(row => row.operation_type === 'Доплачено')) {
+    const key = operationKey(row);
+    compensations.set(key, (compensations.get(key) || 0) + 1);
+  }
+  const operations = rows.filter(row => {
+    if (row.operation_type !== label) return false;
+    if (!isWithheld) return true;
+    if (row.paid) return false;
+    const key = operationKey(row);
+    const remaining = compensations.get(key) || 0;
+    if (remaining > 0) { compensations.set(key, remaining - 1); return false; }
+    return true;
+  });
   if (!operations.length) {
     panel.replaceChildren(element('p', 'Операций в загруженной истории нет.', 'empty'));
     return;
   }
-  const heading = element('p', operations.length + ' операций · ' + money.format(operations.reduce((sum, row) => sum + Number(row.amount), 0)), 'point-archive-total');
+  const totals = new Map();
+  for (const row of operations) { const code = currencyCode(row); totals.set(code, (totals.get(code) || 0) + Number(row.amount)); }
+  const heading = element('p', operations.length + ' операций · ' + [...totals].map(([code, sum]) => money(sum, code)).join(' · '), 'point-archive-total');
   const lists = new Map();
   for (const row of operations) {
     const month = row.operation_date?.slice(0, 7) || '';
     if (!lists.has(month)) lists.set(month, element('ul', '', 'point-archive-list'));
     const item = element('li', '', 'point-archive-row');
     const date = [formatDate(row.operation_date), row.operation_time?.slice(0, 5)].filter(Boolean).join(' ');
-    item.append(element('strong', 'ШК ' + row.shk), element('strong', money.format(Number(row.amount))), element('small', date));
+    item.append(element('strong', 'ШК ' + row.shk), element('strong', money(row.amount, currencyCode(row))), element('small', date));
     const details = [
       row.cell && 'Ячейка ' + row.cell,
       row.return_box && 'Коробка возврата ' + row.return_box,
@@ -80,7 +100,7 @@ export function bindPointSections(root, account, pointKey) {
       const pointId = panel.closest('[data-archive-point]')?.dataset.archivePoint;
       if (!pointId) return;
       const archiveQuery = 'edpvz_owner_stuck_history?wb_point_id=eq.' + encodeURIComponent(pointId)
-        + '&select=operation_type,shk,amount,operation_date,operation_time,cell,return_box,accept_box,paid'
+        + '&select=operation_type,shk,amount,currency,operation_date,operation_time,cell,return_box,accept_box,paid'
         + '&order=operation_date.desc,operation_time.desc,source_row.desc&limit=1000';
       const request = archive.get(pointId) ?? (async () => {
         const all = [];
