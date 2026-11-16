@@ -1,8 +1,8 @@
 const sections = [
   ['disputes', 'Оспаривание'],
-  ['paid', 'Доплачено'],
+  ['tickets', 'Тикеты'],
   ['withheld', 'Удержано'],
-  ['tickets', 'Тикеты']
+  ['paid', 'Доплачено']
 ];
 const archivePoint = '50034020';
 const archiveOrg = 'org01';

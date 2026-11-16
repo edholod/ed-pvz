@@ -38,7 +38,7 @@
 .ticket-reply-clock[data-overdue="true"]{color:#922332}
 .ticket-urgent .ticket-coverage{margin:0 0 8px}
 
-.point-section-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 9px 12px; }
+.point-section-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 6px; padding: 9px 12px; }
 .point-section-tabs button { min-height: 42px; padding: 6px; }
 .point-section-tabs button[aria-pressed="true"] { background: #f4e6f0; color: #713354; border-color: #dfb6d1; }
 .point-sections [data-point-panel="tickets"] > .ticket-urgent { margin: 4px 12px 10px; }
@@ -48,4 +48,3 @@
 [data-point-panel="withheld"] .point-archive-row { border-color: #df9ca5; background: #fff0f1; }
 [data-point-panel="paid"] .point-archive-row { border-color: #8cbe9c; background: #edf8ef; }
 .point-archive-row small { grid-column: 1 / -1; overflow-wrap: anywhere; }
-@media (max-width: 500px) { .point-section-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
