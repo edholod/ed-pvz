@@ -24,6 +24,7 @@ export function groupPointTickets(tickets, observations) {
  const groups = new Map();
  const sorted = [...tickets].sort((a, b) => dateKey(b.created_local).localeCompare(dateKey(a.created_local)));
  for (const ticket of sorted) {
+  if (dateKey(ticket.created_local) < '2026-10-01') continue;
   const key = pointKey(ticket);
   if (!groups.has(key)) groups.set(key, { withholding: [], other: [] });
   const group = ticket.linked_withholding || withholdingTopic.test(ticket.title ?? '') || numbers.has(ticketKey(ticket, ticket.ticket_number))
@@ -53,7 +54,7 @@ export function renderPointTickets(point, groups, scopes, failed, activeTab = 'w
    `<button type="button" data-ticket-tab="${id}" aria-pressed="${id === activeTab}">${label} <span>${tickets[id].length}</span></button>`
   ).join('')}</div>
   ${tabs.map(({ id, label }) => `<div data-ticket-panel="${id}" aria-label="${label}"${id !== activeTab ? ' hidden' : ''}>${
-   tickets[id].length ? `<ul class="point-ticket-list">${tickets[id].map(ticket => `<li><strong>${esc(ticket.title?.trim() || 'Тема не указана в WB')}</strong>
+   tickets[id].length ? `<ul class="point-ticket-list">${tickets[id].map(ticket => `<li><button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
     <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)}</span><span>${ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'}</span><span>${esc(ticket.created_local || '')}</span></div>
     <span class="point-ticket-state">${esc(ticket.status)}</span></li>`).join('')}</ul>`
    : '<p class="empty">Активные тикеты в этой вкладке пока не найдены.</p>'

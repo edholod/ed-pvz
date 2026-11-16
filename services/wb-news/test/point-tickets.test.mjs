@@ -11,6 +11,8 @@ const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '
 
 test('tickets stay with their organization and point, and both WB lists keep distinct IDs', () => {
  const rows = [
+  ticket('0', 'Старое обращение', '30.09.2026'),
+  ticket('5', 'Тикет с первого октября', '01.10.2026'),
   ticket('1', 'Оспаривание брака', '31.10.2026'),
   ticket('1', 'График работы ПВЗ', '01.11.2026', { namespace: 'new' }),
   ticket('2', 'Зависшие ШК', '02.11.2026'),
@@ -22,9 +24,10 @@ test('tickets stay with their organization and point, and both WB lists keep dis
  const { document } = parseHTML(renderPointTickets(point, groups, [], false, 'other', escape));
  assert.equal(document.querySelector('[data-ticket-panel="withholding"]').hidden, true);
  assert.equal(document.querySelector('[data-ticket-panel="other"]').hidden, false);
- assert.deepEqual([...document.querySelectorAll('[data-ticket-panel="withholding"] strong')].map(node => node.textContent),
+ assert.deepEqual([...document.querySelectorAll('[data-ticket-panel="withholding"] [data-open-ticket]')].map(node => node.textContent),
   ['Вопрос к менеджеру', 'Зависшие ШК', 'Оспаривание брака']);
- assert.equal(document.querySelector('[data-ticket-panel="other"] strong').textContent, 'График работы ПВЗ');
+ assert.deepEqual([...document.querySelectorAll('[data-ticket-panel="other"] [data-open-ticket]')].map(node => node.textContent),
+  ['График работы ПВЗ', 'Тикет с первого октября']);
  assert.equal(document.querySelector('[data-ticket-tab="other"]').getAttribute('aria-pressed'), 'true');
 });
 
@@ -36,7 +39,7 @@ test('old checks and failed requests are visible, and WB topics are escaped', ()
  const html = renderPointTickets(point, groups, scopes, false, 'other', escape);
  const { document } = parseHTML(html);
  assert.equal(document.querySelector('img'), null);
- assert.equal(document.querySelector('strong').textContent, '<img src=bad>');
+ assert.equal(document.querySelector('[data-open-ticket]').textContent, '<img src=bad>');
  assert.match(html, /Данные могут быть устаревшими/);
  assert.match(renderPointTickets(point, groups, scopes, true, 'other', escape), /Не удалось обновить тикеты/);
 });

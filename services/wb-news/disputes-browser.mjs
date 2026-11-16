@@ -1,5 +1,5 @@
 import {selectOrganization,readOrganizationEvidence,verifyOrganization,organizationLabelMatches} from './disputes-organizations.mjs';
-import {eligibleObservation,observationRows,normalizeMessages,ticketNeedsDetail} from './disputes-model.mjs';
+import {eligibleObservation,observationRows,normalizeMessages,ticketNeedsDetail,localDate} from './disputes-model.mjs';
 const ORIGIN='https://my-pvz.wb.ru';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const stamp=()=>new Date().toISOString();
@@ -424,7 +424,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
- const phases=categories.includes('tickets')?['inventory','tickets']:['inventory'];
+ const phases=categories.includes('tickets')?['inventory','tickets','details']:['inventory'];
  for(const phase of phases)for(const org of ordered){
   report.phase=phase;
   if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
@@ -505,7 +505,9 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      const ticket={ticket_number:row.number,status:row.status,title:row.title,created_local:row.created_local,
       namespace,wb_point_id:point.wb_point_id,organization_research_id:org.research_id};
      const cached=tickets.find(x=>x.organization_research_id===org.research_id&&x.namespace===namespace&&x.ticket_number===row.number);
-     if(ticketNeedsDetail(row,cached)){detailQueue.push({organization:org.research_id,point:point.wb_point_id,namespace,row,cached,ticket});report.pending_dialogues=detailQueue.length;}
+     if(['Новый','В работе','Ожидает решения'].includes(row.status)
+       && localDate(row.created_local) >= '2026-09-30T21:00:00.000Z'
+       && ticketNeedsDetail(row,cached)){detailQueue.push({organization:org.research_id,point:point.wb_point_id,namespace,row,cached,ticket});report.pending_dialogues=detailQueue.length;}
      saved.push(ticket);report.tickets++;
      if(saved.length){await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved.splice(0),complete:false,status:'running'});onProgress(report)}
     }
@@ -529,8 +531,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     await openScope(ORIGIN+(namespace==='legacy'?'/tickets':'/tickets/new-tickets'),'Тикеты',org);
     const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();if(await search.count())await search.fill('',{timeout:5000});
     await chooseTicketPoint(page,point.wb_point_id);
-    const closed=row=>/Реш[её]н|Закрыт|Отмен/i.test(row.status||'')?1:0;
-    pending.sort((a,b)=>closed(a.row)-closed(b.row)||Date.parse(a.cached?.last_attempt_at||'1970-01-01')-Date.parse(b.cached?.last_attempt_at||'1970-01-01'));
+    pending.sort((a,b)=>Date.parse(a.cached?.last_checked_at||'1970-01-01')-Date.parse(b.cached?.last_checked_at||'1970-01-01'));
     let detailsOnPage=0;
     for(const task of pending){
      if(Date.now()-started>budgetMs){complete=false;break}

@@ -1,4 +1,5 @@
-import { groupPointTickets, renderPointTickets } from './point-tickets.mjs?v=2';
+import { createTicketHistory } from './ticket-history.mjs';
+import { groupPointTickets, renderPointTickets } from './point-tickets.mjs?v=3';
 import { STATUSES, STATUS_CLASSES, initialNote, monthKey, monthGroups, photoPath, sourceMatches } from './cards-model.mjs?v=manual-hanging-1';
 
 const $ = id => document.getElementById(id);
@@ -22,7 +23,12 @@ const ticketTabs = new Map();
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
+const ticketHistory = createTicketHistory(id => account.rpc('edpvz_dispute_owner_access', {
+  p_action: 'ticket_history', p_org: picker.value, p_after: id
+}));
+
 function clearCases() {
+  ticketHistory.close();
   pageVersion++;
   displayedOrganization = null;
   notes.clear();
@@ -274,6 +280,8 @@ $('owner-reset').addEventListener('click', () => {
   render();
 });
 cases.addEventListener('click', event => {
+  const ticket = event.target.closest('[data-open-ticket]');
+  if (ticket) { void ticketHistory.open(ticket.dataset.openTicket, ticket.textContent); return; }
   const button = event.target.closest('[data-ticket-tab]');
   if (!button) return;
   const section = button.closest('.point-tickets');

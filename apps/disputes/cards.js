@@ -1,4 +1,5 @@
-import { groupPointTickets, renderPointTickets } from './point-tickets.mjs?v=1';
+import { createTicketHistory } from './ticket-history.mjs';
+import { groupPointTickets, renderPointTickets } from './point-tickets.mjs?v=3';
 import { showInvite } from './owner-invite.js?v=3';
 import{STATUSES,STATUS_CLASSES,FIELDS,blankNote,initialNote,eligible,visibleObservations,mapNotes,monthKey,monthGroups,attachSourceTickets,pointCoverage,sourceMatches,validateNote,photoPath,csvCell,manualHangingObservation}from'./cards-model.mjs?v=manual-hanging-1';
 const BASE='https://duerixyhzapotoeclggz.supabase.co',KEY='sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV',ADMIN='0f75065b-2b26-4a87-bf26-005f5a2284d4',api=window.EdPVZAccount,$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,6 +9,12 @@ const ticketTabs = new Map();
 const opened=new Set(),openedCards=new Set(),cacheKey='edpvz-dispute-drafts-v1:'+ADMIN;
 function permitted(){return api?.signedIn&&api.user?.id===ADMIN}
 async function rest(path,options={}){const session=await api.ensure();if(!session||!permitted())throw Error('Доступ запрещён');const r=await fetch(BASE+'/rest/v1/'+path,{...options,headers:{apikey:KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json',...(options.headers||{})}});if(!r.ok){const e=Error('Не удалось сохранить или получить данные ('+r.status+')');e.status=r.status;throw e}return r.status===204?null:r.json()}
+const ticketHistory = createTicketHistory(async id => {
+ const ticket = (await rest('edpvz_dispute_tickets?select=title,ticket_number,history_complete&id=eq.'+encodeURIComponent(id)))[0];
+ if (!ticket) throw Error('Тикет недоступен');
+ const messages = await all('edpvz_dispute_ticket_messages?select=author_role,message_text,message_at,raw&is_current=eq.true&order=sequence_number.asc.nullslast,message_at.asc,id.asc&ticket_id=eq.'+encodeURIComponent(id));
+ return { ...ticket, messages };
+});
 async function all(path){const rows=[];for(let offset=0;offset<100000;offset+=1000){const batch=await rest(path+(path.includes('?')?'&':'?')+'limit=1000&offset='+offset);rows.push(...batch);if(batch.length<1000)return rows}throw Error('Слишком большой список')}
 function persist(){try{localStorage.setItem(cacheKey,JSON.stringify([...drafts]))}catch{$('load-error').textContent='Черновик не поместился на устройстве. Нажми «Сохранить» в карточке.'}}
 function note(id){return drafts.get(id)?.value||notes.get(id)||initialNote(observations.find(row=>row.id===id)||{})}
@@ -106,7 +113,7 @@ function refresh() {
 }
 
 async function loadCases(){if(busy||!permitted())return;busy=true;try{const [orgs,pp,rows,nn,control,ss,activeTickets]=await Promise.all([all('edpvz_dispute_organizations?select=*&order=name_exact.asc'),all('edpvz_dispute_points?select=*&order=wb_point_id.asc'),all('edpvz_dispute_observations?select=*&is_current=eq.true&wb_state=eq.to-hold&order=last_seen_at.desc,id.asc'),all('edpvz_dispute_notes?select=*,source:edpvz_dispute_observations(organization_research_id,wb_point_id,category,barcode,raw)'),rest('edpvz_dispute_sync_control?select=last_state,last_report,next_due_at,updated_at'),all('edpvz_dispute_sync_scopes?select=scope,state,last_success,last_attempt').catch(()=>[]),
- all('edpvz_dispute_tickets?select=organization_research_id,wb_point_id,namespace,ticket_number,status,title,created_local&order=id.asc&status=in.'+
+ all('edpvz_dispute_tickets?select=id,organization_research_id,wb_point_id,namespace,ticket_number,status,title,created_local&order=id.asc&status=in.'+
   encodeURIComponent('(Новый,В работе,Ожидает решения)')).catch(()=>null)]);if(!permitted())return;
  pointTicketsFailed=activeTickets===null;
  if(activeTickets)pointTickets=groupPointTickets(activeTickets,rows);const activeOwners=new Set(orgs.map(o=>o.research_id)),removedRows=new Set(observations.filter(row=>!activeOwners.has(row.organization_research_id)).map(row=>row.id));for(const [id,draft] of drafts)if(removedRows.has(id)||(draft.organization&&!activeOwners.has(draft.organization)))drafts.delete(id);persist();organizations=orgs;points=pp;scopes=ss;observations=visibleObservations(rows);
@@ -115,9 +122,11 @@ try{for(let offset=0;offset<numbers.length;offset+=100)linked.push(...await all(
 observations=attachSourceTickets(observations,linked);
 try{const photoIndex=await fetch('https://raw.githubusercontent.com/edholod/ed-pvz/main/assets/wb-disputes/index.json?v='+Math.floor(Date.now()/60000),{cache:'no-store'});if(photoIndex.ok)readyPhotos=new Set(await photoIndex.json())}catch{}
 notes=mapNotes(observations,nn);updateMonths();await Promise.all(observations.map(async row=>{if(!photos.has(row.photo_url))photos.set(row.photo_url,await photoPath(row.photo_url))}));const c=control[0],r=c?.last_report||{},labels={running:'Идёт обновление WB',ok:'Данные WB обновлены',partial:'Обновление выполнено частично',authentication_required:'Нужен вход в WB',blocked:'WB приостановил доступ',unavailable:'Проверка будет повторена',interrupted:'Проверка будет повторена'};$('sync-state').textContent=labels[c?.last_state]||'Ожидание проверки WB';const current=organizations.find(o=>o.research_id===r.current?.organization);$('sync-info').textContent=observations.length+' товаров в работе с 01.10.2026. Полностью проверено ПВЗ: '+points.filter(p=>pointCoverage(p,scopes)===3).length+'/'+points.length+'. '+(c?.last_state==='running'&&current?'Проверяется '+current.name_exact+'. ':'')+(rows.length>observations.length?'Карточки без подтверждённого периода пока не показаны. ':'')+(c?.next_due_at?'Следующая проверка: '+new Date(c.next_due_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow'})+' МСК.':'Проверка каждые 3 часа.');$('load-error').textContent='';render()}catch(e){$('load-error').textContent='Не удалось обновить данные. Сохранённые анкеты и черновики остаются на месте. '+e.message}finally{busy=false}}
-async function init(){if(!permitted()){showInvite(null);$('manual-hanging').hidden=true;clearInterval(timer);timer=null;$('workspace').hidden=true;$('gate').hidden=false;$('gate').textContent='Доступ только для владельца раздела. Войди в свой аккаунт Эд ПВЗ.';$('view').innerHTML='';organizations=[];observations=[];pointTickets.clear();ticketTabs.clear();notes.clear();drafts.clear();return}$('gate').hidden=true;$('workspace').hidden=false;try{drafts=new Map(JSON.parse(localStorage.getItem(cacheKey)||'[]'))}catch{drafts=new Map()}await refresh();if(!timer)timer=setInterval(()=>{if(document.visibilityState!=='hidden')refresh()},15000)}
+async function init(){if(!permitted()){ticketHistory.close();showInvite(null);$('manual-hanging').hidden=true;clearInterval(timer);timer=null;$('workspace').hidden=true;$('gate').hidden=false;$('gate').textContent='Доступ только для владельца раздела. Войди в свой аккаунт Эд ПВЗ.';$('view').innerHTML='';organizations=[];observations=[];pointTickets.clear();ticketTabs.clear();notes.clear();drafts.clear();return}$('gate').hidden=true;$('workspace').hidden=false;try{drafts=new Map(JSON.parse(localStorage.getItem(cacheKey)||'[]'))}catch{drafts=new Map()}await refresh();if(!timer)timer=setInterval(()=>{if(document.visibilityState!=='hidden')refresh()},15000)}
 $('status-filter').insertAdjacentHTML('beforeend',STATUSES.map(s=>'<option>'+esc(s)+'</option>').join(''));$('search').addEventListener('input',render);$('month-filter').addEventListener('change',render);$('wb-appeal-filter').addEventListener('change',render);$('status-filter').addEventListener('change',render);$('reset-filters').onclick=()=>{for(const id of ['search','status-filter','month-filter','wb-appeal-filter'])$(id).value='';render()};$('back').onclick=()=>{selected=null;render();window.scrollTo(0,0)};
 $('view').addEventListener('click',async event=>{
+ const ticket=event.target.closest('[data-open-ticket]');
+ if(ticket){void ticketHistory.open(ticket.dataset.openTicket,ticket.textContent);return;}
  const tab=event.target.closest('[data-ticket-tab]');
  if(tab){
   const section=tab.closest('.point-tickets');
