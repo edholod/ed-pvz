@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#fce7f1">
   <title>Мои удержания — Эд ПВЗ</title>
-  <link rel="stylesheet" href="cards.css?v=owner-simple-1">
+  <link rel="stylesheet" href="cards.css?v=owner-tabs-1">
   <script defer src="../../assets/account.js?v=dispute-access-1"></script>
-  <script type="module" src="owner.js?v=15"></script>
+  <script type="module" src="owner.js?v=16"></script>
   <style>
     .case .owner-annotations { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #0001; }
     .owner-annotations dd { white-space: pre-wrap; }
@@ -15,21 +15,32 @@
 </head>
 <body>
 <main>
-  <header><a href="../account/">← Мой профиль</a><span>Личный раздел</span></header>
+  <header><a href="../../">← На главную</a><span>Личный раздел</span></header>
   <h1>Мои удержания</h1>
   <p id="owner-status" role="status">Проверяем доступ…</p>
   <a id="owner-login" href="../account/" hidden>Войти в аккаунт</a>
-  <section id="roz41-history-link" hidden aria-label="История зависших товаров" style="margin:16px 0 20px"><a href="./all-stuck-roz41.html" style="display:flex;gap:12px;align-items:center;padding:17px;border:1px solid #e7d5ed;border-radius:18px;background:linear-gradient(110deg,#f9e6f4,#eaf1ff);color:#713b93;font-weight:750;text-decoration:none"><span aria-hidden="true" style="font-size:27px">▤</span><span>Все зависшие<small style="display:block;font-weight:400;color:#77667f">Сочи, ул. Роз, 41 · Сколько удержали и сколько доплатили</small></span><span style="margin-left:auto">›</span></a></section>
-  <section id="owner-workspace" hidden>
-    <nav class="tools">
+  <section id="owner-content" hidden>
+    <div class="tools owner-views" role="group" aria-label="Раздел удержаний">
+      <button type="button" data-owner-tab="dispute" aria-pressed="true">Оспаривание</button>
+      <button type="button" data-owner-tab="paid" aria-pressed="false">Доплачено</button>
+      <button type="button" data-owner-tab="withheld" aria-pressed="false">Удержано</button>
+      <button type="button" data-owner-tab="tickets" aria-pressed="false">Тикеты</button>
+    </div>
+    <nav class="tools" id="owner-organization-tools" hidden>
       <label>Собственник <select id="owner-organization"></select></label>
       <button id="owner-refresh" type="button">Обновить</button>
     </nav>
-    <div class="tools owner-views" role="group" aria-label="Что показать">
-      <button type="button" id="owner-all-goods" aria-pressed="true">Все удержания</button>
-      <button type="button" id="owner-stuck-goods" aria-pressed="false">Зависшие товары</button>
-    </div>
-    <p id="owner-view-help" class="source-explanation" hidden>Здесь товары, которые WB показывает в списке «К удержанию».</p>
+    <p id="owner-admin-entry" hidden><a href="./">Открыть оспаривания в «Удержаниях»</a></p>
+    <section id="owner-history" hidden>
+      <div class="tools" id="owner-history-controls" hidden>
+        <input id="owner-history-search" type="search" aria-label="ШК в истории" placeholder="Найти по ШК">
+      </div>
+      <div id="owner-history-results"></div>
+    </section>
+    <section id="owner-tickets" hidden></section>
+    <section id="owner-workspace" hidden>
+    <p class="source-explanation">Товары, которые WB показывает в списке «К удержанию».</p>
+    <label class="owner-stuck-filter"><input id="owner-stuck-goods" type="checkbox"> Только зависшие товары</label>
     <nav class="tools" aria-label="Поиск по удержаниям">
       <input id="owner-search" type="search" aria-label="Поиск удержаний" placeholder="Найти по ШК, товару или тикету">
       <select id="owner-point" aria-label="ПВЗ"><option value="">Все ПВЗ</option></select>
@@ -48,6 +59,7 @@
     </details>
     <p id="owner-count" class="source-explanation" role="status"></p>
     <div id="owner-cases"></div>
+    </section>
   </section>
 </main>
 </body>

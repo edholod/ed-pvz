@@ -68,9 +68,10 @@
       setPasswordMode(false);
       panel.hidden = false;
       const link = document.createElement('a');
-      link.href = './apps/account/#owner-disputes';
-      link.textContent = 'Открыть профиль';
-      status.replaceChildren('Доступ открыт. «Мои удержания» теперь в твоём профиле. ', link);
+      link.href = './apps/disputes/owner.html?view=owner-tabs-1';
+      link.textContent = 'Открыть «Мои удержания»';
+      status.replaceChildren('Доступ открыт. ', link);
+      window.dispatchEvent(new Event('edpvz-owner-access-changed'));
     } catch (error) {
       const messages = {
         invalid_password: 'Пароль не подошёл.',

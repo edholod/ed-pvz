@@ -23,6 +23,7 @@ async function refresh() {
 }
 
 window.addEventListener('edpvz-auth-changed', refresh);
+window.addEventListener('edpvz-owner-access-changed', refresh);
 window.addEventListener('pageshow', refresh);
 window.addEventListener('focus', refresh);
 void refresh();
