@@ -26,7 +26,7 @@ export function groupPointTickets(tickets, observations) {
  for (const ticket of sorted) {
   const key = pointKey(ticket);
   if (!groups.has(key)) groups.set(key, { withholding: [], other: [] });
-  const group = withholdingTopic.test(ticket.title ?? '') || numbers.has(ticketKey(ticket, ticket.ticket_number))
+  const group = ticket.linked_withholding || withholdingTopic.test(ticket.title ?? '') || numbers.has(ticketKey(ticket, ticket.ticket_number))
    ? 'withholding' : 'other';
   groups.get(key)[group].push(ticket);
  }

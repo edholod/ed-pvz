@@ -1,3 +1,4 @@
+import { groupPointTickets, renderPointTickets } from './point-tickets.mjs?v=2';
 import { STATUSES, STATUS_CLASSES, initialNote, monthKey, monthGroups, photoPath, sourceMatches } from './cards-model.mjs?v=manual-hanging-1';
 
 const $ = id => document.getElementById(id);
@@ -15,6 +16,11 @@ let pageVersion = 0;
 let points = [];
 let rows = [];
 let displayedOrganization = null;
+let ticketSnapshot = null;
+let ticketsFailed = false;
+const ticketTabs = new Map();
+const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
 function clearCases() {
   pageVersion++;
@@ -22,6 +28,9 @@ function clearCases() {
   notes.clear();
   points = [];
   rows = [];
+  ticketSnapshot = null;
+  ticketsFailed = false;
+  ticketTabs.clear();
   $('owner-count').textContent = '';
   cases.replaceChildren();
 }
@@ -136,7 +145,8 @@ function render() {
     count++;
   }
 
-  const sections = points.filter(point => !filtering || grouped.has(point.id)).map(point => {
+  const pointTickets = groupPointTickets(ticketSnapshot?.tickets ?? [], []);
+  const sections = points.filter(point => pointId ? point.id === pointId : !filtering || grouped.has(point.id)).map(point => {
     const section = node('details', null, 'point');
     section.dataset.point = point.id;
     section.open = filtering || points.length === 1 || expanded.has(point.id);
@@ -151,7 +161,12 @@ function render() {
       cards.append(...group.rows.map(card));
       content.append(heading, cards);
     }
-    section.append(summary, content);
+    section.append(summary);
+    section.insertAdjacentHTML('beforeend', renderPointTickets(
+      { organization_research_id: displayedOrganization, wb_point_id: point.id },
+      pointTickets, ticketSnapshot?.scopes ?? [], ticketsFailed, ticketTabs.get(point.id), escapeHTML
+    ));
+    section.append(content);
     return section;
   });
 
@@ -172,6 +187,9 @@ async function loadRows() {
   let cursor = null;
   if (displayedOrganization !== organization) status.textContent = 'Загружаем удержания…';
 
+  const ticketRequest = account.rpc('edpvz_dispute_owner_access', {
+    p_action: 'tickets', p_org: organization
+  }).then(data => ({ data })).catch(error => ({ error }));
   try {
     for (;;) {
       const page = await account.rpc('edpvz_dispute_owner_access', {
@@ -185,8 +203,15 @@ async function loadRows() {
       if (!next || next === cursor) throw Error('Не удалось дочитать список');
       cursor = next;
     }
+    const { data, error: ticketError } = await ticketRequest;
+    if (version !== pageVersion || uid !== account.user?.id) return;
+    if (ticketError?.status === 403 || ticketError?.status === 401) throw ticketError;
+    const changedTickets = Boolean(ticketError) !== ticketsFailed
+      || (data && JSON.stringify(data) !== JSON.stringify(ticketSnapshot));
+    ticketsFailed = Boolean(ticketError);
+    if (data) ticketSnapshot = data;
     status.textContent = nextPoints.length ? '' : 'Для этого собственника пока нет подключённых ПВЗ.';
-    if (displayedOrganization === organization && JSON.stringify([points, rows]) === JSON.stringify([nextPoints, collected])) return;
+    if (displayedOrganization === organization && !changedTickets && JSON.stringify([points, rows]) === JSON.stringify([nextPoints, collected])) return;
     displayedOrganization = organization;
     points = nextPoints;
     rows = collected;
@@ -247,6 +272,15 @@ for (const id of filterIds) $(id).addEventListener(id === 'owner-search' ? 'inpu
 $('owner-reset').addEventListener('click', () => {
   for (const id of filterIds) $(id).value = '';
   render();
+});
+cases.addEventListener('click', event => {
+  const button = event.target.closest('[data-ticket-tab]');
+  if (!button) return;
+  const section = button.closest('.point-tickets');
+  const tab = button.dataset.ticketTab;
+  ticketTabs.set(section.closest('.point').dataset.point, tab);
+  for (const item of section.querySelectorAll('[data-ticket-tab]')) item.setAttribute('aria-pressed', String(item === button));
+  for (const panel of section.querySelectorAll('[data-ticket-panel]')) panel.hidden = panel.dataset.ticketPanel !== tab;
 });
 picker.addEventListener('change', () => {
   for (const id of filterIds) $(id).value = '';
