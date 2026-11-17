@@ -63,7 +63,7 @@
       <div class="actions"><strong id="ivideon-live-name"></strong><button id="ivideon-live-stop" type="button" class="secondary">Остановить</button></div>
       <form id="ivideon-archive" class="iv-camera-edit" hidden>
         <label>Начало записи <input id="ivideon-archive-start" type="datetime-local" required></label>
-        <label>Длительность <select id="ivideon-archive-duration"><option value="5">5 минут</option><option value="15">15 минут</option><option value="30">30 минут</option><option value="60">1 час</option></select></label>
+        <label>Длительность <select id="ivideon-archive-duration"><option value="1">1 минута</option><option value="5" selected>5 минут</option><option value="15">15 минут</option><option value="30">30 минут</option><option value="60">1 час</option></select></label>
         <button class="primary" type="submit">Показать запись</button>
         <button class="secondary" type="submit" id="ivideon-export">Подготовить MP4</button>
         <p id="ivideon-export-result" role="status" hidden></p>
@@ -188,38 +188,9 @@
           const link = document.createElement('a');
           link.className = 'primary';
           link.href = result.downloadUrl;
-          link.target = '_blank';
           link.rel = 'noopener noreferrer';
+          link.download = '';
           link.textContent = 'Скачать MP4';
-          link.addEventListener('click', async event => {
-            event.preventDefault();
-            if (link.getAttribute('aria-busy') === 'true') return;
-            link.setAttribute('aria-busy','true');
-            link.textContent = 'Загружаем MP4…';
-            try {
-              const response = await fetch(result.downloadUrl,{credentials:'omit',referrerPolicy:'no-referrer'});
-              if (!response.ok) throw Error('Download failed');
-              const file = await response.blob();
-              if (!file.size) throw Error('Empty file');
-              const url = URL.createObjectURL(file);
-              const save = document.createElement('a');
-              save.href = url;
-              save.download = 'ivideon-archive.mp4';
-              document.body.append(save);
-              save.click();
-              save.remove();
-              setTimeout(() => URL.revokeObjectURL(url),60000);
-              link.textContent = 'Скачать MP4';
-            } catch {
-              link.textContent = 'Открыть MP4 для сохранения';
-              link.setAttribute('aria-busy','false');
-              link.addEventListener('click', open => {
-                open.stopImmediatePropagation();
-              },{capture:true,once:true});
-            } finally {
-              link.removeAttribute('aria-busy');
-            }
-          });
           exportResult.replaceChildren(link);
           return;
         }

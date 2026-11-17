@@ -39,13 +39,14 @@ async function serveHls(req: Request, ticket: string) {
     const bytes = Uint8Array.from(atob(ticket.replace(/-/g,'+').replace(/_/g,'/')), (char) => char.charCodeAt(0));
     const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, await ticketKey(), bytes.slice(12));
     const {url, expires, purpose} = JSON.parse(new TextDecoder().decode(plain));
-    if (purpose !== 'hls' || typeof expires !== 'number' || expires < Date.now()) throw Error();
+    const download = new URL(req.url).searchParams.has('download');
+    if (purpose !== (download ? 'download' : 'hls') || typeof expires !== 'number' || expires < Date.now()) throw Error();
     let target = hlsTarget(url);
     let response: Response | undefined;
     const requestHeaders = new Headers();
     const range = req.headers.get('range');
     if (range && /^bytes=\d+-\d*$/.test(range)) requestHeaders.set('range',range);
-    const deadline = AbortSignal.timeout(12000);
+    const deadline = AbortSignal.timeout(download ? 120000 : 12000);
     for (let i = 0; i < 4; i++) {
       response = await fetch(target, {redirect:'manual', headers:requestHeaders, signal:deadline});
       if (response.status < 300 || response.status >= 400) break;
@@ -54,9 +55,20 @@ async function serveHls(req: Request, ticket: string) {
       if (!location) throw Error();
       target = hlsTarget(location, target.href);
     }
-    if (!response?.ok) return reply({error:'Ivideon не отдал данные HLS.'}, 502);
+    if (!response?.ok) return reply({error:download ? 'Ivideon не отдал файл. Подготовь MP4 заново.' : 'Ivideon не отдал данные HLS.'}, 502);
     const contentType = response.headers.get('content-type') ?? '';
     const headersOut = {...headers, 'Access-Control-Expose-Headers':'Content-Range, Accept-Ranges', 'X-Content-Type-Options':'nosniff'};
+    if (download) {
+      if (!/^(video\/mp4|application\/octet-stream)/i.test(contentType)) return reply({error:'Ivideon не вернул файл MP4.'},502);
+      const fileHeaders = new Headers(headersOut);
+      fileHeaders.set('Content-Type','video/mp4');
+      fileHeaders.set('Content-Disposition','attachment; filename="ivideon-archive.mp4"');
+      for (const name of ['Content-Range','Accept-Ranges','Content-Length']) {
+        const value = response.headers.get(name);
+        if (value) fileHeaders.set(name,value);
+      }
+      return new Response(response.body,{status:response.status,headers:fileHeaders});
+    }
     if (/mpegurl/i.test(contentType) || /\.m3u8$/i.test(target.pathname) || /text\/plain/i.test(contentType)) {
       const manifest = await response.text();
       if (manifest.length > 512000 || !manifest.startsWith('#EXTM3U')) throw Error();
@@ -197,6 +209,8 @@ Deno.serve(async (req) => {
   const nativeMedia = req.method === 'GET' && !requestOrigin &&
     new URL(req.url).searchParams.has('hls') &&
     req.headers.get('referer') === origin + '/';
+  const downloadTicket = req.method === 'GET' ? new URL(req.url).searchParams.get('download') : null;
+  if (downloadTicket && (!requestOrigin || requestOrigin === origin)) return serveHls(req, downloadTicket);
   if (requestOrigin !== origin && !nativeMedia) return reply({error:'Доступ запрещён'}, 403);
   if (req.method === 'GET' && req.headers.get('upgrade')?.toLowerCase() === 'websocket') {
     return relay(req, new URL(req.url).searchParams.get('ticket') ?? '');
@@ -263,8 +277,10 @@ Deno.serve(async (req) => {
         if (!record) return reply({state:'pending'});
         if (record.status === 'ready' && typeof record.video_url === 'string') {
           const download = hlsTarget(record.video_url);
-          if (decodeURIComponent(download.href).includes(key)) return reply({error:'Ivideon вернул ссылку с ключом аккаунта. Файл доступен в кабинете Ivideon.'},422);
-          return reply({state:'ready',downloadUrl:download.href});
+          download.searchParams.set('access_token',key);
+          const link = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
+          link.searchParams.set('download',await issueTicket(download,Date.now()+15*60*1000,'download'));
+          return reply({state:'ready',downloadUrl:link.href});
         }
         if (['failed','error','cancelled','expired','deleted'].includes(record.status)) return reply({state:'failed'});
         const progress = Number(record.progress);
