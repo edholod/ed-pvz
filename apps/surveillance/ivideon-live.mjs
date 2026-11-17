@@ -3,7 +3,9 @@ export function playIvideon(video, url, notify) {
   if (!Media) throw Error('Этот браузер не поддерживает встроенный эфир Ivideon.');
   const media = new Media();
   const address = URL.createObjectURL(media);
-  const socket = new WebSocket(url);
+  const endpoint = new URL(url);
+  if (endpoint.pathname.endsWith('/functions/v1/edpvz-ivideon-check')) endpoint.searchParams.set('frames', 'text');
+  const socket = new WebSocket(endpoint);
   socket.binaryType = 'arraybuffer';
   video.disableRemotePlayback = true;
   video.src = address;
@@ -70,6 +72,10 @@ export function playIvideon(video, url, notify) {
   }
   socket.onmessage = ({data}) => {
     if (stopped) return;
+    if (typeof data === 'string' && data.startsWith('edpvz-fmp4:')) {
+      try { data = Uint8Array.from(atob(data.slice('edpvz-fmp4:'.length)), (c) => c.charCodeAt(0)); }
+      catch { finish('Не удалось прочитать видеофрагмент ретранслятора.'); return; }
+    }
     if (typeof data !== 'string') {
       if (seenCodec !== 'audio' || initializing) {
         fragments++;

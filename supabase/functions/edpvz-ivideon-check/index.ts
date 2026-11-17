@@ -32,8 +32,24 @@ async function relay(req: Request, ticket: string) {
     return reply({error:'Ссылка на эфир истекла.'}, 403);
   }
   const {socket, response} = Deno.upgradeWebSocket(req);
+  const textTransport = new URL(req.url).searchParams.get('frames') === 'text';
   let upstream: WebSocket | undefined;
+  let binaryFrames = 0, textFrames = 0, reported = false;
+  const report = () => {
+    if (reported) return;
+    reported = true;
+    console.info('ivideon-relay frames text=' + textFrames + ' binary=' + binaryFrames);
+  };
+  function encodeFrame(frame: ArrayBuffer) {
+    const bytes = new Uint8Array(frame);
+    let raw = '';
+    for (let offset = 0; offset < bytes.length; offset += 8192) {
+      raw += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+    }
+    return btoa(raw);
+  }
   const end = () => {
+    report();
     if (upstream && upstream.readyState < WebSocket.CLOSING) upstream.close();
     if (socket.readyState === WebSocket.OPEN) socket.close();
   };
@@ -43,9 +59,24 @@ async function relay(req: Request, ticket: string) {
     try {
       upstream = new WebSocket(upstreamUrl.href);
       upstream.binaryType = 'arraybuffer';
+      let pending = Promise.resolve();
+      let waiting = 0;
       upstream.onmessage = ({data}) => {
-        if (socket.readyState !== WebSocket.OPEN || socket.bufferedAmount > 16 * 1024 * 1024) return end();
-        try { socket.send(data); } catch { end(); }
+        const size = typeof data === 'string' ? data.length : data instanceof Blob ? data.size : data.byteLength;
+        waiting += size;
+        if (waiting + socket.bufferedAmount > 16 * 1024 * 1024) return end();
+        pending = pending.then(async () => {
+          if (socket.readyState !== WebSocket.OPEN) return;
+          if (typeof data === 'string') {
+            textFrames++;
+            socket.send(data);
+          } else {
+            binaryFrames++;
+            const frame = data instanceof Blob ? await data.arrayBuffer() : data;
+            if (socket.readyState !== WebSocket.OPEN) return;
+            socket.send(textTransport ? 'edpvz-fmp4:' + encodeFrame(frame) : frame);
+          }
+        }).catch(end).finally(() => { waiting -= size; });
       };
       upstream.onclose = end;
       upstream.onerror = end;
