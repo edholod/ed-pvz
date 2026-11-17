@@ -207,7 +207,8 @@ Deno.serve(async (req) => {
           const target = location ?? (data?.success === true ? data?.result?.url : null);
           if (typeof target === 'string') {
             const url = hlsTarget(target, hls.href);
-            return reply({streamUrl:await hlsLink(url, Date.now() + 15 * 60 * 1000), streamType:'hls'});
+            const streamUrl = decodeURIComponent(url.href).includes(key) ? await hlsLink(url, Date.now() + 15 * 60 * 1000) : url.href;
+            return reply({streamUrl, streamType:'hls'});
           }
         } catch { /* Fall through to the WebSocket stream. */ }
       }
