@@ -165,7 +165,7 @@ for (const [city, variants] of Object.entries(cityVariants)) {
   for (const variant of variants.split('|')) cityAliases.set(variant, city);
 }
 const ambiguousCities = new Set(['видное','клин','луки','мирный','советский','свободный','шахты','орел',
-  'нижний','пушкине','кирова','чехова','пушкина','ломоносова','жукова','фрунзе','заречный','осень','ленинский']);
+  'нижний','любим','пушкине','кирова','чехова','пушкина','ломоносова','жукова','фрунзе','заречный','осень','ленинский']);
 const escapeCity = name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const cityPattern = new RegExp('(?<![\\p{L}\\p{N}])(?:' + [...cityAliases.keys()]
   .sort((one, two) => two.length - one.length).map(escapeCity).join('|') + ')(?![\\p{L}\\p{N}])', 'gu');
@@ -183,8 +183,11 @@ function listingCities(city, text) {
   const body = String(text || '').replace(/https?:\/\/\S+|@[\w]+/gu, ' ');
   const explicit = /(?:^|[\n,;📍])\s*(?:город\s*[:—-]\s*|г\s*\.\s*)([а-яё-]+(?:[ \t]+[а-яё-]+){0,2})(?=[ \t]*(?:$|[\n,.;:!]))/giu;
   for (const match of body.matchAll(explicit)) {
-    const name = explicitCity(match[1]);
-    if (!/\b(?:wb|ozon)\b|(?:^|\s)(?:пвз|улица|ищу|ищем)(?:$|\s)/iu.test(name)) found.add(name);
+    const label = match[1].replace(/\s+(?:ул(?:ица)?|пер(?:еулок)?|проспект|шоссе|метро|м|пвз|ищу|ищем)(?:\s+.*)?$/iu, '');
+    const name = explicitCity(label);
+    if (cityAliases.has(cityKey(label)) || !/(?:^|\s)(?:пвз|улица|ищу|ищем)(?:$|\s)|(?:ская|ский|ская обл)$/iu.test(name)) {
+      found.add(name);
+    }
   }
   const normalized = cityKey(body);
   for (const match of normalized.matchAll(cityPattern)) {
