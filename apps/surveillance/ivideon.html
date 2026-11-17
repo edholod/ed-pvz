@@ -6,10 +6,19 @@
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
   <link rel="stylesheet" href="surveillance.css?v=private-1">
-  <script defer src="../../assets/account.js?v=ivideon-account-1"></script>
+  <script defer src="../../assets/account.js?v=ivideon-camera-settings-1"></script>
   <script type="module" src="ivideon.mjs?v=3"></script>
   <meta name="robots" content="noindex,nofollow">
   <script type="module" src="../../assets/surveillance-access.mjs?v=2"></script>
+  <style>
+    #ivideon-check-cameras > li {display:flex; flex-wrap:wrap; align-items:center; gap:.7rem}
+    .iv-camera-name {flex:1 1 12rem; min-width:0; overflow-wrap:anywhere}
+    .iv-camera-name small {display:block; margin-top:.25rem}
+    .iv-camera-edit {flex:1 0 100%; box-sizing:border-box; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr)); gap:.7rem; align-items:end}
+    .iv-camera-edit label {display:grid; gap:.3rem}
+    .iv-camera-edit input,.iv-camera-edit select {font:inherit; width:100%; box-sizing:border-box; padding:.55rem; border:1px solid #a5b3c6; border-radius:.4rem}
+    .iv-camera-edit p {margin:0; grid-column:1/-1}
+  </style>
 </head>
 <body>
 <section class="panel" id="surveillance-access" role="status">
@@ -83,11 +92,12 @@
   const video = document.getElementById('ivideon-live-video');
   const liveStatus = document.getElementById('ivideon-live-status');
   const liveName = document.getElementById('ivideon-live-name');
-  let connected = false, stopPlayer, streamRequest = 0;
+  let connected = false, stopPlayer, activeCameraId, streamRequest = 0;
   function stopLive() {
     streamRequest++;
     stopPlayer?.();
     stopPlayer = undefined;
+    activeCameraId = undefined;
     live.hidden = true;
   }
   document.getElementById('ivideon-live-stop').addEventListener('click', stopLive);
@@ -97,7 +107,8 @@
     stopLive();
     const request = streamRequest;
     live.hidden = false;
-    liveName.textContent = camera.name;
+    activeCameraId = camera.id;
+    liveName.textContent = camera.displayName || camera.name;
     async function connect(quality, previousError) {
       liveStatus.textContent = quality === 2 ? 'Подключаем эфир…' : 'Пробуем другой видеопоток…';
       function fail(message, started = false) {
@@ -130,28 +141,110 @@
   const disconnect = document.getElementById('ivideon-disconnect');
   let generation = 0;
   let accountId;
-  function render(result) {
+  function makeButton(text, action) {
+    const element = document.createElement('button');
+    element.type = 'button';
+    element.className = 'secondary';
+    element.textContent = text;
+    element.addEventListener('click', action);
+    return element;
+  }
+  function renderCamera(camera, settings, points) {
+    const row = document.createElement('li');
+    const name = document.createElement('span');
+    name.className = 'iv-camera-name';
+    const title = document.createElement('strong');
+    const point = document.createElement('small');
+    name.append(title, point);
+    row.append(name);
+    function showName() {
+      title.textContent = camera.displayName || camera.name;
+      const assigned = points?.find(item => item.point_id === camera.pointId);
+      point.textContent = assigned ? (assigned.name || assigned.point_id) : '';
+      point.hidden = !assigned;
+      if (activeCameraId === camera.id) liveName.textContent = title.textContent;
+    }
+    camera.displayName = settings?.display_name || '';
+    camera.pointId = settings?.point_id ?? null;
+    showName();
+    if (!camera.id) return row;
+    row.append(makeButton('Смотреть эфир', () => openLive(camera)));
+    if (!points) return row;
+    const edit = makeButton('Настроить', openEditor);
+    edit.setAttribute('aria-label','Настроить камеру ' + title.textContent);
+    edit.setAttribute('aria-expanded','false');
+    row.append(edit);
+    let editor;
+    function closeEditor() {
+      editor.remove();
+      editor = undefined;
+      edit.setAttribute('aria-expanded','false');
+      edit.focus();
+    }
+    function openEditor() {
+      if (editor) { closeEditor(); return; }
+      editor = document.createElement('form');
+      editor.className = 'iv-camera-edit';
+      const customName = document.createElement('input');
+      customName.type = 'text';
+      customName.maxLength = 100;
+      customName.placeholder = camera.name;
+      customName.value = camera.displayName;
+      const nameLabel = document.createElement('label');
+      nameLabel.append('Название в «Эд ПВЗ»', customName);
+      const select = document.createElement('select');
+      select.add(new Option('Без привязки к ПВЗ', ''));
+      for (const p of points) select.add(new Option(p.name || p.point_id, p.point_id));
+      select.value = points.some(p => p.point_id === camera.pointId) ? camera.pointId : '';
+      const pointLabel = document.createElement('label');
+      pointLabel.append('Пункт выдачи', select);
+      const save = document.createElement('button');
+      save.type = 'submit';
+      save.className = 'primary';
+      save.textContent = 'Сохранить';
+      const feedback = document.createElement('p');
+      feedback.setAttribute('role','status');
+      editor.append(nameLabel,pointLabel,save,feedback);
+      editor.addEventListener('submit', async event => {
+        event.preventDefault();
+        const currentEditor = editor;
+        const currentAccount = accountId;
+        const displayName = customName.value.trim();
+        const pointId = select.value || null;
+        save.disabled = customName.disabled = select.disabled = true;
+        feedback.textContent = 'Сохраняем…';
+        try {
+          await window.EdPVZAccount.rpc('edpvz_ivideon_save_camera', {
+            p_camera_id:camera.id,p_display_name:displayName,p_point_id:pointId,
+          });
+          if (currentAccount !== accountId || !row.isConnected) return;
+          camera.displayName = displayName;
+          camera.pointId = pointId;
+          showName();
+          edit.setAttribute('aria-label','Настроить камеру ' + title.textContent);
+          if (editor === currentEditor) closeEditor();
+        } catch (error) {
+          if (editor === currentEditor) feedback.textContent = error.message || 'Не удалось сохранить настройки.';
+        } finally {
+          save.disabled = customName.disabled = select.disabled = false;
+        }
+      });
+      row.append(editor);
+      edit.setAttribute('aria-expanded','true');
+      customName.focus();
+    }
+    return row;
+  }
+  function render(result, preferences, points) {
     connected = result.connected === true;
     disconnect.hidden = !connected;
     button.textContent = connected ? 'Заменить ключ' : 'Подключить Ivideon';
     const items = result.cameras || [];
     status.textContent = !connected ? 'Подключи Ivideon своим ключом API.' :
       items.length ? 'Ivideon подключён к аккаунту.' : 'Ivideon подключён. Камер в аккаунте нет.';
-    for (const camera of items) {
-      const item = document.createElement('li');
-      const name = document.createElement('span');
-      name.textContent = camera.name;
-      item.append(name);
-      if (camera.id) {
-        const open = document.createElement('button');
-        open.type = 'button';
-        open.className = 'secondary';
-        open.textContent = 'Смотреть эфир';
-        open.addEventListener('click', () => openLive(camera));
-        item.append(open);
-      }
-      cameras.append(item);
-    }
+    if (connected && items.length && !points) status.textContent += ' Настройки камер временно недоступны.';
+    const byCamera = new Map(preferences.map(item => [item.camera_id,item]));
+    for (const camera of items) cameras.append(renderCamera(camera,byCamera.get(camera.id),points));
   }
   async function updateConnection(action, key) {
     const check = ++generation;
@@ -162,8 +255,20 @@
     try {
       const result = await window.EdPVZAccount.checkIvideon(key, undefined, undefined, action);
       if (check !== generation) return;
+      let preferences = [], points;
+      if (result.connected && result.cameras?.length) {
+        try {
+          const account = window.EdPVZAccount;
+          const id = encodeURIComponent(accountId);
+          [preferences,points] = await Promise.all([
+            account.readTable('edpvz_ivideon_camera_settings?select=camera_id,display_name,point_id&user_id=eq.' + id),
+            account.readTable('edpvz_points?select=point_id,name&order=name.asc&owner_id=eq.' + id),
+          ]);
+        } catch { /* Live streams stay available when settings cannot be read. */ }
+      }
+      if (check !== generation) return;
       cameras.replaceChildren();
-      render(result);
+      render(result, preferences, points);
     } catch (error) {
       if (check === generation) status.textContent = error.message || 'Не удалось подключить Ivideon.';
     } finally {
