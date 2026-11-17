@@ -16,7 +16,7 @@ const URL='https://duerixyhzapotoeclggz.supabase.co',KEY='sb_publishable_fKE2S2r
    const raw=await r.text();let data;
    try{data=JSON.parse(raw)}catch{data={message:raw}}
    if(!r.ok){
-    const error=Error(data.msg||data.error_description||data.message||('HTTP '+r.status));
+    const error=Error(data.msg||data.error_description||data.message||data.error||('HTTP '+r.status));
     error.status=r.status;error.code=data.error_code||data.code;
     if(!canRetry||![429,502,503,504].includes(r.status))throw error;
     lastError=error;
@@ -79,4 +79,5 @@ document.addEventListener('visibilitychange',resumeSession);
 async function readTable(path){if(!/^edpvz_[a-z_]+\?/.test(path))throw Error('Некорректная таблица');await ensure();if(!session)throw Error('Войдите в аккаунт');return request('/rest/v1/'+path)}
 async function rpc(name,args){if(!['edpvz_calendar_write','edpvz_dispute_manage_access','edpvz_dispute_owner_access','edpvz_dispute_manage_password','edpvz_dispute_redeem_password','edpvz_surveillance_allowed'].includes(name))throw Error('Неизвестная операция');await ensure();if(!session)throw Error('Войдите в аккаунт');return request('/rest/v1/rpc/'+name,{method:'POST',body:JSON.stringify(args)})}
 async function createPoint(point){await ensure();if(!session)throw Error('Войдите в аккаунт');if(!['wb','ozon','ym'].includes(point.market))throw Error('Выберите маркетплейс');return request('/rest/v1/edpvz_points',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({point_id:point.point_id,name:point.name,market:point.market,owner_id:session.user.id})})}
-window.EdPVZAccount={rpc,createPoint,readTable,signUp,registerUsername,signIn,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
+async function checkIvideon(key){await ensure();if(!session)throw Error('Войдите в аккаунт');return request('/functions/v1/edpvz-ivideon-check',{method:'POST',body:JSON.stringify({key})})}
+window.EdPVZAccount={checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
