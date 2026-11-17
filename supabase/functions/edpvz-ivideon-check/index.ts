@@ -35,10 +35,11 @@ async function relay(req: Request, ticket: string) {
   const textTransport = new URL(req.url).searchParams.get('frames') === 'text';
   let upstream: WebSocket | undefined;
   let binaryFrames = 0, textFrames = 0, reported = false;
+  const messages = {init:0, metadata:0, fragment:0, inline:0, error:0, other:0};
   const report = () => {
     if (reported) return;
     reported = true;
-    console.info('ivideon-relay frames text=' + textFrames + ' binary=' + binaryFrames);
+    console.info('ivideon-relay frames text=' + textFrames + ' binary=' + binaryFrames + ' ' + JSON.stringify(messages));
   };
   function encodeFrame(frame: ArrayBuffer) {
     const bytes = new Uint8Array(frame);
@@ -69,6 +70,19 @@ async function relay(req: Request, ticket: string) {
           if (socket.readyState !== WebSocket.OPEN) return;
           if (typeof data === 'string') {
             textFrames++;
+            try {
+              const msg = JSON.parse(data);
+              switch (msg?.type) {
+                case 'stream-init': messages.init++; break;
+                case 'metadata': messages.metadata++; break;
+                case 'fragment':
+                  messages.fragment++;
+                  if (typeof msg.data === 'string' && msg.data.length) messages.inline++;
+                  break;
+                case 'error': case 'stream-error': messages.error++; break;
+                default: messages.other++;
+              }
+            } catch { messages.other++; }
             socket.send(data);
           } else {
             binaryFrames++;

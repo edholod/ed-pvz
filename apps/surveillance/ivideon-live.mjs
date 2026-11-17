@@ -85,6 +85,18 @@ export function playIvideon(video, url, notify) {
     }
     try {
       const message = JSON.parse(data);
+      if (message.type === 'fragment' && typeof message.data === 'string' && message.data) {
+        if (seenCodec !== 'audio' || initializing) {
+          fragments++;
+          enqueue(Uint8Array.from(atob(message.data), (c) => c.charCodeAt(0)));
+        }
+        return;
+      }
+      if (message.type === 'error' || message.type === 'stream-error') {
+        const code = typeof message.code === 'number' && Number.isInteger(message.code) ? ' (код ' + message.code + ')' : '';
+        finish('Видеосервер Ivideon сообщил об ошибке потока' + code + '.');
+        return;
+      }
       if (message.type !== 'stream-init' || initializing) return;
       const description = typeof message.codec_string === 'string' ? message.codec_string.trim() : '';
       if (/^(?:mp4a|opus|aac|ac-3|ec-3|alaw|ulaw|pcm)/i.test(description)) {
