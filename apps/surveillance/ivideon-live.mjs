@@ -179,22 +179,23 @@ export function playIvideonHls(video, url, notify) {
   video.addEventListener('error', onError);
   video.disableRemotePlayback = true;
   const play = () => video.play().catch(() => {});
-  if (video.canPlayType('application/vnd.apple.mpegurl')) {
+  function playNative() {
+    if (stopped) return;
+    if (!video.canPlayType('application/vnd.apple.mpegurl')) return fail('В этом браузере просмотр HLS недоступен.');
     video.crossOrigin = 'anonymous';
     video.src = url;
     void play();
-  } else {
-    import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.mjs').then(({default:Hls}) => {
-      if (stopped) return;
-      if (!Hls.isSupported()) return fail('В этом браузере просмотр HLS недоступен.');
-      player = new Hls({enableWorker:false, maxBufferLength:20, backBufferLength:20});
-      player.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) fail('Ivideon HLS: ' + (data.details?.replace(/[^a-zA-Z]/g,'') || 'ошибка потока') + '.');
-      });
-      player.on(Hls.Events.MANIFEST_PARSED, play);
-      player.loadSource(url);
-      player.attachMedia(video);
-    }).catch(() => fail('Не удалось загрузить плеер HLS.'));
   }
+  import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.mjs').then(({default:Hls}) => {
+    if (stopped) return;
+    if (!Hls.isSupported()) return playNative();
+    player = new Hls({enableWorker:false, maxBufferLength:20, backBufferLength:20});
+    player.on(Hls.Events.ERROR, (_event, data) => {
+      if (data.fatal) fail('Ivideon HLS: ' + (data.details?.replace(/[^a-zA-Z]/g,'') || 'ошибка потока') + '.');
+    });
+    player.on(Hls.Events.MANIFEST_PARSED, play);
+    player.loadSource(url);
+    player.attachMedia(video);
+  }).catch(playNative);
   return stop;
 }
