@@ -6,8 +6,39 @@ let archiveRequest;
 let archiveReady = false;
 let archiveNewest;
 let liveTelegramItems = [];
+let initialFeedSettled = false;
+const feedSnapshotKey = 'edpvz:jobs:telegram-preview:v1';
+let feedSnapshot = [];
+try {
+  const stored = JSON.parse(localStorage.getItem(feedSnapshotKey) || '[]');
+  if (Array.isArray(stored)) feedSnapshot = stored.filter(item =>
+    item && typeof item.id === 'string' && typeof item.text === 'string').slice(0, 480);
+} catch {}
+function saveFeedSnapshot() {
+  const selectedCity = $('city').value;
+  const entries = new Map();
+  const perMode = new Map();
+  const perCityMode = new Map();
+  for (const item of tgItems) {
+    const listing = prepareTelegramListing(item);
+    if (!listing.mode || typeof item.id !== 'string') continue;
+    const modeCount = perMode.get(listing.mode) || 0;
+    const cityCount = perCityMode.get(listing.mode) || 0;
+    const cityMatch = selectedCity && listing.cities.includes(selectedCity) && cityCount < 40;
+    if (modeCount >= 80 && !cityMatch) continue;
+    if (modeCount < 80) perMode.set(listing.mode, modeCount + 1);
+    if (cityMatch) perCityMode.set(listing.mode, cityCount + 1);
+    const {id, source, source_title, channel_title, url, text, published_at, marketplaces, kind, city, author_id, author_username, author_name, author_url} = item;
+    entries.set(id, {id, source, source_title, channel_title, url, text, published_at, marketplaces, kind, city, author_id, author_username, author_name, author_url});
+    if (entries.size >= 480) break;
+  }
+  if (entries.size) {
+    try { localStorage.setItem(feedSnapshotKey, JSON.stringify([...entries.values()])); } catch {}
+  }
+}
 function publishTelegram() {
-  const merged = new Map(liveTelegramItems.map(item => [item.id || item.url, item]));
+  const merged = new Map(feedSnapshot.map(item => [item.id, item]));
+  for (const item of liveTelegramItems) merged.set(item.id || item.url, item);
   for (const item of telegramArchive.values()) merged.set(item.id || item.url, item);
   tgItems = [...merged.values()].sort((a, b) => (b.published_at || '').localeCompare(a.published_at || ''));
   tgRender();
@@ -16,18 +47,19 @@ function loadTelegramArchive() {
   if (archiveRequest) return archiveRequest;
   archiveRequest = (async () => {
     const pageSize = 1000;
-    async function getPage(offset) {
-      const response = await fetch(BASE + 'edpvz_telegram_feed?select=*&order=published_at.desc,id.desc&limit=' + pageSize + '&offset=' + offset,
+    async function getPage(offset, limit) {
+      const response = await fetch(BASE + 'edpvz_telegram_feed?select=*&order=published_at.desc,id.desc&limit=' + limit + '&offset=' + offset,
         {headers: {apikey: KEY}, cache: 'no-store', signal: globalThis.AbortSignal?.timeout?.(25000)});
       if (!response.ok) throw Error('Telegram database HTTP ' + response.status);
       return response.json();
     }
     const knownNewest = archiveNewest;
     let newest;
-    const batchSize = knownNewest ? 1 : 4;
-    for (let offset = 0;; offset += pageSize * batchSize) {
+    for (let offset = 0;;) {
+      const limit = offset === 0 ? 250 : pageSize;
+      const batchSize = offset === 0 || knownNewest ? 1 : 4;
       const pages = await Promise.allSettled(Array.from({length: batchSize},
-        (_, page) => getPage(offset + page * pageSize)));
+        (_, page) => getPage(offset + page * limit, limit)));
       if (offset === 0 && pages[0].status === 'fulfilled') newest = pages[0].value[0]?.id;
       let reachedEnd = false;
       let reachedKnown = false;
@@ -38,7 +70,7 @@ function loadTelegramArchive() {
           failure = page.reason;
           continue;
         }
-        reachedEnd ||= page.value.length < pageSize;
+        reachedEnd ||= page.value.length < limit;
         for (const row of page.value) {
           const previous = telegramArchive.get(row.id);
           if (previous && row.id === knownNewest) reachedKnown = true;
@@ -53,9 +85,12 @@ function loadTelegramArchive() {
           }
         }
       }
+      if (!failure && (reachedEnd || reachedKnown)) feedSnapshot = [];
       publishTelegram();
+      if (offset === 0 || (!failure && (reachedEnd || reachedKnown))) saveFeedSnapshot();
       if (failure) throw failure;
       if (reachedEnd || reachedKnown) break;
+      offset += limit * batchSize;
     }
     archiveNewest = newest;
     archiveReady = true;
@@ -80,12 +115,14 @@ function tgLoad(force = false) {
       liveTelegramItems = Array.isArray(data.items) ? data.items : [];
       tgErrors = data.errors || [];
       tgStatuses = data.status || [];
-      if (!archiveReady) publishTelegram();
+      if (liveTelegramItems.length) publishTelegram();
     } catch (error) {
       console.warn('Telegram live:', error);
     }
   })();
   telegramRefresh = Promise.all([archive, live]).then(() => {
+    initialFeedSettled = true;
+    tgRender();
     $('tg-state').textContent = 'Получено: ' + tgItems.length;
     updateCityStatus();
   }).finally(() => { telegramRefresh = undefined; });
@@ -302,7 +339,14 @@ function updateCityStatus() {
     ? 'Загружаем города из архива Telegram…'
     : 'Архив Telegram пока недоступен. Можно обновить список.';
 }
-function renderFeed(){const root=$('feed-list');root.replaceChildren();const q=$('query').value.trim().toLowerCase(),city=$('city').value,market=$('market').value;const all=[];for(const x of listings){all.push({source:'Эд ПВЗ',id:'local:'+x.id,kind:x.kind,title:x.title,text:x.description||'',city:x.city||'',pay:x.pay_text||'',schedule:x.schedule||'',contact:x.contact||'',marketplaces:x.marketplace==='any'?[]:[x.marketplace],date:x.created_at||'',local:x})}for (const item of tgItems) all.push(prepareTelegramListing(item));for(const x of turboItems){all.push({source:'Турбо Смена',id:x.id,kind:x.kind,title:x.title,text:x.text||'',city:x.city||'',marketplaces:x.marketplaces||[],date:x.date||'',url:x.url,pay:x.pay||''})}for(const x of avitoItems){all.push({source:'Авито',id:x.id,kind:x.kind||'vacancy',title:x.title,text:x.text||'',city:x.city||'',marketplaces:/wildberries|вайлдбер|\\bwb\\b/i.test(x.title+' '+x.text)?['wb']:/ozon|озон/i.test(x.title+' '+x.text)?['ozon']:[],date:x.date||'',url:x.url,pay:x.pay||''})}for(const x of hhItems){all.push({source:'hh.ru',id:'hh:'+x.id,kind:'vacancy',title:x.name||'Вакансия',text:[x.snippet?.requirement,x.snippet?.responsibility].filter(Boolean).join(' '),city:x.area?.name||'',marketplaces:/wildberries|вайлдбер|\\bwb\\b/i.test(x.name||'')?['wb']:/ozon|озон/i.test(x.name||'')?['ozon']:[],date:x.published_at||'',url:x.alternate_url,pay:x.salary?[(x.salary.from||''),(x.salary.to||''),x.salary.currency||''].filter(Boolean).join(' '):'',employer:x.employer?.name||''})}const unique=new Set();const sourceFilter=$('source-filter').value,minPay=Number($('pay-min').value)||0,age=Number($('age-filter').value),sort=$('sort-by').value;const cities = new Set();
+function renderFeed(){
+const root=$('feed-list');
+root.replaceChildren();
+if (!initialFeedSettled && !tgItems.length) {
+  $('feed-state').textContent = 'Загружаем объявления…';
+  return;
+}
+const q=$('query').value.trim().toLowerCase(),city=$('city').value,market=$('market').value;const all=[];for(const x of listings){all.push({source:'Эд ПВЗ',id:'local:'+x.id,kind:x.kind,title:x.title,text:x.description||'',city:x.city||'',pay:x.pay_text||'',schedule:x.schedule||'',contact:x.contact||'',marketplaces:x.marketplace==='any'?[]:[x.marketplace],date:x.created_at||'',local:x})}for (const item of tgItems) all.push(prepareTelegramListing(item));for(const x of turboItems){all.push({source:'Турбо Смена',id:x.id,kind:x.kind,title:x.title,text:x.text||'',city:x.city||'',marketplaces:x.marketplaces||[],date:x.date||'',url:x.url,pay:x.pay||''})}for(const x of avitoItems){all.push({source:'Авито',id:x.id,kind:x.kind||'vacancy',title:x.title,text:x.text||'',city:x.city||'',marketplaces:/wildberries|вайлдбер|\\bwb\\b/i.test(x.title+' '+x.text)?['wb']:/ozon|озон/i.test(x.title+' '+x.text)?['ozon']:[],date:x.date||'',url:x.url,pay:x.pay||''})}for(const x of hhItems){all.push({source:'hh.ru',id:'hh:'+x.id,kind:'vacancy',title:x.name||'Вакансия',text:[x.snippet?.requirement,x.snippet?.responsibility].filter(Boolean).join(' '),city:x.area?.name||'',marketplaces:/wildberries|вайлдбер|\\bwb\\b/i.test(x.name||'')?['wb']:/ozon|озон/i.test(x.name||'')?['ozon']:[],date:x.published_at||'',url:x.alternate_url,pay:x.salary?[(x.salary.from||''),(x.salary.to||''),x.salary.currency||''].filter(Boolean).join(' '):'',employer:x.employer?.name||''})}const unique=new Set();const sourceFilter=$('source-filter').value,minPay=Number($('pay-min').value)||0,age=Number($('age-filter').value),sort=$('sort-by').value;const cities = new Set();
 const classified = [];
 for (const x of all) {
   let mode;
@@ -327,5 +371,5 @@ function showNextPage() {
 }
 more.onclick = showNextPage;
 showNextPage();
-}const oldLocal=renderLocal;renderLocal=()=>{renderFeed()};const oldTg=tgRender;tgRender=()=>{renderFeed()};function applyMode(){document.querySelectorAll('[data-mode]').forEach(b=>{b.classList.toggle('primary',b.dataset.mode===jobMode);b.setAttribute('aria-pressed',String(b.dataset.mode===jobMode))});$('mode-description').textContent={work:'Все последние вакансии в одной ленте',staff:'Резюме и предложения работников, включая разовые смены',replacement:'Предложения владельцев ПВЗ о разовых заменах',parttime:'Предложения работников выйти на смену или подработку'}[jobMode];if(!$('publish-panel').open)$('post-kind').value=jobMode==='staff'?'resume':jobMode==='parttime'?'parttime':jobMode==='replacement'?'replacement':'vacancy';renderFeed()}document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{jobMode=b.dataset.mode;history.replaceState(null,'','#'+jobMode);applyMode()});$('local-section').classList.add('hidden');$('hh-section').classList.add('hidden');$('telegram-feed').classList.add('hidden');const sources=$('feed-sources');const hhState=node('p','hh.ru: проверяем источник…');sources.append(hhState);const tgState=node('p','Telegram: проверяем источники…');sources.append(tgState);const avitoState=node('p','Авито: проверяем подключение API…');sources.append(avitoState);const turboState=node('p','Турбо Смена: проверяем объявления…');sources.append(turboState);const avitoOpen=node('a','Найти вакансии на Авито по фильтрам');avitoOpen.className='link';avitoOpen.href=avitoUrl();avitoOpen.target='_blank';avitoOpen.rel='noopener noreferrer';avitoOpen.style.cssText='display:inline-flex;margin:7px 0 12px';sources.append(avitoOpen);const syncAvitoLink=()=>{avitoOpen.href=avitoUrl()};$('query').addEventListener('input',syncAvitoLink);$('city').addEventListener('change',syncAvitoLink);$('market').addEventListener('change',syncAvitoLink);async function loadTurbo(){try{const r=await fetch('https://duerixyhzapotoeclggz.supabase.co/functions/v1/edpvz-turbosmena-jobs',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();turboItems=Array.isArray(data.items)?data.items:[];turboStatus=turboItems.length?'Турбо Смена: '+turboItems.length+' объявлений · '+(data.updated_at?new Date(data.updated_at).toLocaleTimeString('ru-RU'):'обновлено'):data.status==='registration_only'?'Турбо Смена: сейчас доступна только регистрация — импорт объявлений невозможен':data.status==='no_public_listings_parsed'?'Турбо Смена: публичные объявления не обнаружены — импорт не подтверждён':'Турбо Смена: ответ источника не подтверждён';turboState.textContent=turboStatus;renderFeed()}catch(e){turboStatus='Турбо Смена: сервер импорта недоступен — '+String(e.message||e).slice(0,100);turboState.textContent=turboStatus;renderFeed()}}async function loadAvito(){try{const r=await fetch('https://duerixyhzapotoeclggz.supabase.co/functions/v1/edpvz-avito-jobs',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();avitoItems=Array.isArray(data.items)?data.items:[];avitoStatus=data.reason==='avito_oauth_ok_vacancy_search_not_verified'?'Авито: API подключён · вакансии других работодателей доступны через поиск на Авито':data.reason==='avito_credentials_not_configured'?'Авито: ключи не настроены в Render':data.reason==='avito_oauth_failed'?'Авито: авторизация API отклонена (HTTP '+data.upstream_status+')':data.reason==='collector_version_outdated'?'Авито: Render ещё использует старую сборку сервера':data.reason==='collector_waking_up'?'Авито: бесплатный сервер Render запускается, повторите обновление через минуту':data.reason==='collector_http_error'?'Авито: сервер вернул HTTP '+data.upstream_status:data.reason==='collector_network_error'?'Авито: ошибка соединения с Render':data.connected?'Авито: подключено, вакансий '+avitoItems.length:'Авито: '+(data.reason||'проверка не завершена');avitoState.textContent=avitoStatus;renderFeed()}catch(e){avitoState.textContent='Авито: источник недоступен';renderFeed()}}for(const c of tgChannels){const a=node('a','@'+c);a.href='https://t.me/'+c;a.target='_blank';a.rel='noopener noreferrer';a.style.cssText='display:inline-block;margin:7px';sources.append(a)}for(const [name,url] of [['hh.ru','https://hh.ru'],['Авито','https://www.avito.ru']]){const a=node('a',name);a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.style.cssText='display:inline-block;margin:7px';sources.append(a)}$('feed-refresh').onclick=()=>{loadLocal();loadHH();tgLoad(true);loadAvito();loadTurbo()};$('search').onclick=()=>{renderFeed();loadHH()};$('query').oninput=renderFeed;$('city').onchange=()=>{saveCity($('city').value);renderFeed()};$('market').onchange=renderFeed;for(const k of ['source-filter','pay-min','sort-by','age-filter'])$(k).addEventListener(k==='pay-min'?'input':'change',renderFeed);$('reset-filters').onclick=()=>{for(const k of ['query','city','pay-min'])$(k).value='';$('market').value='any';$('source-filter').value='all';$('sort-by').value='new';$('age-filter').value='0';saveCity('');syncAvitoLink();renderFeed()};const originalHH=loadHH;loadHH=async()=>{if(jobMode==='work')await originalHH();else renderFeed();hhState.textContent=hhStatus};const originalTgLoad=tgLoad;tgLoad=async(force)=>{await originalTgLoad(force);lastUpdated=new Date();tgState.textContent='Telegram: '+tgItems.length+' сообщений · '+tgStatuses.filter(x=>x.ok).length+'/'+tgChannels.length+' источников ответили'+(tgErrors.length?' · ошибок: '+tgErrors.length:'');const old=sources.querySelector('#tg-channel-status');if(old)old.remove();const details=node('div','');details.id='tg-channel-status';for(const st of tgStatuses){const p=node('p','@'+st.channel+': '+(st.ok?st.posts+' сообщений':'недоступен · '+st.reason));p.style.margin='4px 0';details.append(p)}sources.append(details);renderFeed()};$('publish-top').onclick=()=>{const p=$('publish-panel');p.open=true;p.scrollIntoView({behavior:'smooth',block:'start'});$('post-title').focus({preventScroll:true})};applyMode();tgLoad();setInterval(()=>{if(!document.hidden){loadLocal();loadHH();loadAvito();loadTurbo()}},300000);loadAvito();loadTurbo();window.addEventListener('edpvz-auth-changed',()=>{auth();loadLocal()});auth();loadLocal();loadHH()})();
+}const oldLocal=renderLocal;renderLocal=()=>{renderFeed()};const oldTg=tgRender;tgRender=()=>{renderFeed()};function applyMode(){document.querySelectorAll('[data-mode]').forEach(b=>{b.classList.toggle('primary',b.dataset.mode===jobMode);b.setAttribute('aria-pressed',String(b.dataset.mode===jobMode))});$('mode-description').textContent={work:'Все последние вакансии в одной ленте',staff:'Резюме и предложения работников, включая разовые смены',replacement:'Предложения владельцев ПВЗ о разовых заменах',parttime:'Предложения работников выйти на смену или подработку'}[jobMode];if(!$('publish-panel').open)$('post-kind').value=jobMode==='staff'?'resume':jobMode==='parttime'?'parttime':jobMode==='replacement'?'replacement':'vacancy';renderFeed()}document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{jobMode=b.dataset.mode;history.replaceState(null,'','#'+jobMode);applyMode()});$('local-section').classList.add('hidden');$('hh-section').classList.add('hidden');$('telegram-feed').classList.add('hidden');const sources=$('feed-sources');const hhState=node('p','hh.ru: проверяем источник…');sources.append(hhState);const tgState=node('p','Telegram: проверяем источники…');sources.append(tgState);const avitoState=node('p','Авито: проверяем подключение API…');sources.append(avitoState);const turboState=node('p','Турбо Смена: проверяем объявления…');sources.append(turboState);const avitoOpen=node('a','Найти вакансии на Авито по фильтрам');avitoOpen.className='link';avitoOpen.href=avitoUrl();avitoOpen.target='_blank';avitoOpen.rel='noopener noreferrer';avitoOpen.style.cssText='display:inline-flex;margin:7px 0 12px';sources.append(avitoOpen);const syncAvitoLink=()=>{avitoOpen.href=avitoUrl()};$('query').addEventListener('input',syncAvitoLink);$('city').addEventListener('change',syncAvitoLink);$('market').addEventListener('change',syncAvitoLink);async function loadTurbo(){try{const r=await fetch('https://duerixyhzapotoeclggz.supabase.co/functions/v1/edpvz-turbosmena-jobs',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();turboItems=Array.isArray(data.items)?data.items:[];turboStatus=turboItems.length?'Турбо Смена: '+turboItems.length+' объявлений · '+(data.updated_at?new Date(data.updated_at).toLocaleTimeString('ru-RU'):'обновлено'):data.status==='registration_only'?'Турбо Смена: сейчас доступна только регистрация — импорт объявлений невозможен':data.status==='no_public_listings_parsed'?'Турбо Смена: публичные объявления не обнаружены — импорт не подтверждён':'Турбо Смена: ответ источника не подтверждён';turboState.textContent=turboStatus;renderFeed()}catch(e){turboStatus='Турбо Смена: сервер импорта недоступен — '+String(e.message||e).slice(0,100);turboState.textContent=turboStatus;renderFeed()}}async function loadAvito(){try{const r=await fetch('https://duerixyhzapotoeclggz.supabase.co/functions/v1/edpvz-avito-jobs',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();avitoItems=Array.isArray(data.items)?data.items:[];avitoStatus=data.reason==='avito_oauth_ok_vacancy_search_not_verified'?'Авито: API подключён · вакансии других работодателей доступны через поиск на Авито':data.reason==='avito_credentials_not_configured'?'Авито: ключи не настроены в Render':data.reason==='avito_oauth_failed'?'Авито: авторизация API отклонена (HTTP '+data.upstream_status+')':data.reason==='collector_version_outdated'?'Авито: Render ещё использует старую сборку сервера':data.reason==='collector_waking_up'?'Авито: бесплатный сервер Render запускается, повторите обновление через минуту':data.reason==='collector_http_error'?'Авито: сервер вернул HTTP '+data.upstream_status:data.reason==='collector_network_error'?'Авито: ошибка соединения с Render':data.connected?'Авито: подключено, вакансий '+avitoItems.length:'Авито: '+(data.reason||'проверка не завершена');avitoState.textContent=avitoStatus;renderFeed()}catch(e){avitoState.textContent='Авито: источник недоступен';renderFeed()}}for(const c of tgChannels){const a=node('a','@'+c);a.href='https://t.me/'+c;a.target='_blank';a.rel='noopener noreferrer';a.style.cssText='display:inline-block;margin:7px';sources.append(a)}for(const [name,url] of [['hh.ru','https://hh.ru'],['Авито','https://www.avito.ru']]){const a=node('a',name);a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.style.cssText='display:inline-block;margin:7px';sources.append(a)}$('feed-refresh').onclick=()=>{loadLocal();loadHH();tgLoad(true);loadAvito();loadTurbo()};$('search').onclick=()=>{renderFeed();loadHH()};$('query').oninput=renderFeed;$('city').onchange=()=>{saveCity($('city').value);renderFeed();saveFeedSnapshot()};$('market').onchange=renderFeed;for(const k of ['source-filter','pay-min','sort-by','age-filter'])$(k).addEventListener(k==='pay-min'?'input':'change',renderFeed);$('reset-filters').onclick=()=>{for(const k of ['query','city','pay-min'])$(k).value='';$('market').value='any';$('source-filter').value='all';$('sort-by').value='new';$('age-filter').value='0';saveCity('');syncAvitoLink();renderFeed()};const originalHH=loadHH;loadHH=async()=>{if(jobMode==='work')await originalHH();else renderFeed();hhState.textContent=hhStatus};const originalTgLoad=tgLoad;tgLoad=async(force)=>{await originalTgLoad(force);lastUpdated=new Date();tgState.textContent='Telegram: '+tgItems.length+' сообщений · '+tgStatuses.filter(x=>x.ok).length+'/'+tgChannels.length+' источников ответили'+(tgErrors.length?' · ошибок: '+tgErrors.length:'');const old=sources.querySelector('#tg-channel-status');if(old)old.remove();const details=node('div','');details.id='tg-channel-status';for(const st of tgStatuses){const p=node('p','@'+st.channel+': '+(st.ok?st.posts+' сообщений':'недоступен · '+st.reason));p.style.margin='4px 0';details.append(p)}sources.append(details);renderFeed()};$('publish-top').onclick=()=>{const p=$('publish-panel');p.open=true;p.scrollIntoView({behavior:'smooth',block:'start'});$('post-title').focus({preventScroll:true})};if (feedSnapshot.length) publishTelegram();applyMode();tgLoad();setInterval(()=>{if(!document.hidden){loadLocal();loadHH();loadAvito();loadTurbo()}},300000);loadAvito();loadTurbo();window.addEventListener('edpvz-auth-changed',()=>{auth();loadLocal()});auth();loadLocal();loadHH()})();
 </script></body></html>
