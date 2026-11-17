@@ -18,15 +18,30 @@ Deno.serve(async (req) => {
     let key;
     try { key = JSON.parse(raw)?.key; } catch { return reply({error:'Некорректный запрос'}, 400); }
     if (typeof key !== 'string' || !/^xtok-[a-zA-Z0-9_.~+/=\-]{8,512}$/.test(key)) return reply({error:'Нужен ключ Ivideon формата xtok-…'}, 400);
-    const url = new URL('https://openapi-alpha.ivideon.com/cameras');
-    url.search = new URLSearchParams({op:'GET', access_token:key}).toString();
-    const response = await fetch(url, {redirect:'error', signal:AbortSignal.timeout(8000)});
-    if ([401,403].includes(response.status)) return reply({error:'Ivideon отклонил этот ключ для запроса списка камер.'}, 422);
-    if (!response.ok) return reply({error:'Ivideon не вернул список камер.', providerStatus:response.status}, 502);
-    const data = await response.json();
-    const list = Array.isArray(data?.result) ? data.result : data?.result?.cameras;
-    if (data?.success !== true || !Array.isArray(list)) return reply({error:'Ivideon не подтвердил доступ к списку камер через этот API.'}, 422);
-    return reply({cameras:list.slice(0, 250).map((item) => ({name: typeof item?.name === 'string' ? item.name.slice(0, 160) : 'Камера Ivideon'}))});
+    const deadline = AbortSignal.timeout(8500);
+    const statuses: string[] = [];
+    for (const resource of ['cameras', 'servers']) {
+      const url = new URL('https://openapi-alpha.ivideon.com/' + resource);
+      url.search = new URLSearchParams({op:'FIND', access_token:key}).toString();
+      const response = await fetch(url, {
+        method:'POST', redirect:'error', signal:deadline,
+        headers:{'content-type':'application/json', accept:'application/json'},
+        body:JSON.stringify({limit:100, skip:0}),
+      });
+      statuses.push(resource + ': HTTP ' + response.status);
+      if (!response.ok) continue;
+      const data = await response.json().catch(() => null);
+      const items = Array.isArray(data?.result) ? data.result : data?.result?.items ?? data?.result?.cameras;
+      if (data?.success !== true || !Array.isArray(items)) continue;
+      const list = resource === 'servers'
+        ? items.flatMap((server) => Array.isArray(server?.cameras) ? server.cameras : [])
+        : items;
+      if (resource === 'servers' && items.length && !items.some((server) => Array.isArray(server?.cameras))) continue;
+      return reply({cameras:list.slice(0,250).map((item) => ({
+        name: typeof item?.name === 'string' ? item.name.slice(0,160) : 'Камера Ivideon',
+      }))});
+    }
+    return reply({error:'Ivideon не подтвердил получение камер (' + statuses.join(', ') + ').'}, 422);
   } catch {
     return reply({error:'Не удалось завершить проверку Ivideon. Повторите позже.'}, 502);
   }
