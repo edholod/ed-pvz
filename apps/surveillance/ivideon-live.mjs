@@ -1,5 +1,5 @@
 export function playIvideon(video, url, notify) {
-  const Media = window.ManagedMediaSource || window.MediaSource;
+  const Media = window.MediaSource || window.ManagedMediaSource;
   if (!Media) throw Error('Этот браузер не поддерживает встроенный эфир Ivideon.');
   const media = new Media();
   const address = URL.createObjectURL(media);
@@ -7,10 +7,14 @@ export function playIvideon(video, url, notify) {
   socket.binaryType = 'arraybuffer';
   video.disableRemotePlayback = true;
   video.src = address;
-  let buffer, stopped = false, playing = false;
+  let buffer, stopped = false, playing = false, initializing = false, seenCodec;
   const queue = [];
   let queuedBytes = 0;
-  const startup = setTimeout(() => finish('Камера не передала видео. Проверь её статус в Ivideon.'), 15000);
+  const startup = setTimeout(() => finish(
+    seenCodec === 'audio' ? 'Ivideon передал аудиодорожку, но видеодорожка не появилась.' :
+    seenCodec ? 'Ivideon передал видеодорожку, но браузер не получил кадры.' :
+    'Ivideon не передал совместимую видеодорожку.'
+  ), 15000);
   const stop = () => {
     if (stopped) return;
     stopped = true;
@@ -65,25 +69,48 @@ export function playIvideon(video, url, notify) {
   socket.onmessage = ({data}) => {
     if (stopped) return;
     if (typeof data !== 'string') {
-      enqueue(data);
+      if (seenCodec !== 'audio' || initializing) enqueue(data);
       return;
     }
     try {
       const message = JSON.parse(data);
-      if (message.type !== 'stream-init' || buffer) return;
-      if (!/^avc1\.[a-f0-9]{6}$/i.test(message.codec_string) || typeof message.data !== 'string') {
-        finish('Камера вернула неподдерживаемый формат видео. Выбери H.264 в Ivideon.');
+      if (message.type !== 'stream-init' || initializing) return;
+      const description = typeof message.codec_string === 'string' ? message.codec_string.trim() : '';
+      if (/^(?:mp4a|opus|aac|ac-3|ec-3|alaw|ulaw|pcm)/i.test(description)) {
+        seenCodec ??= 'audio';
+        queue.length = 0;
+        queuedBytes = 0;
         return;
       }
-      const init = Uint8Array.from(atob(message.data), (c) => c.charCodeAt(0));
+      const init = typeof message.data === 'string' && message.data
+        ? Uint8Array.from(atob(message.data), (c) => c.charCodeAt(0)) : null;
+      let codec = description.match(/\b(?:avc[13]\.[a-f0-9]{6}|(?:hvc1|hev1)\.[a-z0-9.]+)(?![a-z0-9.])/i)?.[0];
+      if (!codec && init) {
+        // avcC contains the AVC profile, compatibility and level bytes.
+        for (let i = 4; i + 7 < init.length; i++) {
+          if (init[i] !== 97 || init[i+1] !== 118 || init[i+2] !== 99 || init[i+3] !== 67 || init[i+4] !== 1) continue;
+          codec = 'avc1.' + Array.from(init.slice(i+5, i+8), (byte) => byte.toString(16).padStart(2,'0')).join('');
+          break;
+        }
+      }
+      if (!codec) return;
+      const mime = 'video/mp4; codecs="' + codec + '"';
+      if (!Media.isTypeSupported(mime)) {
+        finish('Браузер не поддерживает видеокодек камеры (' + codec.split('.')[0] + ').');
+        return;
+      }
+      initializing = true;
+      seenCodec = 'video';
       const prepare = () => {
         if (stopped || buffer) return;
         try {
-          buffer = media.addSourceBuffer('video/mp4; codecs="' + message.codec_string + '"');
+          buffer = media.addSourceBuffer(mime);
           buffer.addEventListener('updateend', pump);
           buffer.addEventListener('error', () => finish('Ошибка декодирования эфира Ivideon.'));
-          queue.unshift(init);
-          queuedBytes += init.byteLength;
+          if (init) {
+            queue.unshift(init);
+            queuedBytes += init.byteLength;
+          }
           pump();
         } catch {
           finish('Браузер не поддерживает формат эфира этой камеры.');

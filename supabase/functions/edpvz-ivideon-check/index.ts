@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       }
       const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/live_stream');
       endpoint.search = new URLSearchParams({
-        op:'GET', access_token:key, q:'2', video_codecs:'h264', format:'ws-fmp4',
+        op:'GET', access_token:key, q:'2', video_codecs:'h264', audio_codecs:'none', format:'ws-fmp4',
       }).toString();
       const upstream = await fetch(endpoint, {redirect:'error', signal:deadline});
       const stream = await upstream.json().catch(() => null);
