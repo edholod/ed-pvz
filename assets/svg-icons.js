@@ -38,3 +38,27 @@ function transform(root){const walker=document.createTreeWalker(root,NodeFilter.
 function init(){const style=document.createElement('style');style.textContent='.edpvz-icon-wrap{display:inline-flex;align-items:center;justify-content:center;vertical-align:-.12em;line-height:1;color:inherit}.edpvz-svg-icon{display:inline-block;flex:none}';document.head.append(style);transform(document.body);let scheduled=false;const observer=new MutationObserver(records=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;for(const record of records){if(record.type==='characterData'&&record.target.parentElement)transform(record.target.parentElement);for(const node of record.addedNodes)if(node.nodeType===1)transform(node);else if(node.nodeType===3&&node.parentElement)transform(node.parentElement)}})});observer.observe(document.body,{childList:true,characterData:true,subtree:true})}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+/* Shared compact scroll-to-top control for EdPVZ pages. */
+(function(){
+  if(window.__edpvzScrollTopReady)return;
+  window.__edpvzScrollTopReady=true;
+  function init(){
+    if(!document.body||document.getElementById('edpvz-scroll-top'))return;
+    const button=document.createElement('button');
+    button.id='edpvz-scroll-top';button.type='button';
+    button.setAttribute('aria-label','Наверх');button.title='Наверх';
+    button.innerHTML='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg>';
+    const style=document.createElement('style');
+    style.textContent='#edpvz-scroll-top{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:9000;width:38px;height:38px;border:1px solid #ead8e5;border-radius:13px;background:#fffafeee;color:#853a70;box-shadow:0 3px 12px #3b21402b;display:grid;place-items:center;cursor:pointer;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s;backdrop-filter:blur(8px)}#edpvz-scroll-top.is-visible{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}@media(prefers-reduced-motion:reduce){#edpvz-scroll-top{transition:none}}';
+    document.head.append(style);document.body.append(button);
+    const scrollables=()=>[document.scrollingElement,...document.querySelectorAll('main,.app-content,.page-content,.content,.scroll-container,[data-scroll-container]')].filter((x,i,a)=>x&&a.indexOf(x)===i&&x.scrollHeight>x.clientHeight+80);
+    let active=null,scheduled=false;
+    function update(){scheduled=false;const elements=scrollables();active=elements.find(x=>x.scrollTop>180)||null;button.classList.toggle('is-visible',!!active)}
+    function schedule(){if(!scheduled){scheduled=true;requestAnimationFrame(update)}}
+    document.addEventListener('scroll',schedule,{capture:true,passive:true});
+    window.addEventListener('resize',schedule,{passive:true});
+    button.addEventListener('click',()=>{const target=active||document.scrollingElement;if(target)target.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});schedule()});
+    update();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
