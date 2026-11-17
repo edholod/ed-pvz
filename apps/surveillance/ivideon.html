@@ -190,8 +190,36 @@
           link.href = result.downloadUrl;
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
-          link.download = '';
           link.textContent = 'Скачать MP4';
+          link.addEventListener('click', async event => {
+            event.preventDefault();
+            if (link.getAttribute('aria-busy') === 'true') return;
+            link.setAttribute('aria-busy','true');
+            link.textContent = 'Загружаем MP4…';
+            try {
+              const response = await fetch(result.downloadUrl,{credentials:'omit',referrerPolicy:'no-referrer'});
+              if (!response.ok) throw Error('Download failed');
+              const file = await response.blob();
+              if (!file.size) throw Error('Empty file');
+              const url = URL.createObjectURL(file);
+              const save = document.createElement('a');
+              save.href = url;
+              save.download = 'ivideon-archive.mp4';
+              document.body.append(save);
+              save.click();
+              save.remove();
+              setTimeout(() => URL.revokeObjectURL(url),60000);
+              link.textContent = 'Скачать MP4';
+            } catch {
+              link.textContent = 'Открыть MP4 для сохранения';
+              link.setAttribute('aria-busy','false');
+              link.addEventListener('click', open => {
+                open.stopImmediatePropagation();
+              },{capture:true,once:true});
+            } finally {
+              link.removeAttribute('aria-busy');
+            }
+          });
           exportResult.replaceChildren(link);
           return;
         }
