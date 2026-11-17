@@ -77,7 +77,7 @@
   </section>
 </main>
 <script type="module">
-  import {playIvideon} from './ivideon-live.mjs?v=5';
+  import {playIvideon, playIvideonHls} from './ivideon-live.mjs?v=6';
   const live = document.getElementById('ivideon-live');
   const video = document.getElementById('ivideon-live-video');
   const liveStatus = document.getElementById('ivideon-live-status');
@@ -109,9 +109,10 @@
         liveStatus.textContent = previousError ? previousError + ' Повторная попытка: ' + message : message;
       }
       try {
-        const result = await window.EdPVZAccount.checkIvideon(key, camera.id, quality);
+        const result = await window.EdPVZAccount.checkIvideon(key, camera.id, quality === 2 ? 'hls' : quality);
         if (request !== streamRequest) return;
-        stopPlayer = playIvideon(video, result.streamUrl, (message, state) => {
+        const play = result.streamType === 'hls' ? playIvideonHls : playIvideon;
+        stopPlayer = play(video, result.streamUrl, (message, state) => {
           if (message) fail(message, state.started);
           else if (request === streamRequest) liveStatus.textContent = '';
         });

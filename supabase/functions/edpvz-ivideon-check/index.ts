@@ -124,6 +124,27 @@ Deno.serve(async (req) => {
         op:'GET', access_token:key, q:quality === 1 ? '1' : '2', video_codecs:'h264',
         ...(quality === 1 ? {} : {audio_codecs:'none'}), format:'ws-fmp4',
       }).toString();
+      if (quality === 'hls') {
+        try {
+          const hls = new URL(endpoint.href);
+          hls.searchParams.set('format', 'hls');
+          hls.searchParams.delete('audio_codecs');
+          hls.searchParams.delete('video_codecs');
+          const res = await fetch(hls, {redirect:'manual', signal:AbortSignal.timeout(3500)});
+          const location = res.headers.get('location');
+          const data = location ? null : await res.json().catch(() => null);
+          const target = location ?? (data?.success === true ? data?.result?.url : null);
+          if (typeof target === 'string') {
+            const url = new URL(target, hls.href);
+            const decoded = decodeURIComponent(url.href);
+            if (url.protocol === 'https:' && !url.username && !url.password &&
+                /(^|\.)(ivideon\.com|iv-cdn\.com|extcam\.com)$/.test(url.hostname) &&
+                !decoded.includes(key) && !/xtok-/i.test(decoded)) {
+              return reply({streamUrl:url.href, streamType:'hls'});
+            }
+          }
+        } catch { /* Fall through to the WebSocket stream. */ }
+      }
       const upstream = await fetch(endpoint, {redirect:'error', signal:deadline});
       const stream = await upstream.json().catch(() => null);
       if (!upstream.ok || stream?.success !== true || typeof stream?.result?.url !== 'string') {

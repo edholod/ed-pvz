@@ -149,3 +149,51 @@ export function playIvideon(video, url, notify) {
   socket.onclose = () => finish('Соединение с камерой Ivideon закрыто.');
   return stop;
 }
+
+export function playIvideonHls(video, url, notify) {
+  let player, stopped = false, started = false;
+  const deadline = setTimeout(() => fail('Ivideon HLS: видео не загрузилось.'), 16000);
+  const onPlaying = () => {
+    if (started) return;
+    started = true;
+    clearTimeout(deadline);
+    notify('', {started:true});
+  };
+  const onError = () => fail('Браузер не смог открыть эфир Ivideon HLS.');
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    clearTimeout(deadline);
+    video.removeEventListener('playing', onPlaying);
+    video.removeEventListener('error', onError);
+    player?.destroy();
+    video.removeAttribute('src');
+    video.load();
+  };
+  const fail = (message) => {
+    if (stopped) return;
+    stop();
+    notify(message, {started});
+  };
+  video.addEventListener('playing', onPlaying);
+  video.addEventListener('error', onError);
+  video.disableRemotePlayback = true;
+  const play = () => video.play().catch(() => {});
+  if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = url;
+    void play();
+  } else {
+    import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.mjs').then(({default:Hls}) => {
+      if (stopped) return;
+      if (!Hls.isSupported()) return fail('В этом браузере просмотр HLS недоступен.');
+      player = new Hls({enableWorker:false, maxBufferLength:20, backBufferLength:20});
+      player.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) fail('Ivideon HLS: ' + (data.details?.replace(/[^a-zA-Z]/g,'') || 'ошибка потока') + '.');
+      });
+      player.on(Hls.Events.MANIFEST_PARSED, play);
+      player.loadSource(url);
+      player.attachMedia(video);
+    }).catch(() => fail('Не удалось загрузить плеер HLS.'));
+  }
+  return stop;
+}
