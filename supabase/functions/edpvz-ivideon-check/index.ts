@@ -194,11 +194,11 @@ Deno.serve(async (req) => {
         op:'GET', access_token:key, q:quality === 1 ? '1' : '2', video_codecs:'h264',
         ...(quality === 1 ? {} : {audio_codecs:'none'}), format:'ws-fmp4',
       }).toString();
-      if (quality === 'hls') {
+      if (quality === 'hls' || quality === 1) {
         try {
           const hls = new URL(endpoint.href);
           hls.searchParams.set('format', 'hls');
-          hls.searchParams.set('q', '1');
+          hls.searchParams.set('q', quality === 1 ? '2' : '1');
           hls.searchParams.delete('audio_codecs');
           hls.searchParams.delete('video_codecs');
           const res = await fetch(hls, {redirect:'manual', signal:AbortSignal.timeout(3500)});
