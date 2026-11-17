@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
   const authorization = req.headers.get('authorization');
   if (!authorization?.startsWith('Bearer ')) return reply({error:'Войдите в Эд ПВЗ'}, 401);
   try {
-    const session = await fetch(Deno.env.get('SUPABASE_URL') + '/rest/v1/rpc/edpvz_surveillance_allowed', {
+    const session = await fetch(Deno.env.get('SUPABASE_URL') + '/rest/v1/rpc/edpvz_ivideon_allowed', {
       method:'POST', headers:{authorization, apikey: Deno.env.get('SUPABASE_ANON_KEY')!, 'content-type':'application/json'},
       body:'{}', signal:AbortSignal.timeout(5000)
     });

@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#f3f6fb">
   <title>Видеонаблюдение — Эд ПВЗ</title>
   <link rel="stylesheet" href="surveillance.css?v=private-1">
-  <script defer src="../../assets/account.js?v=surveillance-access-1"></script>
+  <script defer src="../../assets/account.js?v=ivideon-owners-1"></script>
   <meta name="robots" content="noindex,nofollow">
-  <script type="module" src="../../assets/surveillance-access.mjs?v=1"></script>
+  <script type="module" src="../../assets/surveillance-access.mjs?v=2"></script>
 </head>
 <body>
 <section class="panel" id="surveillance-access" role="status">
@@ -19,7 +19,7 @@
     <a class="primary" href="../account/" id="surveillance-login" hidden>Войти в «Эд ПВЗ»</a>
   </div>
 </section>
-<main data-surveillance-private hidden>
+<main data-surveillance-private="ivideon" hidden>
   <nav aria-label="Навигация">
     <a href="../../">← Главная</a>
     <a href="../cameras/">Настройка камер</a>
@@ -28,7 +28,7 @@
     <div><h1>Видеонаблюдение</h1><p>Выбери сервис, к которому подключены камеры твоих ПВЗ.</p></div>
   </header>
   <div class="provider-grid" aria-label="Сервисы видеонаблюдения">
-    <a class="panel provider" href="ipeye.html">
+    <a class="panel provider" href="ipeye.html" data-surveillance-private hidden>
       <img src="../../logos/ipeye.webp" alt="" width="44" height="44">
       <div><h2>IPEYE</h2><p>Плееры камер и кабинет IPEYE</p></div>
       <span aria-hidden="true">→</span>

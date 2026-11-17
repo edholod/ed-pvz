@@ -74,7 +74,7 @@ function start() {
     if (id === owner) return;
     $('status').textContent = 'Проверяем доступ…';
     try {
-      const allowed = await account.rpc('edpvz_surveillance_allowed', {});
+      const allowed = await account.rpc('edpvz_ivideon_allowed', {});
       if (request !== version || account.user?.id !== id || !allowed) return;
       owner = id;
       try {

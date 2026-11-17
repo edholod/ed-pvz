@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
   <link rel="stylesheet" href="surveillance.css?v=private-1">
-  <script defer src="../../assets/account.js?v=ivideon-live-3"></script>
-  <script type="module" src="ivideon.mjs?v=2"></script>
+  <script defer src="../../assets/account.js?v=ivideon-owners-1"></script>
+  <script type="module" src="ivideon.mjs?v=3"></script>
   <meta name="robots" content="noindex,nofollow">
-  <script type="module" src="../../assets/surveillance-access.mjs?v=1"></script>
+  <script type="module" src="../../assets/surveillance-access.mjs?v=2"></script>
 </head>
 <body>
 <section class="panel" id="surveillance-access" role="status">
@@ -20,7 +20,7 @@
     <a class="primary" href="../account/" id="surveillance-login" hidden>Войти в «Эд ПВЗ»</a>
   </div>
 </section>
-<main data-surveillance-private hidden>
+<main data-surveillance-private="ivideon" hidden>
   <nav aria-label="Навигация"><a href="./">← Видеонаблюдение</a><a href="../cameras/">Настройка камер</a></nav>
   <header><div><h1>Ivideon</h1><p>Видеонаблюдение твоих ПВЗ</p></div></header>
   <section class="panel" aria-labelledby="ivideon-access">
@@ -128,8 +128,11 @@
   const cameras = document.getElementById('ivideon-check-cameras');
   const button = form.querySelector('button');
   let generation = 0;
+  let accountId = window.EdPVZAccount?.user?.id;
   window.addEventListener('edpvz-auth-changed', () => {
-    if (window.EdPVZAccount?.user) return;
+    const nextId = window.EdPVZAccount?.user?.id;
+    if (nextId === accountId) return;
+    accountId = nextId;
     generation++;
     apiKey = undefined;
     stopLive();
