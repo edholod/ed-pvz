@@ -1,3 +1,5 @@
+import UpstreamWebSocket from 'npm:ws@8.23.0';
+
 const origin = 'https://edpvz.ru';
 const headers = {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store'};
 const reply = (body: unknown, status = 200) => Response.json(body, {status, headers});
@@ -33,67 +35,59 @@ async function relay(req: Request, ticket: string) {
   }
   const {socket, response} = Deno.upgradeWebSocket(req);
   const textTransport = new URL(req.url).searchParams.get('frames') === 'text';
-  let upstream: WebSocket | undefined;
+  let upstream: UpstreamWebSocket | undefined;
   let binaryFrames = 0, textFrames = 0, reported = false;
   const messages = {init:0, metadata:0, fragment:0, inline:0, error:0, other:0};
   const report = () => {
     if (reported) return;
     reported = true;
-    console.info('ivideon-relay frames text=' + textFrames + ' binary=' + binaryFrames + ' ' + JSON.stringify(messages));
+    console.info('ivideon-relay frames text=' + textFrames + ' binary=' + binaryFrames + ' ' + JSON.stringify(messages) + ' transport=ws');
   };
-  function encodeFrame(frame: ArrayBuffer) {
-    const bytes = new Uint8Array(frame);
-    let raw = '';
-    for (let offset = 0; offset < bytes.length; offset += 8192) {
-      raw += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
-    }
-    return btoa(raw);
-  }
   const end = () => {
     report();
-    if (upstream && upstream.readyState < WebSocket.CLOSING) upstream.close();
+    if (upstream && upstream.readyState < UpstreamWebSocket.CLOSING) upstream.terminate();
     if (socket.readyState === WebSocket.OPEN) socket.close();
   };
   socket.onclose = end;
   socket.onerror = end;
   socket.onopen = () => {
     try {
-      upstream = new WebSocket(upstreamUrl.href);
-      upstream.binaryType = 'arraybuffer';
-      let pending = Promise.resolve();
-      let waiting = 0;
-      upstream.onmessage = ({data}) => {
-        const size = typeof data === 'string' ? data.length : data instanceof Blob ? data.size : data.byteLength;
-        waiting += size;
-        if (waiting + socket.bufferedAmount > 16 * 1024 * 1024) return end();
-        pending = pending.then(async () => {
-          if (socket.readyState !== WebSocket.OPEN) return;
-          if (typeof data === 'string') {
-            textFrames++;
-            try {
-              const msg = JSON.parse(data);
-              switch (msg?.type) {
-                case 'stream-init': messages.init++; break;
-                case 'metadata': messages.metadata++; break;
-                case 'fragment':
-                  messages.fragment++;
-                  if (typeof msg.data === 'string' && msg.data.length) messages.inline++;
-                  break;
-                case 'error': case 'stream-error': messages.error++; break;
-                default: messages.other++;
-              }
-            } catch { messages.other++; }
-            socket.send(data);
-          } else {
+      upstream = new UpstreamWebSocket(upstreamUrl.href, {
+        perMessageDeflate: false,
+        handshakeTimeout: 8000,
+        maxPayload: 12 * 1024 * 1024,
+      });
+      upstream.binaryType = 'nodebuffer';
+      upstream.on('message', (data, isBinary) => {
+        if (socket.readyState !== WebSocket.OPEN) return end();
+        if (Array.isArray(data) || !(data instanceof Uint8Array)) return end();
+        if (socket.bufferedAmount + Math.ceil(data.byteLength * (textTransport && isBinary ? 4 / 3 : 1)) > 16 * 1024 * 1024) return end();
+        try {
+          if (isBinary) {
             binaryFrames++;
-            const frame = data instanceof Blob ? await data.arrayBuffer() : data;
-            if (socket.readyState !== WebSocket.OPEN) return;
-            socket.send(textTransport ? 'edpvz-fmp4:' + encodeFrame(frame) : frame);
+            socket.send(textTransport ? 'edpvz-fmp4:' + data.toString('base64') : data);
+            return;
           }
-        }).catch(end).finally(() => { waiting -= size; });
-      };
-      upstream.onclose = end;
-      upstream.onerror = end;
+          textFrames++;
+          const message = data.toString('utf8');
+          try {
+            const msg = JSON.parse(message);
+            switch (msg?.type) {
+              case 'stream-init': messages.init++; break;
+              case 'metadata': messages.metadata++; break;
+              case 'fragment':
+                messages.fragment++;
+                if (typeof msg.data === 'string' && msg.data.length) messages.inline++;
+                break;
+              case 'error': case 'stream-error': messages.error++; break;
+              default: messages.other++;
+            }
+          } catch { messages.other++; }
+          socket.send(message);
+        } catch { end(); }
+      });
+      upstream.on('error', end);
+      upstream.on('close', end);
     } catch { end(); }
   };
   return response;
