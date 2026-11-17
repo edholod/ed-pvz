@@ -35,7 +35,7 @@
   <header><div><h1>Ivideon</h1><p>Видеонаблюдение твоих ПВЗ</p></div></header>
   <section class="panel" aria-labelledby="ivideon-access">
     <h2 id="ivideon-access">Камеры и архив</h2>
-    <p>Скачать запись можно в личном кабинете Ivideon. Для просмотра записи выбери «Архив» рядом с камерой.</p>
+    <p>Для просмотра или скачивания записи выбери «Архив» рядом с камерой.</p>
     <div class="actions">
       <a class="primary" href="https://my.ivideon.com/" target="_blank" rel="noopener noreferrer">Открыть кабинет Ivideon ↗</a>
     </div>
@@ -65,6 +65,8 @@
         <label>Начало записи <input id="ivideon-archive-start" type="datetime-local" required></label>
         <label>Длительность <select id="ivideon-archive-duration"><option value="5">5 минут</option><option value="15">15 минут</option><option value="30">30 минут</option><option value="60">1 час</option></select></label>
         <button class="primary" type="submit">Показать запись</button>
+        <button class="secondary" type="submit" id="ivideon-export">Подготовить MP4</button>
+        <p id="ivideon-export-result" role="status" hidden></p>
         <p>Дата и время по часовому поясу этого устройства.</p>
       </form>
       <p id="ivideon-live-status" role="status"></p>
@@ -102,6 +104,9 @@
   const archiveForm = document.getElementById('ivideon-archive');
   const archiveStart = document.getElementById('ivideon-archive-start');
   const archiveDuration = document.getElementById('ivideon-archive-duration');
+  const exportButton = document.getElementById('ivideon-export');
+  const exportResult = document.getElementById('ivideon-export-result');
+  let exportRequest = 0;
   let archiveCamera, connected = false, stopPlayer, activeCameraId, streamRequest = 0;
   function stopLive() {
     streamRequest++;
@@ -109,6 +114,10 @@
     stopPlayer = undefined;
     activeCameraId = undefined;
     archiveCamera = undefined;
+    exportRequest++;
+    exportButton.disabled = false;
+    exportResult.replaceChildren();
+    exportResult.hidden = true;
     archiveForm.hidden = true;
     live.hidden = true;
   }
@@ -161,6 +170,42 @@
     liveStatus.textContent = '';
     archiveStart.focus();
   }
+  async function exportArchive(camera, start, end) {
+    const attempt = ++exportRequest;
+    const active = () => attempt === exportRequest && archiveCamera?.id === camera.id;
+    exportButton.disabled = true;
+    exportResult.hidden = false;
+    exportResult.textContent = 'Запрашиваем MP4 у Ivideon…';
+    try {
+      const account = window.EdPVZAccount;
+      const {exportId} = await account.checkIvideon(undefined,camera.id,undefined,'load',{mode:'export',start,end});
+      if (!exportId) throw Error('Ivideon не вернул номер экспорта.');
+      for (let index = 0; index < 50 && active(); index++) {
+        const result = await account.checkIvideon(undefined,camera.id,undefined,'load',{mode:'export-status',exportId});
+        if (!active()) return;
+        if (result.state === 'failed') throw Error('Ivideon не смог подготовить MP4 за выбранный интервал.');
+        if (result.state === 'ready') {
+          const link = document.createElement('a');
+          link.className = 'primary';
+          link.href = result.downloadUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.download = '';
+          link.textContent = 'Скачать MP4';
+          exportResult.replaceChildren(link);
+          return;
+        }
+        const percent = result.progress > 0 ? ' · ' + result.progress + '%' : '';
+        exportResult.textContent = 'Ivideon готовит MP4' + percent + '…';
+        await new Promise(resolve => setTimeout(resolve,3000));
+      }
+      if (active()) exportResult.textContent = 'MP4 ещё готовится. Готовый файл можно открыть в разделе «Экспорт архива» кабинета Ivideon.';
+    } catch (error) {
+      if (active()) exportResult.textContent = error.message || 'Не удалось подготовить MP4.';
+    } finally {
+      if (active()) exportButton.disabled = false;
+    }
+  }
   archiveForm.addEventListener('submit', async event => {
     event.preventDefault();
     const camera = archiveCamera;
@@ -170,6 +215,10 @@
     const end = Math.min(now, start + Number(archiveDuration.value)*60);
     if (!Number.isFinite(start) || start >= end) {
       liveStatus.textContent = 'Выбери время в прошлом.';
+      return;
+    }
+    if (event.submitter === exportButton) {
+      void exportArchive(camera,start,end);
       return;
     }
     const request = ++streamRequest;

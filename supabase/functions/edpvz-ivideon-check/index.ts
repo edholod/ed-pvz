@@ -247,6 +247,29 @@ Deno.serve(async (req) => {
       if (typeof cameraId !== 'string' || !/^[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}$/.test(cameraId)) {
         return reply({error:'Некорректный ID камеры Ivideon.'}, 400);
       }
+      if (archive?.mode === 'export-status') {
+        if (action !== 'load' || typeof archive.exportId !== 'string' || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(archive.exportId)) {
+          return reply({error:'Некорректный запрос экспорта.'},400);
+        }
+        const endpoint = new URL('https://openapi-alpha.ivideon.com/exported_records');
+        endpoint.search = new URLSearchParams({op:'FIND',access_token:key}).toString();
+        const response = await fetch(endpoint,{method:'POST',redirect:'error',signal:deadline,
+          headers:{'content-type':'application/json'},body:JSON.stringify({limit:100,skip:0,sources:[{id:cameraId,type:'camera'}]})});
+        const data = await response.json().catch(() => null);
+        if (!response.ok || data?.success !== true || !Array.isArray(data?.result?.items)) {
+          return reply({error:'Ivideon не вернул состояние экспорта (HTTP ' + response.status + ').'},502);
+        }
+        const record = data.result.items.find((item) => String(item?.id) === archive.exportId);
+        if (!record) return reply({state:'pending'});
+        if (record.status === 'ready' && typeof record.video_url === 'string') {
+          const download = hlsTarget(record.video_url);
+          if (decodeURIComponent(download.href).includes(key)) return reply({error:'Ivideon вернул ссылку с ключом аккаунта. Файл доступен в кабинете Ivideon.'},422);
+          return reply({state:'ready',downloadUrl:download.href});
+        }
+        if (['failed','error','cancelled','expired','deleted'].includes(record.status)) return reply({state:'failed'});
+        const progress = Number(record.progress);
+        return reply({state:'pending',progress:Number.isFinite(progress) ? Math.min(100,Math.max(0,Math.round(progress))) : null});
+      }
       if (archive !== undefined) {
         const start = archive?.start;
         const end = archive?.end;
@@ -254,6 +277,19 @@ Deno.serve(async (req) => {
         if (action !== 'load' || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) ||
             start <= 0 || start >= now || end <= start || end > now + 30 || end - start > 3600) {
           return reply({error:'Укажи прошедшее время и интервал до одного часа.'}, 400);
+        }
+        if (archive.mode === 'export') {
+          const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/archive');
+          endpoint.search = new URLSearchParams({op:'EXPORT',access_token:key}).toString();
+          const response = await fetch(endpoint,{method:'POST',redirect:'error',signal:deadline,
+            headers:{'content-type':'application/json'},body:JSON.stringify({start_time:start,end_time:end})});
+          const data = await response.json().catch(() => null);
+          const id = data?.result?.id == null ? '' : String(data.result.id);
+          if (!response.ok || data?.success !== true || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(id)) {
+            const code = typeof data?.code === 'string' && /^[A-Z0-9_]{1,60}$/.test(data.code) ? ' · ' + data.code : '';
+            return reply({error:'Ivideon не начал экспорт (HTTP ' + response.status + code + '). Попробуй другой интервал или проверь доступ к экспорту.'},422);
+          }
+          return reply({exportId:id});
         }
         let status = 0;
         for (const profile of ['1','2']) {
