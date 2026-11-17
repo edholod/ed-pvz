@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-16T17:24:30.996Z",
+  "updated": "2026-11-17T01:02:46.919Z",
   "items": [
     {
       "id": "wb-pvz-0448c8ef7c94208d242e5bce",
@@ -31,6 +31,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/86c9765a-df6b-11f1-b4ac-de33cfcfc989.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/86c9765a-df6b-11f1-b4ac-de33cfcfc989.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -96,6 +99,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/89417b3c-df6d-11f1-b551-1e1571c3484d.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/89417b3c-df6d-11f1-b551-1e1571c3484d.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -120,6 +126,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/0d806394-df6b-11f1-9c91-6e258f5b3570.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/0d806394-df6b-11f1-9c91-6e258f5b3570.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -144,6 +153,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/55376b49-df6a-11f1-9e01-6a1d786f9c74.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/55376b49-df6a-11f1-9e01-6a1d786f9c74.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -168,6 +180,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/1eb8b584-d9e3-11f1-959d-1abdb29bfd26.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/1eb8b584-d9e3-11f1-959d-1abdb29bfd26.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -196,6 +211,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/76705100-d9e3-11f1-924b-e6c8bdb1721f.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/76705100-d9e3-11f1-924b-e6c8bdb1721f.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -212,6 +230,9 @@
       ],
       "links": [],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/26ee6bc2-deac-11f1-b551-1e1571c3484d.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/26ee6bc2-deac-11f1-b551-1e1571c3484d.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -232,6 +253,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/8bda2a79-de69-11f1-b3b3-1677f4cf3ac4.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/8bda2a79-de69-11f1-b3b3-1677f4cf3ac4.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -253,6 +277,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/3d447c18-de67-11f1-be38-d21ff05e51b2.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/3d447c18-de67-11f1-be38-d21ff05e51b2.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -281,6 +308,9 @@
         }
       ],
       "image": "https://pvz-infra.wb.ru/static/29/1/123/64e73300-d9e3-11f1-8389-1a5075433be3.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/64e73300-d9e3-11f1-8389-1a5075433be3.webp"
+      ],
       "origin": "my-pvz"
     },
     {
@@ -669,7 +699,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-16T17:24:31.010Z",
+    "checked": "2026-11-17T01:02:46.933Z",
     "intervalMinutes": 30
   }
 }
