@@ -1,7 +1,7 @@
 import UpstreamWebSocket from 'npm:ws@8.23.0';
 
 const origin = 'https://edpvz.ru';
-const headers = {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store'};
+const headers = {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, range', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Cache-Control': 'no-store'};
 const reply = (body: unknown, status = 200) => Response.json(body, {status, headers});
 function secureStreamUrl(raw: string) {
   const url = new URL(raw);
@@ -16,11 +16,76 @@ async function ticketKey() {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('edpvz-ivideon-live:' + secret));
   return crypto.subtle.importKey('raw', digest, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
-async function issueTicket(url: URL) {
+async function issueTicket(url: URL, expires = Date.now() + 30000, purpose = 'ws') {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const plaintext = new TextEncoder().encode(JSON.stringify({url: url.href, expires: Date.now() + 30000}));
+  const plaintext = new TextEncoder().encode(JSON.stringify({url: url.href, expires, purpose}));
   const cipher = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, await ticketKey(), plaintext));
   return btoa(Array.from([...iv,...cipher], (byte) => String.fromCharCode(byte)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function hlsTarget(raw: string, base?: string) {
+  const url = new URL(raw, base);
+  if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+      !/(^|\.)(ivideon\.com|iv-cdn\.com|extcam\.com)$/.test(url.hostname)) throw Error('Invalid HLS origin');
+  return url;
+}
+async function hlsLink(url: URL, expires: number) {
+  const link = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
+  link.searchParams.set('hls', await issueTicket(url, expires, 'hls'));
+  return link.href;
+}
+async function serveHls(req: Request, ticket: string) {
+  try {
+    if (!/^[a-zA-Z0-9_-]{40,12000}$/.test(ticket)) throw Error();
+    const bytes = Uint8Array.from(atob(ticket.replace(/-/g,'+').replace(/_/g,'/')), (char) => char.charCodeAt(0));
+    const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, await ticketKey(), bytes.slice(12));
+    const {url, expires, purpose} = JSON.parse(new TextDecoder().decode(plain));
+    if (purpose !== 'hls' || typeof expires !== 'number' || expires < Date.now()) throw Error();
+    let target = hlsTarget(url);
+    let response: Response | undefined;
+    const requestHeaders = new Headers();
+    const range = req.headers.get('range');
+    if (range && /^bytes=\d+-\d*$/.test(range)) requestHeaders.set('range',range);
+    const deadline = AbortSignal.timeout(12000);
+    for (let i = 0; i < 4; i++) {
+      response = await fetch(target, {redirect:'manual', headers:requestHeaders, signal:deadline});
+      if (response.status < 300 || response.status >= 400) break;
+      const location = response.headers.get('location');
+      await response.body?.cancel();
+      if (!location) throw Error();
+      target = hlsTarget(location, target.href);
+    }
+    if (!response?.ok) return reply({error:'Ivideon не отдал данные HLS.'}, 502);
+    const contentType = response.headers.get('content-type') ?? '';
+    const headersOut = {...headers, 'Access-Control-Expose-Headers':'Content-Range, Accept-Ranges', 'X-Content-Type-Options':'nosniff'};
+    if (/mpegurl/i.test(contentType) || /\.m3u8$/i.test(target.pathname) || /text\/plain/i.test(contentType)) {
+      const manifest = await response.text();
+      if (manifest.length > 512000 || !manifest.startsWith('#EXTM3U')) throw Error();
+      const links = new Map<string, Promise<string>>();
+      const wrap = (value: string) => {
+        const next = hlsTarget(value, target.href);
+        if (!links.has(next.href)) links.set(next.href, hlsLink(next, expires));
+        return links.get(next.href)!;
+      };
+      const lines = await Promise.all(manifest.split(/\r?\n/).map(async (line) => {
+        if (!line.trim()) return line;
+        if (!line.startsWith('#')) return wrap(line.trim());
+        for (const match of line.matchAll(/\bURI="([^"]+)"/g)) {
+          line = line.replace(match[0], 'URI="' + await wrap(match[1]) + '"');
+        }
+        return line;
+      }));
+      return new Response(lines.join('\n'), {headers:{...headersOut,'Content-Type':'application/vnd.apple.mpegurl'}});
+    }
+    const media = new Headers(headersOut);
+    media.set('Content-Type', /^(video\/|audio\/|application\/octet-stream)/i.test(contentType) ? contentType : 'application/octet-stream');
+    for (const name of ['Content-Range','Accept-Ranges']) {
+      const value = response.headers.get(name);
+      if (value) media.set(name,value);
+    }
+    return new Response(response.body, {status:response.status, headers:media});
+  } catch {
+    return reply({error:'Не удалось получить сегмент HLS Ivideon.'}, 502);
+  }
 }
 async function relay(req: Request, ticket: string) {
   let upstreamUrl;
@@ -28,8 +93,8 @@ async function relay(req: Request, ticket: string) {
     if (!/^[a-zA-Z0-9_-]{40,12000}$/.test(ticket)) throw Error();
     const bytes = Uint8Array.from(atob(ticket.replace(/-/g,'+').replace(/_/g,'/')), (char) => char.charCodeAt(0));
     const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, await ticketKey(), bytes.slice(12));
-    const {url, expires} = JSON.parse(new TextDecoder().decode(plain));
-    if (typeof expires !== 'number' || expires < Date.now() || !(upstreamUrl = secureStreamUrl(url))) throw Error();
+    const {url, expires, purpose} = JSON.parse(new TextDecoder().decode(plain));
+    if ((purpose && purpose !== 'ws') || typeof expires !== 'number' || expires < Date.now() || !(upstreamUrl = secureStreamUrl(url))) throw Error();
   } catch {
     return reply({error:'Ссылка на эфир истекла.'}, 403);
   }
@@ -94,10 +159,15 @@ async function relay(req: Request, ticket: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.headers.get('origin') !== origin) return reply({error:'Доступ запрещён'}, 403);
+  const requestOrigin = req.headers.get('origin');
+  const nativeMedia = req.method === 'GET' && !requestOrigin &&
+    new URL(req.url).searchParams.has('hls') &&
+    req.headers.get('referer') === origin + '/';
+  if (requestOrigin !== origin && !nativeMedia) return reply({error:'Доступ запрещён'}, 403);
   if (req.method === 'GET' && req.headers.get('upgrade')?.toLowerCase() === 'websocket') {
     return relay(req, new URL(req.url).searchParams.get('ticket') ?? '');
   }
+  if (req.method === 'GET') return serveHls(req, new URL(req.url).searchParams.get('hls') ?? '');
   if (req.method === 'OPTIONS') return new Response(null, {status: 204, headers});
   if (req.method !== 'POST') return reply({error:'Метод недоступен'}, 405);
   const authorization = req.headers.get('authorization');
@@ -128,6 +198,7 @@ Deno.serve(async (req) => {
         try {
           const hls = new URL(endpoint.href);
           hls.searchParams.set('format', 'hls');
+          hls.searchParams.set('q', '1');
           hls.searchParams.delete('audio_codecs');
           hls.searchParams.delete('video_codecs');
           const res = await fetch(hls, {redirect:'manual', signal:AbortSignal.timeout(3500)});
@@ -135,13 +206,8 @@ Deno.serve(async (req) => {
           const data = location ? null : await res.json().catch(() => null);
           const target = location ?? (data?.success === true ? data?.result?.url : null);
           if (typeof target === 'string') {
-            const url = new URL(target, hls.href);
-            const decoded = decodeURIComponent(url.href);
-            if (url.protocol === 'https:' && !url.username && !url.password &&
-                /(^|\.)(ivideon\.com|iv-cdn\.com|extcam\.com)$/.test(url.hostname) &&
-                !decoded.includes(key) && !/xtok-/i.test(decoded)) {
-              return reply({streamUrl:url.href, streamType:'hls'});
-            }
+            const url = hlsTarget(target, hls.href);
+            return reply({streamUrl:await hlsLink(url, Date.now() + 15 * 60 * 1000), streamType:'hls'});
           }
         } catch { /* Fall through to the WebSocket stream. */ }
       }

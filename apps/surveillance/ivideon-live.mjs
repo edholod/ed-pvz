@@ -180,6 +180,7 @@ export function playIvideonHls(video, url, notify) {
   video.disableRemotePlayback = true;
   const play = () => video.play().catch(() => {});
   if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.crossOrigin = 'anonymous';
     video.src = url;
     void play();
   } else {
