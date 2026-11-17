@@ -10,10 +10,10 @@ function secureStreamUrl(raw: string) {
       !/(^|\.)(ivideon\.com|iv-cdn\.com|extcam\.com)$/.test(url.hostname)) return null;
   return new URL('wss:' + url.href.slice(url.protocol.length));
 }
-async function ticketKey() {
+async function ticketKey(context = 'edpvz-ivideon-live:') {
   const secret = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!secret) throw Error('Relay unavailable');
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('edpvz-ivideon-live:' + secret));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(context + secret));
   return crypto.subtle.importKey('raw', digest, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
 async function issueTicket(url: URL, expires = Date.now() + 30000, purpose = 'ws') {
@@ -158,6 +158,40 @@ async function relay(req: Request, ticket: string) {
   return response;
 }
 
+async function connectionCipher(userId: string, value: string, encrypt: boolean) {
+  const cipher = await ticketKey('edpvz-ivideon-connection-v1:');
+  const additionalData = new TextEncoder().encode(userId);
+  if (encrypt) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = new Uint8Array(await crypto.subtle.encrypt(
+      {name:'AES-GCM', iv, additionalData}, cipher, new TextEncoder().encode(value),
+    ));
+    return btoa(String.fromCharCode(...iv, ...ciphertext));
+  }
+  const bytes = Uint8Array.from(atob(value), char => char.charCodeAt(0));
+  const result = await crypto.subtle.decrypt(
+    {name:'AES-GCM', iv:bytes.slice(0,12), additionalData}, cipher, bytes.slice(12),
+  );
+  return new TextDecoder().decode(result);
+}
+
+async function connectionRequest(userId: string, method: string, encryptedKey?: string) {
+  const secret = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!secret) throw Error('Connection storage unavailable');
+  const endpoint = new URL(Deno.env.get('SUPABASE_URL') + '/rest/v1/edpvz_ivideon_connections');
+  if (method === 'POST') endpoint.searchParams.set('on_conflict','user_id');
+  else endpoint.searchParams.set('user_id','eq.' + userId);
+  if (method === 'GET') endpoint.searchParams.set('select','encrypted_key');
+  const response = await fetch(endpoint, {method, headers:{
+    apikey:secret, authorization:'Bearer ' + secret, 'content-type':'application/json',
+    ...(method === 'POST' ? {Prefer:'resolution=merge-duplicates,return=minimal'} : {}),
+  }, body:method === 'POST' ? JSON.stringify({
+    user_id:userId, encrypted_key:encryptedKey, updated_at:new Date().toISOString(),
+  }) : undefined, signal:AbortSignal.timeout(3500)});
+  if (!response.ok) throw Error('Connection storage unavailable');
+  return method === 'GET' ? (await response.json())[0]?.encrypted_key ?? null : null;
+}
+
 Deno.serve(async (req) => {
   const requestOrigin = req.headers.get('origin');
   const nativeMedia = req.method === 'GET' && !requestOrigin &&
@@ -182,7 +216,31 @@ Deno.serve(async (req) => {
     if (raw.length > 2048) return reply({error:'Некорректный запрос'}, 400);
     let payload;
     try { payload = JSON.parse(raw); } catch { return reply({error:'Некорректный запрос'}, 400); }
-    const {key, cameraId, quality} = payload ?? {};
+    const {cameraId, quality, action} = payload ?? {};
+    let {key} = payload ?? {};
+    let userId;
+    if (action !== undefined) {
+      if (!['save','load','disconnect'].includes(action) ||
+          (action !== 'load' && cameraId !== undefined)) {
+        return reply({error:'Некорректное действие Ivideon'}, 400);
+      }
+      const identity = await fetch(Deno.env.get('SUPABASE_URL') + '/auth/v1/user', {
+        headers:{authorization, apikey:Deno.env.get('SUPABASE_ANON_KEY')!},
+        signal:AbortSignal.timeout(3500),
+      });
+      if (!identity.ok) return reply({error:'Войдите в Эд ПВЗ'}, 401);
+      userId = (await identity.json())?.id;
+      if (typeof userId !== 'string' || !/^[a-f0-9-]{36}$/i.test(userId)) return reply({error:'Войдите в Эд ПВЗ'}, 401);
+      if (action === 'disconnect') {
+        await connectionRequest(userId, 'DELETE');
+        return reply({connected:false});
+      }
+      if (action === 'load') {
+        const encrypted = await connectionRequest(userId, 'GET');
+        if (!encrypted) return cameraId === undefined ? reply({connected:false,cameras:[]}) : reply({error:'Подключите Ivideon к аккаунту.'}, 409);
+        key = await connectionCipher(userId, encrypted, false);
+      }
+    }
     if (typeof key !== 'string' || !/^xtok-[a-zA-Z0-9_.~+/=\-]{8,512}$/.test(key)) return reply({error:'Нужен ключ Ivideon формата xtok-…'}, 400);
     const deadline = AbortSignal.timeout(8500);
     if (cameraId !== undefined) {
@@ -248,7 +306,8 @@ Deno.serve(async (req) => {
         ? items.flatMap((server) => Array.isArray(server?.cameras) ? server.cameras : [])
         : items;
       if (resource === 'servers' && items.length && !items.some((server) => Array.isArray(server?.cameras))) continue;
-      return reply({cameras:list.slice(0,250).map((item) => ({
+      if (action === 'save') await connectionRequest(userId, 'POST', await connectionCipher(userId, key, true));
+      return reply({connected:action !== undefined,cameras:list.slice(0,250).map((item) => ({
         id: typeof item?.id === 'string' && /^[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}$/.test(item.id) ? item.id : null,
         name: typeof item?.name === 'string' ? item.name.slice(0,160) : 'Камера Ivideon',
       }))});
