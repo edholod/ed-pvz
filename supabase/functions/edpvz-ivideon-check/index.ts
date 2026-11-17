@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
     if (raw.length > 2048) return reply({error:'Некорректный запрос'}, 400);
     let payload;
     try { payload = JSON.parse(raw); } catch { return reply({error:'Некорректный запрос'}, 400); }
-    const {cameraId, quality, action} = payload ?? {};
+    const {cameraId, quality, action, archive} = payload ?? {};
     let {key} = payload ?? {};
     let userId;
     if (action !== undefined) {
@@ -246,6 +246,33 @@ Deno.serve(async (req) => {
     if (cameraId !== undefined) {
       if (typeof cameraId !== 'string' || !/^[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}$/.test(cameraId)) {
         return reply({error:'Некорректный ID камеры Ivideon.'}, 400);
+      }
+      if (archive !== undefined) {
+        const start = archive?.start;
+        const end = archive?.end;
+        const now = Math.floor(Date.now()/1000);
+        if (action !== 'load' || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) ||
+            start <= 0 || start >= now || end <= start || end > now + 30 || end - start > 3600) {
+          return reply({error:'Укажи прошедшее время и интервал до одного часа.'}, 400);
+        }
+        let status = 0;
+        for (const profile of ['1','2']) {
+          const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/archive_stream');
+          endpoint.search = new URLSearchParams({
+            op:'GET',access_token:key,format:'hls',q:profile,start_time:String(start),end_time:String(end),
+          }).toString();
+          const response = await fetch(endpoint,{redirect:'manual',signal:deadline});
+          status = response.status;
+          if (status === 401 || status === 403) return reply({error:'Ключ Ivideon не даёт доступа к архиву этой камеры.'},422);
+          const location = response.headers.get('location');
+          const data = location ? null : await response.json().catch(() => null);
+          const target = location ?? (data?.success === true ? data?.result?.url : null);
+          if (typeof target !== 'string') continue;
+          const url = hlsTarget(target,endpoint.href);
+          const streamUrl = decodeURIComponent(url.href).includes(key) ? await hlsLink(url,Date.now()+15*60*1000) : url.href;
+          return reply({streamType:'hls',streamUrl});
+        }
+        return reply({error:'Ivideon не выдал запись за этот период (HTTP ' + status + '). Проверь другой интервал.'},422);
       }
       const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/live_stream');
       endpoint.search = new URLSearchParams({

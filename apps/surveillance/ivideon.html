@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
   <link rel="stylesheet" href="surveillance.css?v=private-1">
-  <script defer src="../../assets/account.js?v=ivideon-camera-settings-1"></script>
+  <script defer src="../../assets/account.js?v=ivideon-archive-1"></script>
   <script type="module" src="ivideon.mjs?v=3"></script>
   <meta name="robots" content="noindex,nofollow">
   <script type="module" src="../../assets/surveillance-access.mjs?v=2"></script>
@@ -15,6 +15,7 @@
     .iv-camera-name {flex:1 1 12rem; min-width:0; overflow-wrap:anywhere}
     .iv-camera-name small {display:block; margin-top:.25rem}
     .iv-camera-edit {flex:1 0 100%; box-sizing:border-box; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr)); gap:.7rem; align-items:end}
+    .iv-camera-edit[hidden] {display:none}
     .iv-camera-edit label {display:grid; gap:.3rem}
     .iv-camera-edit input,.iv-camera-edit select {font:inherit; width:100%; box-sizing:border-box; padding:.55rem; border:1px solid #a5b3c6; border-radius:.4rem}
     .iv-camera-edit p {margin:0; grid-column:1/-1}
@@ -34,7 +35,7 @@
   <header><div><h1>Ivideon</h1><p>Видеонаблюдение твоих ПВЗ</p></div></header>
   <section class="panel" aria-labelledby="ivideon-access">
     <h2 id="ivideon-access">Камеры и архив</h2>
-    <p>Войти, посмотреть эфир и скачать запись можно в личном кабинете Ivideon.</p>
+    <p>Скачать запись можно в личном кабинете Ivideon. Для просмотра записи выбери «Архив» рядом с камерой.</p>
     <div class="actions">
       <a class="primary" href="https://my.ivideon.com/" target="_blank" rel="noopener noreferrer">Открыть кабинет Ivideon ↗</a>
     </div>
@@ -60,6 +61,12 @@
     <ul id="ivideon-check-cameras" class="shortcut-list"></ul>
     <div id="ivideon-live" hidden>
       <div class="actions"><strong id="ivideon-live-name"></strong><button id="ivideon-live-stop" type="button" class="secondary">Остановить</button></div>
+      <form id="ivideon-archive" class="iv-camera-edit" hidden>
+        <label>Начало записи <input id="ivideon-archive-start" type="datetime-local" required></label>
+        <label>Длительность <select id="ivideon-archive-duration"><option value="5">5 минут</option><option value="15">15 минут</option><option value="30">30 минут</option><option value="60">1 час</option></select></label>
+        <button class="primary" type="submit">Показать запись</button>
+        <p>Дата и время по часовому поясу этого устройства.</p>
+      </form>
       <p id="ivideon-live-status" role="status"></p>
       <video id="ivideon-live-video" controls muted playsinline style="display:block;width:100%;max-height:65vh;background:#142032;border-radius:12px;margin-top:12px"></video>
     </div>
@@ -92,12 +99,17 @@
   const video = document.getElementById('ivideon-live-video');
   const liveStatus = document.getElementById('ivideon-live-status');
   const liveName = document.getElementById('ivideon-live-name');
-  let connected = false, stopPlayer, activeCameraId, streamRequest = 0;
+  const archiveForm = document.getElementById('ivideon-archive');
+  const archiveStart = document.getElementById('ivideon-archive-start');
+  const archiveDuration = document.getElementById('ivideon-archive-duration');
+  let archiveCamera, connected = false, stopPlayer, activeCameraId, streamRequest = 0;
   function stopLive() {
     streamRequest++;
     stopPlayer?.();
     stopPlayer = undefined;
     activeCameraId = undefined;
+    archiveCamera = undefined;
+    archiveForm.hidden = true;
     live.hidden = true;
   }
   document.getElementById('ivideon-live-stop').addEventListener('click', stopLive);
@@ -133,6 +145,47 @@
     }
     await connect(2);
   }
+  function dateInputValue(date) {
+    const local = new Date(date.getTime() - date.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,16);
+  }
+  function openArchive(camera) {
+    if (!connected || !window.EdPVZAccount?.user) return;
+    stopLive();
+    activeCameraId = camera.id;
+    archiveCamera = camera;
+    live.hidden = archiveForm.hidden = false;
+    liveName.textContent = camera.displayName || camera.name;
+    archiveStart.max = dateInputValue(new Date());
+    archiveStart.value = dateInputValue(new Date(Date.now()-10*60000));
+    liveStatus.textContent = '';
+    archiveStart.focus();
+  }
+  archiveForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    const camera = archiveCamera;
+    if (!camera) return;
+    const start = Math.floor(new Date(archiveStart.value).getTime()/1000);
+    const now = Math.floor(Date.now()/1000);
+    const end = Math.min(now, start + Number(archiveDuration.value)*60);
+    if (!Number.isFinite(start) || start >= end) {
+      liveStatus.textContent = 'Выбери время в прошлом.';
+      return;
+    }
+    const request = ++streamRequest;
+    stopPlayer?.();
+    stopPlayer = undefined;
+    liveStatus.textContent = 'Загружаем архив…';
+    try {
+      const result = await window.EdPVZAccount.checkIvideon(undefined,camera.id,undefined,'load',{start,end});
+      if (request !== streamRequest) return;
+      stopPlayer = playIvideonHls(video,result.streamUrl,(message) => {
+        if (request === streamRequest) liveStatus.textContent = message || ('Архив · ' + new Date(start*1000).toLocaleString('ru-RU'));
+      });
+    } catch (error) {
+      if (request === streamRequest) liveStatus.textContent = error.message || 'Не удалось открыть архив.';
+    }
+  });
   const form = document.getElementById('ivideon-check');
   const input = document.getElementById('ivideon-key');
   const status = document.getElementById('ivideon-check-status');
@@ -168,7 +221,7 @@
     camera.pointId = settings?.point_id ?? null;
     showName();
     if (!camera.id) return row;
-    row.append(makeButton('Смотреть эфир', () => openLive(camera)));
+    row.append(makeButton('Смотреть эфир', () => openLive(camera)), makeButton('Архив', () => openArchive(camera)));
     if (!points) return row;
     const edit = makeButton('Настроить', openEditor);
     edit.setAttribute('aria-label','Настроить камеру ' + title.textContent);
