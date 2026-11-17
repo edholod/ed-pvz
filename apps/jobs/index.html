@@ -145,9 +145,27 @@ function listingCities(city, text) {
   }
   return [...found];
 }
+const telegramSourceCities = new Map([
+  ['mskpodmena', 'Москва'],
+  ['spbpvz', 'Санкт-Петербург'],
+  ['ozonpvzarh', 'Архангельск'],
+]);
+function citiesFromSource(item) {
+  const source = String(item.source || '').trim().replace(/^@/, '');
+  const knownCity = telegramSourceCities.get(source.toLowerCase());
+  if (knownCity) return [knownCity];
+  // Telegram stores many source names as handles with underscores or camel case.
+  const title = [item.source_title, item.channel_title, source]
+    .filter(Boolean).join(' · ').replace(/_/g, ' ')
+    .replace(/([a-zа-яё])([A-ZА-ЯЁ])/g, '$1 $2');
+  return listingCities('', title);
+}
 const telegramCityCache = new WeakMap();
 function telegramCities(item) {
-  if (!telegramCityCache.has(item)) telegramCityCache.set(item, listingCities(item.city, item.text));
+  if (!telegramCityCache.has(item)) {
+    const cities = listingCities(item.city, item.text);
+    telegramCityCache.set(item, cities.length ? cities : citiesFromSource(item));
+  }
   return telegramCityCache.get(item);
 }
 let cityOptionsKey;
