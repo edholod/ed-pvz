@@ -15,10 +15,32 @@ Deno.serve(async (req) => {
     if (!session.ok || await session.json() !== true) return reply({error:'Доступ запрещён'}, 403);
     const raw = await req.text();
     if (raw.length > 2048) return reply({error:'Некорректный запрос'}, 400);
-    let key;
-    try { key = JSON.parse(raw)?.key; } catch { return reply({error:'Некорректный запрос'}, 400); }
+    let payload;
+    try { payload = JSON.parse(raw); } catch { return reply({error:'Некорректный запрос'}, 400); }
+    const {key, cameraId} = payload ?? {};
     if (typeof key !== 'string' || !/^xtok-[a-zA-Z0-9_.~+/=\-]{8,512}$/.test(key)) return reply({error:'Нужен ключ Ivideon формата xtok-…'}, 400);
     const deadline = AbortSignal.timeout(8500);
+    if (cameraId !== undefined) {
+      if (typeof cameraId !== 'string' || !/^[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}$/.test(cameraId)) {
+        return reply({error:'Некорректный ID камеры Ivideon.'}, 400);
+      }
+      const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/live_stream');
+      endpoint.search = new URLSearchParams({
+        op:'GET', access_token:key, q:'2', video_codecs:'h264', audio_codecs:'none', format:'ws-fmp4',
+      }).toString();
+      const upstream = await fetch(endpoint, {redirect:'error', signal:deadline});
+      const stream = await upstream.json().catch(() => null);
+      if (!upstream.ok || stream?.success !== true || typeof stream?.result?.url !== 'string') {
+        return reply({error:'Ivideon не открыл эфир камеры (HTTP ' + upstream.status + ').'}, 422);
+      }
+      const url = new URL(stream.result.url);
+      if (url.protocol !== 'wss:' || url.username || url.password ||
+          !/(^|\.)(ivideon\.com|iv-cdn\.com|extcam\.com)$/.test(url.hostname) ||
+          decodeURIComponent(url.href).includes(key) || /xtok-/i.test(decodeURIComponent(url.href))) {
+        return reply({error:'Ivideon вернул неподдерживаемый адрес эфира.'}, 422);
+      }
+      return reply({streamUrl:url.href});
+    }
     const statuses: string[] = [];
     for (const resource of ['cameras', 'servers']) {
       const url = new URL('https://openapi-alpha.ivideon.com/' + resource);
@@ -38,6 +60,7 @@ Deno.serve(async (req) => {
         : items;
       if (resource === 'servers' && items.length && !items.some((server) => Array.isArray(server?.cameras))) continue;
       return reply({cameras:list.slice(0,250).map((item) => ({
+        id: typeof item?.id === 'string' && /^[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}$/.test(item.id) ? item.id : null,
         name: typeof item?.name === 'string' ? item.name.slice(0,160) : 'Камера Ivideon',
       }))});
     }

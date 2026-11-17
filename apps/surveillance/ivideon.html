@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
   <link rel="stylesheet" href="surveillance.css?v=private-1">
-  <script defer src="../../assets/account.js?v=ivideon-check-1"></script>
+  <script defer src="../../assets/account.js?v=ivideon-live-1"></script>
   <script type="module" src="ivideon.mjs?v=2"></script>
   <meta name="robots" content="noindex,nofollow">
   <script type="module" src="../../assets/surveillance-access.mjs?v=1"></script>
@@ -39,15 +39,20 @@
     </details>
   </section>
   <section class="panel" aria-labelledby="ivideon-check-heading">
-    <h2 id="ivideon-check-heading">Проверка ключа Ivideon</h2>
-    <p>Проверим, отдаёт ли Ivideon список камер по API. Ключ используется только для запроса.</p>
+    <h2 id="ivideon-check-heading">Камеры и прямой эфир</h2>
+    <p>Введи ключ Ivideon, чтобы загрузить камеры и открыть эфир. После выхода или обновления страницы ключ нужно ввести снова.</p>
     <form id="ivideon-check">
       <label for="ivideon-key">Ключ доступа к API</label>
       <input id="ivideon-key" type="password" required maxlength="517" autocomplete="off" spellcheck="false" placeholder="xtok-…">
-      <button type="submit" class="primary">Проверить ключ</button>
+      <button type="submit" class="primary">Загрузить камеры</button>
     </form>
     <p id="ivideon-check-status" role="status"></p>
-    <ul id="ivideon-check-cameras"></ul>
+    <ul id="ivideon-check-cameras" class="shortcut-list"></ul>
+    <div id="ivideon-live" hidden>
+      <div class="actions"><strong id="ivideon-live-name"></strong><button id="ivideon-live-stop" type="button" class="secondary">Остановить</button></div>
+      <p id="ivideon-live-status" role="status"></p>
+      <video id="ivideon-live-video" controls muted playsinline style="display:block;width:100%;max-height:65vh;background:#142032;border-radius:12px;margin-top:12px"></video>
+    </div>
   </section>
   <section class="panel" aria-labelledby="saved-heading">
     <h2 id="saved-heading">Быстрый доступ к камерам</h2>
@@ -72,6 +77,35 @@
   </section>
 </main>
 <script type="module">
+  import {playIvideon} from './ivideon-live.mjs?v=1';
+  const live = document.getElementById('ivideon-live');
+  const video = document.getElementById('ivideon-live-video');
+  const liveStatus = document.getElementById('ivideon-live-status');
+  const liveName = document.getElementById('ivideon-live-name');
+  let apiKey, stopPlayer, streamRequest = 0;
+  function stopLive() {
+    streamRequest++;
+    stopPlayer?.();
+    stopPlayer = undefined;
+    live.hidden = true;
+  }
+  document.getElementById('ivideon-live-stop').addEventListener('click', stopLive);
+  window.addEventListener('pagehide', stopLive);
+  async function openLive(camera) {
+    if (!apiKey || !window.EdPVZAccount?.user) return;
+    stopLive();
+    const request = streamRequest;
+    live.hidden = false;
+    liveName.textContent = camera.name;
+    liveStatus.textContent = 'Подключаем эфир…';
+    try {
+      const result = await window.EdPVZAccount.checkIvideon(apiKey, camera.id);
+      if (request !== streamRequest) return;
+      stopPlayer = playIvideon(video, result.streamUrl, (message) => { liveStatus.textContent = message; });
+    } catch (error) {
+      if (request === streamRequest) liveStatus.textContent = error.message || 'Не удалось открыть эфир.';
+    }
+  }
   const form = document.getElementById('ivideon-check');
   const input = document.getElementById('ivideon-key');
   const status = document.getElementById('ivideon-check-status');
@@ -81,6 +115,8 @@
   window.addEventListener('edpvz-auth-changed', () => {
     if (window.EdPVZAccount?.user) return;
     generation++;
+    apiKey = undefined;
+    stopLive();
     form.reset();
     status.textContent = '';
     cameras.replaceChildren();
@@ -94,6 +130,8 @@
       return;
     }
     const check = ++generation;
+    apiKey = undefined;
+    stopLive();
     button.disabled = true;
     cameras.replaceChildren();
     input.value = '';
@@ -101,10 +139,21 @@
     try {
       const result = await window.EdPVZAccount.checkIvideon(key);
       if (check !== generation) return;
+      apiKey = key;
       status.textContent = result.cameras.length ? 'Камеры, полученные из Ivideon' : 'Ivideon вернул пустой список камер.';
       for (const camera of result.cameras) {
         const item = document.createElement('li');
-        item.textContent = camera.name;
+        const name = document.createElement('span');
+        name.textContent = camera.name;
+        item.append(name);
+        if (camera.id) {
+          const open = document.createElement('button');
+          open.type = 'button';
+          open.className = 'secondary';
+          open.textContent = 'Смотреть эфир';
+          open.addEventListener('click', () => openLive(camera));
+          item.append(open);
+        }
         cameras.append(item);
       }
     } catch (error) {
