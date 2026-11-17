@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     if (raw.length > 2048) return reply({error:'Некорректный запрос'}, 400);
     let payload;
     try { payload = JSON.parse(raw); } catch { return reply({error:'Некорректный запрос'}, 400); }
-    const {key, cameraId} = payload ?? {};
+    const {key, cameraId, quality} = payload ?? {};
     if (typeof key !== 'string' || !/^xtok-[a-zA-Z0-9_.~+/=\-]{8,512}$/.test(key)) return reply({error:'Нужен ключ Ivideon формата xtok-…'}, 400);
     const deadline = AbortSignal.timeout(8500);
     if (cameraId !== undefined) {
@@ -82,7 +82,8 @@ Deno.serve(async (req) => {
       }
       const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/live_stream');
       endpoint.search = new URLSearchParams({
-        op:'GET', access_token:key, q:'2', video_codecs:'h264', audio_codecs:'none', format:'ws-fmp4',
+        op:'GET', access_token:key, q:quality === 1 ? '1' : '2', video_codecs:'h264',
+        ...(quality === 1 ? {} : {audio_codecs:'none'}), format:'ws-fmp4',
       }).toString();
       const upstream = await fetch(endpoint, {redirect:'error', signal:deadline});
       const stream = await upstream.json().catch(() => null);

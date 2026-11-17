@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
   <link rel="stylesheet" href="surveillance.css?v=private-1">
-  <script defer src="../../assets/account.js?v=ivideon-live-1"></script>
+  <script defer src="../../assets/account.js?v=ivideon-live-3"></script>
   <script type="module" src="ivideon.mjs?v=2"></script>
   <meta name="robots" content="noindex,nofollow">
   <script type="module" src="../../assets/surveillance-access.mjs?v=1"></script>
@@ -77,7 +77,7 @@
   </section>
 </main>
 <script type="module">
-  import {playIvideon} from './ivideon-live.mjs?v=2';
+  import {playIvideon} from './ivideon-live.mjs?v=3';
   const live = document.getElementById('ivideon-live');
   const video = document.getElementById('ivideon-live-video');
   const liveStatus = document.getElementById('ivideon-live-status');
@@ -97,14 +97,29 @@
     const request = streamRequest;
     live.hidden = false;
     liveName.textContent = camera.name;
-    liveStatus.textContent = 'Подключаем эфир…';
-    try {
-      const result = await window.EdPVZAccount.checkIvideon(apiKey, camera.id);
-      if (request !== streamRequest) return;
-      stopPlayer = playIvideon(video, result.streamUrl, (message) => { liveStatus.textContent = message; });
-    } catch (error) {
-      if (request === streamRequest) liveStatus.textContent = error.message || 'Не удалось открыть эфир.';
+    const key = apiKey;
+    async function connect(quality, previousError) {
+      liveStatus.textContent = quality === 2 ? 'Подключаем эфир…' : 'Пробуем другой видеопоток…';
+      function fail(message, started = false) {
+        if (request !== streamRequest) return;
+        if (quality === 2 && !started) {
+          void connect(1, message);
+          return;
+        }
+        liveStatus.textContent = previousError ? previousError + ' Повторная попытка: ' + message : message;
+      }
+      try {
+        const result = await window.EdPVZAccount.checkIvideon(key, camera.id, quality);
+        if (request !== streamRequest) return;
+        stopPlayer = playIvideon(video, result.streamUrl, (message, state) => {
+          if (message) fail(message, state.started);
+          else if (request === streamRequest) liveStatus.textContent = '';
+        });
+      } catch (error) {
+        fail(error.message || 'Не удалось открыть эфир.');
+      }
     }
+    await connect(2);
   }
   const form = document.getElementById('ivideon-check');
   const input = document.getElementById('ivideon-key');

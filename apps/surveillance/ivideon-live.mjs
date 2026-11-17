@@ -9,12 +9,14 @@ export function playIvideon(video, url, notify) {
   video.src = address;
   let buffer, stopped = false, playing = false, initializing = false, seenCodec;
   const queue = [];
+  let fragments = 0;
   let queuedBytes = 0;
   const startup = setTimeout(() => finish(
     seenCodec === 'audio' ? 'Ivideon передал аудиодорожку, но видеодорожка не появилась.' :
-    seenCodec ? 'Ivideon передал видеодорожку, но браузер не получил кадры.' :
+    seenCodec === 'video' && fragments ? 'Получено видеофрагментов: ' + fragments + ', но браузер не начал воспроизведение.' :
+    seenCodec === 'video' ? 'Ivideon описал видеодорожку, но не прислал видеофрагменты.' :
     'Ivideon не передал совместимую видеодорожку.'
-  ), 15000);
+  ), 12000);
   const stop = () => {
     if (stopped) return;
     stopped = true;
@@ -27,7 +29,7 @@ export function playIvideon(video, url, notify) {
   const finish = (message) => {
     if (stopped) return;
     stop();
-    notify(message);
+    notify(message, {started:playing});
   };
   function pump() {
     if (stopped || !buffer || buffer.updating) return;
@@ -45,7 +47,7 @@ export function playIvideon(video, url, notify) {
           clearTimeout(startup);
           if (video.currentTime < first) video.currentTime = first;
           video.play().catch(() => {});
-          notify('');
+          notify('', {started:true});
         }
       }
       const chunk = queue.shift();
@@ -69,7 +71,10 @@ export function playIvideon(video, url, notify) {
   socket.onmessage = ({data}) => {
     if (stopped) return;
     if (typeof data !== 'string') {
-      if (seenCodec !== 'audio' || initializing) enqueue(data);
+      if (seenCodec !== 'audio' || initializing) {
+        fragments++;
+        enqueue(data);
+      }
       return;
     }
     try {
