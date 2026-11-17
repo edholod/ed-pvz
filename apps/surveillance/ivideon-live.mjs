@@ -151,51 +151,96 @@ export function playIvideon(video, url, notify) {
 }
 
 export function playIvideonHls(video, url, notify) {
-  let player, stopped = false, started = false;
-  const deadline = setTimeout(() => fail('Ivideon HLS: видео не загрузилось.'), 16000);
-  const onPlaying = () => {
-    if (started) return;
-    started = true;
-    clearTimeout(deadline);
-    notify('', {started:true});
-  };
-  const onError = () => fail('Браузер не смог открыть эфир Ivideon HLS.');
-  const stop = () => {
-    if (stopped) return;
-    stopped = true;
-    clearTimeout(deadline);
-    video.removeEventListener('playing', onPlaying);
-    video.removeEventListener('error', onError);
+  const appleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const supportsNative = Boolean(video.canPlayType('application/vnd.apple.mpegurl'));
+  const playerModes = appleMobile && supportsNative ? ['native','mse'] :
+    supportsNative ? ['mse','native'] : ['mse'];
+  let player, mode, timer, started = false, stopped = false, attempt = 0;
+  let manual = false;
+
+  function clearSource() {
     player?.destroy();
+    player = undefined;
     video.removeAttribute('src');
     video.load();
-  };
-  const fail = (message) => {
+  }
+  function stop() {
     if (stopped) return;
+    stopped = true;
+    attempt++;
+    clearTimeout(timer);
+    video.removeEventListener('playing', onPlaying);
+    video.removeEventListener('error', onError);
+    clearSource();
+  }
+  function onPlaying() {
+    if (started || stopped) return;
+    started = true;
+    clearTimeout(timer);
+    notify('', {started:true});
+  }
+  function onError() {
+    if (mode === 'native') next('Браузер не смог открыть поток Ivideon.');
+  }
+  function next(message) {
+    if (stopped) return;
+    if (!started && playerModes.length) {
+      startMode();
+      return;
+    }
     stop();
     notify(message, {started});
-  };
-  video.addEventListener('playing', onPlaying);
-  video.addEventListener('error', onError);
-  video.disableRemotePlayback = true;
-  const play = () => video.play().catch(() => {});
-  function playNative() {
-    if (stopped) return;
-    if (!video.canPlayType('application/vnd.apple.mpegurl')) return fail('В этом браузере просмотр HLS недоступен.');
-    video.crossOrigin = 'anonymous';
-    video.src = url;
-    void play();
   }
-  import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.mjs').then(({default:Hls}) => {
-    if (stopped) return;
-    if (!Hls.isSupported()) return playNative();
-    player = new Hls({enableWorker:false, maxBufferLength:20, backBufferLength:20});
-    player.on(Hls.Events.ERROR, (_event, data) => {
-      if (data.fatal) fail('Ivideon HLS: ' + (data.details?.replace(/[^a-zA-Z]/g,'') || 'ошибка потока') + '.');
+  function play(currentAttempt) {
+    video.play().catch(error => {
+      if (stopped || attempt !== currentAttempt || error.name !== 'NotAllowedError') return;
+      manual = true;
+      clearTimeout(timer);
+      notify('Нажми ▶ на видео, чтобы запустить воспроизведение.', {started:true});
     });
-    player.on(Hls.Events.MANIFEST_PARSED, play);
-    player.loadSource(url);
-    player.attachMedia(video);
-  }).catch(playNative);
+  }
+  function startMode() {
+    const currentAttempt = ++attempt;
+    mode = undefined;
+    clearTimeout(timer);
+    clearSource();
+    manual = false;
+    mode = playerModes.shift();
+    timer = setTimeout(() => {
+      if (!manual && attempt === currentAttempt) next('Ivideon HLS: видео не загрузилось.');
+    },appleMobile ? 30000 : 16000);
+    if (mode === 'native') {
+      const endpoint = new URL(url);
+      const relay = endpoint.pathname.endsWith('/functions/v1/edpvz-ivideon-check');
+      if (relay) video.crossOrigin = 'anonymous';
+      else video.removeAttribute('crossorigin');
+      video.src = url;
+      play(currentAttempt);
+      return;
+    }
+    import('https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.mjs').then(({default:Hls}) => {
+      if (stopped || attempt !== currentAttempt) return;
+      if (!Hls.isSupported()) return next('В этом браузере просмотр HLS недоступен.');
+      player = new Hls({enableWorker:false, maxBufferLength:20, backBufferLength:20});
+      player.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal && attempt === currentAttempt) {
+          next('Ivideon HLS: ' + (data.details?.replace(/[^a-zA-Z]/g,'') || 'ошибка потока') + '.');
+        }
+      });
+      player.on(Hls.Events.MANIFEST_PARSED, () => play(currentAttempt));
+      player.loadSource(url);
+      player.attachMedia(video);
+    }).catch(() => {
+      if (!stopped && attempt === currentAttempt) next('Не удалось загрузить плеер HLS.');
+    });
+  }
+  video.addEventListener('playing',onPlaying);
+  video.addEventListener('error',onError);
+  video.disableRemotePlayback = true;
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+  startMode();
   return stop;
 }
