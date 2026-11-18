@@ -63,6 +63,7 @@ export function createArchiveStudio(options) {
     return b;
   }
   function persist() {
+    if(!loaded){feedback('Очередь ещё загружается. Повтори действие после восстановления соединения.');return;}
     clearTimeout(saving);
     const owner = user;
     saving = setTimeout(() => {
@@ -101,7 +102,6 @@ export function createArchiveStudio(options) {
   async function preview() {
     if (!camera) return;
     const {start,end} = interval();
-    if (end-start > 3600) throw Error('Для просмотра выбери участок до часа. В очередь подготовки можно добавить весь интервал.');
     const active = ++generation;
     stop(); stopPlayback();
     status.textContent = 'Загружаем запись…';
@@ -115,6 +115,7 @@ export function createArchiveStudio(options) {
       if(active!==generation)return;
       job.previewGeneration=active;jobs.unshift(job);persist();drawJobs();schedule();
     }
+    if(end-start>3600){await compatiblePreview();return;}
     try {
       const result = await account().checkIvideon(undefined,chosen.id,undefined,'load',{start,end,profile:get('profile').value});
       if (active !== generation) return;
@@ -150,12 +151,14 @@ export function createArchiveStudio(options) {
   }
   async function addClip() {
     if (!camera) return;
+    if(!loaded)throw Error('Не удалось прочитать сохранённую очередь. Обнови страницу перед добавлением фрагментов.');
     const range = interval();
     if (clips.length>=50) throw Error('В одном запросе можно подготовить до 50 отдельных файлов.');
     clips.push({cameraId:camera.id,cameraName:camera.displayName||camera.name,...range,name:get('name').value.trim() || (camera.displayName||camera.name)+' '+stamp(range.start)});
     persist();drawClips();feedback('Фрагмент добавлен. Можно выбрать следующий участок или другую камеру.');
   }
   async function prepare() {
+    if(!loaded)throw Error('Не удалось прочитать сохранённую очередь. Обнови страницу.');
     if (!clips.length) throw Error('Добавь хотя бы один фрагмент.');
     const owner = user;
     const payload = {clips:clips.map(c=>({...c})),quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID()};
@@ -178,15 +181,20 @@ export function createArchiveStudio(options) {
       if (!response.ok || !response.body) throw Error('Не удалось скачать файл.');
       const writable = await handle.createWritable();
       await response.body.pipeTo(writable);
-    } else if (pick && navigator.share && navigator.canShare) {
+    } else if (pick && navigator.share && navigator.canShare && file.size<100*1024*1024) {
       const response = await fetch(result.url);
       if (!response.ok) throw Error('Не удалось скачать файл.');
       const blob = await response.blob();
       const shared = new File([blob],result.name,{type:file.mime||'video/mp4'});
-      if (navigator.canShare({files:[shared]})) await navigator.share({files:[shared]});
-      else download(result.url,result.name);
+      if (navigator.canShare({files:[shared]})) {
+        const row=get('jobs').querySelector('[data-file="'+job.id+'-'+file.id+'"]');
+        row.querySelector('.as-share-ready')?.remove();
+        const ready=button('Сохранить через меню устройства',()=>navigator.share({files:[shared]}));
+        ready.classList.add('as-share-ready');row.querySelector('.as-actions').append(ready);
+        feedback('Файл готов. Нажми «Сохранить через меню устройства» и выбери «Сохранить в Файлы» или приложение диска.');
+      } else download(result.url,result.name);
     } else {
-      if (pick) feedback('Этот браузер выбирает папку через своё окно загрузки. На iPhone используй «Поделиться» → «Сохранить в Файлы».');
+      if (pick) feedback('Этот браузер выбирает папку через своё окно загрузки. На iPhone открой скачанный файл и выбери «Поделиться» → «Сохранить в Файлы».');
       download(result.url,result.name);
     }
   }
