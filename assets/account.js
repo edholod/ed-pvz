@@ -80,4 +80,16 @@ async function readTable(path){if(!/^edpvz_[a-z_]+\?/.test(path))throw Error('Н
 async function rpc(name,args){if(!['edpvz_calendar_write','edpvz_dispute_manage_access','edpvz_dispute_owner_access','edpvz_dispute_manage_password','edpvz_dispute_redeem_password','edpvz_surveillance_allowed','edpvz_ivideon_allowed','edpvz_ivideon_save_camera'].includes(name))throw Error('Неизвестная операция');await ensure();if(!session)throw Error('Войдите в аккаунт');return request('/rest/v1/rpc/'+name,{method:'POST',body:JSON.stringify(args)})}
 async function createPoint(point){await ensure();if(!session)throw Error('Войдите в аккаунт');if(!['wb','ozon','ym'].includes(point.market))throw Error('Выберите маркетплейс');return request('/rest/v1/edpvz_points',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({point_id:point.point_id,name:point.name,market:point.market,owner_id:session.user.id})})}
 async function checkIvideon(key,cameraId,quality,action,archive){await ensure();if(!session)throw Error('Войдите в аккаунт');return request('/functions/v1/edpvz-ivideon-check',{method:'POST',body:JSON.stringify({key,cameraId,quality,action,archive})})}
-window.EdPVZAccount={checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
+async function archiveRequest(path,body){
+ await ensure();
+ if(!session)throw Error('Войдите в аккаунт');
+ if(!/^\/(jobs|cloud)(\/|$)/.test(path)||path.includes('..')||path.includes('?'))throw Error('Некорректный запрос архива');
+ const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),120000);
+ try{
+  const r=await fetch('https://edpvz-telegram-collector.onrender.com/archive'+path,{method:body===undefined?'GET':'POST',signal:controller.signal,headers:headers(session.access_token),body:body===undefined?undefined:JSON.stringify(body)});
+  const data=await r.json().catch(()=>({detail:'Сервер архива вернул непонятный ответ.'}));
+  if(!r.ok){const e=Error(typeof data.detail==='string'?data.detail:'Не удалось выполнить запрос архива');e.status=r.status;throw e;}
+  return data;
+ }catch(error){if(error.name==='AbortError')throw Error('Сервер архива не ответил вовремя. Повтори запрос.');throw error;}finally{clearTimeout(timer);}
+}
+window.EdPVZAccount={archiveRequest,checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();

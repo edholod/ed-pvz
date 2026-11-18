@@ -308,7 +308,8 @@ Deno.serve(async (req) => {
           return reply({exportId:id});
         }
         let status = 0;
-        for (const profile of ['1','2']) {
+        const requestedProfiles = archive.profile === 'high' ? ['2'] : archive.profile === 'low' ? ['1'] : ['1','2'];
+        for (const profile of requestedProfiles) {
           const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/archive_stream');
           endpoint.search = new URLSearchParams({
             op:'GET',access_token:key,format:'hls',q:profile,start_time:String(start),end_time:String(end),
@@ -331,11 +332,11 @@ Deno.serve(async (req) => {
         op:'GET', access_token:key, q:quality === 1 ? '1' : '2', video_codecs:'h264',
         ...(quality === 1 ? {} : {audio_codecs:'none'}), format:'ws-fmp4',
       }).toString();
-      if (quality === 'hls' || quality === 1) {
+      if (['hls','high','low',1].includes(quality)) {
         try {
           const hls = new URL(endpoint.href);
           hls.searchParams.set('format', 'hls');
-          hls.searchParams.set('q', quality === 1 ? '2' : '1');
+          hls.searchParams.set('q', quality === 'high' || quality === 1 ? '2' : '1');
           hls.searchParams.delete('audio_codecs');
           hls.searchParams.delete('video_codecs');
           const res = await fetch(hls, {redirect:'manual', signal:AbortSignal.timeout(3500)});

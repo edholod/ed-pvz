@@ -6,7 +6,8 @@
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
   <link rel="stylesheet" href="surveillance.css?v=private-1">
-  <script defer src="../../assets/account.js?v=ivideon-archive-1"></script>
+  <link rel="stylesheet" href="archive-studio.css?v=1">
+  <script defer src="../../assets/account.js?v=archive-studio-1"></script>
   <script type="module" src="ivideon.mjs?v=3"></script>
   <meta name="robots" content="noindex,nofollow">
   <script type="module" src="../../assets/surveillance-access.mjs?v=2"></script>
@@ -35,18 +36,11 @@
   <header><div><h1>Ivideon</h1><p>Видеонаблюдение твоих ПВЗ</p></div></header>
   <section class="panel" aria-labelledby="ivideon-access">
     <h2 id="ivideon-access">Камеры и архив</h2>
-    <p>Для просмотра или скачивания записи выбери «Архив» рядом с камерой.</p>
+    <p>Открой «Архив», выбери интервалы и подготовь отдельные файлы для сохранения.</p>
     <div class="actions">
       <a class="primary" href="https://my.ivideon.com/" target="_blank" rel="noopener noreferrer">Открыть кабинет Ivideon ↗</a>
     </div>
-    <details>
-      <summary>Как скачать фрагмент</summary>
-      <ol>
-        <li>В Ivideon открой нужную камеру и нажми «Экспорт» под видео.</li>
-        <li>Выбери фрагмент на шкале времени и нажми «Экспортировать».</li>
-        <li>Скачай готовый файл в разделе «Экспорт архива».</li>
-      </ol>
-    </details>
+
   </section>
   <section class="panel" aria-labelledby="ivideon-check-heading">
     <h2 id="ivideon-check-heading">Камеры и прямой эфир</h2>
@@ -61,14 +55,9 @@
     <ul id="ivideon-check-cameras" class="shortcut-list"></ul>
     <div id="ivideon-live" hidden>
       <div class="actions"><strong id="ivideon-live-name"></strong><button id="ivideon-live-stop" type="button" class="secondary">Остановить</button></div>
-      <form id="ivideon-archive" class="iv-camera-edit" hidden>
-        <label>Начало записи <input id="ivideon-archive-start" type="datetime-local" required></label>
-        <label>Длительность <select id="ivideon-archive-duration"><option value="1">1 минута</option><option value="5" selected>5 минут</option><option value="15">15 минут</option><option value="30">30 минут</option><option value="60">1 час</option></select></label>
-        <button class="primary" type="submit">Показать запись</button>
-        <button class="secondary" type="submit" id="ivideon-export">Подготовить MP4</button>
-        <p id="ivideon-export-result" role="status" hidden></p>
-        <p>Дата и время по часовому поясу этого устройства.</p>
-      </form>
+      <label id="ivideon-live-quality-label">Качество эфира
+        <select id="ivideon-live-quality"><option value="auto">Автоматически</option><option value="high">Основной поток</option><option value="low">Дополнительный поток</option></select>
+      </label>
       <p id="ivideon-live-status" role="status"></p>
       <video id="ivideon-live-video" controls muted playsinline style="display:block;width:100%;max-height:65vh;background:#142032;border-radius:12px;margin-top:12px"></video>
     </div>
@@ -96,29 +85,24 @@
   </section>
 </main>
 <script type="module">
+  import {createArchiveStudio} from './archive-studio.mjs?v=1';
   import {playIvideon, playIvideonHls} from './ivideon-live.mjs?v=9';
   const live = document.getElementById('ivideon-live');
   const video = document.getElementById('ivideon-live-video');
   const liveStatus = document.getElementById('ivideon-live-status');
   const liveName = document.getElementById('ivideon-live-name');
-  const archiveForm = document.getElementById('ivideon-archive');
-  const archiveStart = document.getElementById('ivideon-archive-start');
-  const archiveDuration = document.getElementById('ivideon-archive-duration');
-  const exportButton = document.getElementById('ivideon-export');
-  const exportResult = document.getElementById('ivideon-export-result');
-  let exportRequest = 0;
-  let archiveCamera, connected = false, stopPlayer, activeCameraId, streamRequest = 0;
+  const liveQuality = document.getElementById('ivideon-live-quality');
+  let connected = false, stopPlayer, activeCameraId, liveCamera, streamRequest = 0;
+  const archiveStudio = createArchiveStudio({video,live,liveName,status:liveStatus,playHls:playIvideonHls,
+    stopPlayback:()=>{streamRequest++;stopPlayer?.();stopPlayer=undefined;}});
   function stopLive() {
     streamRequest++;
     stopPlayer?.();
     stopPlayer = undefined;
     activeCameraId = undefined;
-    archiveCamera = undefined;
-    exportRequest++;
-    exportButton.disabled = false;
-    exportResult.replaceChildren();
-    exportResult.hidden = true;
-    archiveForm.hidden = true;
+    liveCamera = undefined;
+    archiveStudio.reset();
+    document.getElementById('ivideon-live-quality-label').hidden = false;
     live.hidden = true;
   }
   document.getElementById('ivideon-live-stop').addEventListener('click', stopLive);
@@ -129,19 +113,20 @@
     const request = streamRequest;
     live.hidden = false;
     activeCameraId = camera.id;
+    liveCamera = camera;
     liveName.textContent = camera.displayName || camera.name;
     async function connect(quality, previousError) {
       liveStatus.textContent = quality === 2 ? 'Подключаем эфир…' : 'Пробуем другой видеопоток…';
       function fail(message, started = false) {
         if (request !== streamRequest) return;
-        if (quality === 2 && !started) {
+        if (quality === 2 && !started && liveQuality.value === 'auto') {
           void connect(1, message);
           return;
         }
         liveStatus.textContent = previousError ? previousError + ' Повторная попытка: ' + message : message;
       }
       try {
-        const result = await window.EdPVZAccount.checkIvideon(undefined, camera.id, quality === 2 ? 'hls' : quality, 'load');
+        const result = await window.EdPVZAccount.checkIvideon(undefined, camera.id, liveQuality.value === 'auto' ? (quality === 2 ? 'hls' : quality) : liveQuality.value, 'load');
         if (request !== streamRequest) return;
         const play = result.streamType === 'hls' ? playIvideonHls : playIvideon;
         stopPlayer = play(video, result.streamUrl, (message, state) => {
@@ -154,86 +139,14 @@
     }
     await connect(2);
   }
-  function dateInputValue(date) {
-    const local = new Date(date.getTime() - date.getTimezoneOffset()*60000);
-    return local.toISOString().slice(0,16);
-  }
+  liveQuality.addEventListener('change',()=>{if(liveCamera)void openLive(liveCamera);});
   function openArchive(camera) {
     if (!connected || !window.EdPVZAccount?.user) return;
     stopLive();
     activeCameraId = camera.id;
-    archiveCamera = camera;
-    live.hidden = archiveForm.hidden = false;
-    liveName.textContent = camera.displayName || camera.name;
-    archiveStart.max = dateInputValue(new Date());
-    archiveStart.value = dateInputValue(new Date(Date.now()-10*60000));
-    liveStatus.textContent = '';
-    archiveStart.focus();
+    document.getElementById('ivideon-live-quality-label').hidden = true;
+    archiveStudio.open(camera);
   }
-  async function exportArchive(camera, start, end) {
-    const attempt = ++exportRequest;
-    const active = () => attempt === exportRequest && archiveCamera?.id === camera.id;
-    exportButton.disabled = true;
-    exportResult.hidden = false;
-    exportResult.textContent = 'Запрашиваем MP4 у Ivideon…';
-    try {
-      const account = window.EdPVZAccount;
-      const {exportId} = await account.checkIvideon(undefined,camera.id,undefined,'load',{mode:'export',start,end});
-      if (!exportId) throw Error('Ivideon не вернул номер экспорта.');
-      for (let index = 0; index < 50 && active(); index++) {
-        const result = await account.checkIvideon(undefined,camera.id,undefined,'load',{mode:'export-status',exportId});
-        if (!active()) return;
-        if (result.state === 'failed') throw Error('Ivideon не смог подготовить MP4 за выбранный интервал.');
-        if (result.state === 'ready') {
-          const link = document.createElement('a');
-          link.className = 'primary';
-          link.href = result.downloadUrl;
-          link.rel = 'noopener noreferrer';
-          link.download = '';
-          link.textContent = 'Скачать MP4';
-          exportResult.replaceChildren(link);
-          return;
-        }
-        const percent = result.progress > 0 ? ' · ' + result.progress + '%' : '';
-        exportResult.textContent = 'Ivideon готовит MP4' + percent + '…';
-        await new Promise(resolve => setTimeout(resolve,3000));
-      }
-      if (active()) exportResult.textContent = 'MP4 ещё готовится. Готовый файл можно открыть в разделе «Экспорт архива» кабинета Ivideon.';
-    } catch (error) {
-      if (active()) exportResult.textContent = error.message || 'Не удалось подготовить MP4.';
-    } finally {
-      if (active()) exportButton.disabled = false;
-    }
-  }
-  archiveForm.addEventListener('submit', async event => {
-    event.preventDefault();
-    const camera = archiveCamera;
-    if (!camera) return;
-    const start = Math.floor(new Date(archiveStart.value).getTime()/1000);
-    const now = Math.floor(Date.now()/1000);
-    const end = Math.min(now, start + Number(archiveDuration.value)*60);
-    if (!Number.isFinite(start) || start >= end) {
-      liveStatus.textContent = 'Выбери время в прошлом.';
-      return;
-    }
-    if (event.submitter === exportButton) {
-      void exportArchive(camera,start,end);
-      return;
-    }
-    const request = ++streamRequest;
-    stopPlayer?.();
-    stopPlayer = undefined;
-    liveStatus.textContent = 'Загружаем архив…';
-    try {
-      const result = await window.EdPVZAccount.checkIvideon(undefined,camera.id,undefined,'load',{start,end});
-      if (request !== streamRequest) return;
-      stopPlayer = playIvideonHls(video,result.streamUrl,(message) => {
-        if (request === streamRequest) liveStatus.textContent = message || ('Архив · ' + new Date(start*1000).toLocaleString('ru-RU'));
-      });
-    } catch (error) {
-      if (request === streamRequest) liveStatus.textContent = error.message || 'Не удалось открыть архив.';
-    }
-  });
   const form = document.getElementById('ivideon-check');
   const input = document.getElementById('ivideon-key');
   const status = document.getElementById('ivideon-check-status');

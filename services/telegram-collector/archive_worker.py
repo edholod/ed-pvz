@@ -1,0 +1,476 @@
+"""Authenticated archive preparation, independent of provider MP4 export limits."""
+import asyncio
+import hashlib
+import hmac
+import json
+import math
+import os
+import re
+import secrets
+import shutil
+import time
+from pathlib import Path
+from urllib.parse import urlparse
+
+import httpx
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse
+
+router = APIRouter(prefix='/archive')
+BASE = os.environ.get('SUPABASE_URL', 'https://duerixyhzapotoeclggz.supabase.co').rstrip('/')
+ANON = os.environ.get('SUPABASE_ANON_KEY') or 'sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV'
+ROOT = Path(os.environ.get('ARCHIVE_WORK_DIR', '/tmp/edpvz-archive-files'))
+ROOT.mkdir(parents=True, exist_ok=True)
+JOBS = {}
+TASKS = set()
+LOCK = asyncio.Semaphore(1)
+SIGNING_KEY = os.environ.get('ARCHIVE_SIGNING_KEY', '')
+PROFILES = {'source': None, '1080': 1080, '720': 720, '480': 480}
+
+
+def clean_name(value):
+    value = re.sub(r'[\x00-\x1f/\\:*?"<>|]', '_', str(value)).strip(' .')[:110]
+    return value or 'Запись'
+
+
+def chunks(start, end, size=900):
+    while start < end:
+        stop = min(end, start + size)
+        yield start, stop
+        start = stop
+
+
+async def auth(request):
+    header = request.headers.get('authorization', '')
+    if not header.startswith('Bearer '):
+        raise HTTPException(401, 'Войди в аккаунт «Эд ПВЗ».')
+    headers = {'apikey': ANON, 'authorization': header, 'content-type': 'application/json'}
+    async with httpx.AsyncClient(timeout=12) as client:
+        identity = await client.get(BASE + '/auth/v1/user', headers=headers)
+        if identity.status_code != 200:
+            raise HTTPException(401, 'Обнови вход в аккаунт «Эд ПВЗ».')
+        allowed = await client.post(BASE + '/rest/v1/rpc/edpvz_ivideon_allowed', headers=headers, json={})
+    if allowed.status_code != 200 or allowed.json() is not True:
+        raise HTTPException(403, 'Раздел доступен собственнику.')
+    return identity.json()['id'], headers
+
+
+async def edge(job, payload):
+    async with httpx.AsyncClient(timeout=25) as client:
+        result = await client.post(BASE + '/functions/v1/edpvz-ivideon-check', headers={**job['headers'], 'origin': 'https://edpvz.ru'}, json=payload)
+    if result.status_code != 200:
+        data = result.json()
+        raise RuntimeError(data.get('error', 'Ivideon не отдал запись.'))
+    return result.json()
+
+
+def media_url(value):
+    parsed = urlparse(value)
+    if parsed.scheme != 'https' or parsed.username or parsed.password or parsed.port:
+        raise RuntimeError('Неверный адрес видеосервера.')
+    if not any(parsed.hostname == d or parsed.hostname.endswith('.' + d) for d in ('ivideon.com', 'iv-cdn.com', 'extcam.com')):
+        raise RuntimeError('Неверный домен видеосервера.')
+    return value
+
+
+async def process(args, job, timeout=None):
+    if job.get('cancelled'):
+        raise RuntimeError('Подготовка отменена.')
+    proc = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    job['process'] = proc
+    try:
+        out, err = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        if job.get('cancelled'):
+            raise RuntimeError('Подготовка отменена.')
+        if proc.returncode:
+            # ffmpeg logs contain private media URLs. Never expose them.
+            raise RuntimeError('Не удалось обработать видео. В записи может быть пробел или неподдерживаемый поток.')
+        return out
+    finally:
+        if proc.returncode is None:
+            proc.kill()
+            await proc.wait()
+        job.pop('process', None)
+
+
+async def probe(path, job):
+    raw = await process(['ffprobe', '-v', 'error', '-show_format', '-show_streams', '-of', 'json', str(path)], job, 60)
+    info = json.loads(raw)
+    video = next((x for x in info['streams'] if x['codec_type'] == 'video'), None)
+    if not video:
+        raise RuntimeError('В файле отсутствует видеодорожка.')
+    fps = video.get('avg_frame_rate', '25/1').split('/')
+    rate = float(fps[0]) / float(fps[1]) if len(fps) == 2 and float(fps[1]) else 25
+    return float(video.get('duration') or info['format']['duration']), max(rate, 1), video['width'], video['height']
+
+
+async def run(job):
+    async with LOCK:
+        if job.get('cancelled'):
+            return
+        folder = ROOT / job['id']
+        folder.mkdir(exist_ok=True)
+        job.update(state='processing', message='Подготавливаем запись')
+        try:
+            total = sum(x['end'] - x['start'] for x in job['clips'])
+            completed = 0
+            for index, clip in enumerate(job['clips']):
+                job['message'] = 'Фрагмент ' + str(index + 1) + ' из ' + str(len(job['clips']))
+                pieces = []
+                # Retry a refused interval by bisecting it, down to one minute.
+                pending = list(chunks(clip['start'], clip['end']))
+                width = None
+                while pending:
+                    start, end = pending.pop(0)
+                    if shutil.disk_usage(ROOT).free < 256 * 1024 * 1024:
+                        raise RuntimeError('На сервере недостаточно места. Скачай готовые файлы и повтори позже.')
+                    result = await edge(job, {'action':'load', 'cameraId':clip['cameraId'], 'quality': 'hls', 'archive':{'start':start, 'end':end, 'profile':job['profile']}})
+                    url = media_url(result['streamUrl'])
+                    path = folder / ('part-' + str(index) + '-' + str(start) + '.mp4')
+                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-i', url, '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
+                    target = PROFILES[job['quality']]
+                    if width:
+                        args += ['-vf', f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
+                    elif target:
+                        args += ['-vf', f"scale=-2:'min({target},ih)',setsar=1"]
+                    args += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-pix_fmt', 'yuv420p', '-fps_mode', 'passthrough', '-c:a', 'aac', '-ar', '48000', '-af', 'aresample=async=1:first_pts=0', '-movflags', '+faststart', str(path)]
+                    try:
+                        await process(args, job)
+                        duration, fps, w, h = await probe(path, job)
+                        if abs(duration - (end-start)) > max(.25, 2/fps):
+                            raise RuntimeError('Длительность полученной записи не совпадает с выбранным интервалом. Возможно, в архиве есть пропуск.')
+                    except RuntimeError:
+                        path.unlink(missing_ok=True)
+                        if end-start > 60 and not job.get('cancelled'):
+                            middle = (start+end)//2
+                            pending[0:0] = [(start,middle),(middle,end)]
+                            continue
+                        raise
+                    width = width or (w,h)
+                    pieces.append(path)
+                    completed += end-start
+                    job['progress'] = min(98, round(completed/total*98))
+                output = folder / (str(index) + '.mp4')
+                if len(pieces) == 1:
+                    pieces[0].replace(output)
+                else:
+                    manifest = folder / ('concat-' + str(index) + '.txt')
+                    manifest.write_text(''.join("file '" + str(p) + "'\n" for p in pieces))
+                    await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',str(manifest),'-map','0','-c','copy','-movflags','+faststart',str(output)],job)
+                duration, fps, w, h = await probe(output,job)
+                if abs(duration-(clip['end']-clip['start'])) > max(.3, 2/fps):
+                    raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
+                job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':duration,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'sourceStart':clip['start']})
+                for part in pieces:
+                    part.unlink(missing_ok=True)
+            job.update(state='ready',progress=100,message='Файлы готовы')
+        except Exception as exc:
+            job.update(state='cancelled' if job.get('cancelled') else 'failed',message=str(exc) if isinstance(exc,RuntimeError) else 'Подготовка прервана. Повтори запрос.')
+        finally:
+            job['updated'] = time.time()
+
+
+def public_job(job):
+    return {k:job[k] for k in ('id','state','progress','message','created')} | {'files':[{k:v for k,v in f.items() if k != 'path'} for f in job['files']]}
+
+
+def owned(job_id, user):
+    job = JOBS.get(job_id)
+    if not job or job['user'] != user:
+        raise HTTPException(404,'Подготовка не найдена или сервер перезапустился. Создай запрос снова.')
+    return job
+
+
+def expire():
+    now = time.time()
+    for key, job in list(JOBS.items()):
+        if job['state'] in ('ready','failed','cancelled') and now-job.get('updated',job['created']) > 86400:
+            shutil.rmtree(ROOT/key,ignore_errors=True)
+            del JOBS[key]
+
+
+@router.get('/health')
+async def health():
+    return {'ok':bool(shutil.which('ffmpeg') and SIGNING_KEY), 'version':1, 'googleClientId':os.getenv('ARCHIVE_GOOGLE_CLIENT_ID',''), 'yandexClientId':os.getenv('ARCHIVE_YANDEX_CLIENT_ID','')}
+
+
+@router.post('/jobs')
+async def create(request: Request):
+    user, headers = await auth(request)
+    data = await request.json()
+    if not isinstance(data,dict) or data.get('quality') not in PROFILES or data.get('profile') not in ('auto','high','low'):
+        raise HTTPException(400,'Выбери качество записи.')
+    clips = data.get('clips')
+    if not isinstance(clips,list) or not 1 <= len(clips) <= 50:
+        raise HTTPException(400,'Добавь от 1 до 50 фрагментов.')
+    now = int(time.time())
+    normalized = []
+    for clip in clips:
+        if not isinstance(clip,dict) or not re.fullmatch(r'[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}',str(clip.get('cameraId',''))):
+            raise HTTPException(400,'Некорректная камера.')
+        start,end = clip.get('start'),clip.get('end')
+        if type(start) is not int or type(end) is not int or not 0 < start < end <= now:
+            raise HTTPException(400,'Укажи существующий интервал архива.')
+        normalized.append({'cameraId':clip['cameraId'],'start':start,'end':end,'name':clean_name(clip.get('name','Запись'))})
+    expire()
+    request_id = data.get('requestId')
+    if not isinstance(request_id,str) or not re.fullmatch(r'[a-zA-Z0-9-]{10,80}',request_id):
+        raise HTTPException(400,'Некорректный номер запроса.')
+    for j in JOBS.values():
+        if j['user']==user and j['requestId']==request_id:
+            return public_job(j)
+    existing = [j for j in JOBS.values() if j['user']==user and j['state'] in ('queued','processing')]
+    if len(existing) >= 2:
+        raise HTTPException(409,'Уже готовятся два запроса. Дождись завершения или отмени один.')
+    if len([j for j in JOBS.values() if j['state'] in ('queued','processing')]) >= 10:
+        raise HTTPException(429,'Сервер занят подготовкой записей. Повтори позже.')
+    job = {'id':secrets.token_urlsafe(18),'user':user,'headers':headers,'clips':normalized,'quality':data['quality'],'profile':data['profile'],'requestId':request_id,'state':'queued','message':'Ожидание обработки','progress':0,'files':[],'created':time.time()}
+    JOBS[job['id']] = job
+    task = asyncio.create_task(run(job))
+    TASKS.add(task)
+    task.add_done_callback(TASKS.discard)
+    return public_job(job)
+
+
+@router.get('/jobs/{job_id}')
+async def status(job_id:str, request:Request):
+    user, headers = await auth(request)
+    job = owned(job_id,user)
+    job['headers'] = headers
+    return public_job(job)
+
+
+@router.post('/jobs/{job_id}/cancel')
+async def cancel(job_id:str,request:Request):
+    user,_ = await auth(request)
+    job = owned(job_id,user)
+    if job['state'] in ('queued','processing'):
+        job['cancelled'] = True
+        if job.get('process') and job['process'].returncode is None:
+            job['process'].terminate()
+        job.update(state='cancelled',message='Отменено',updated=time.time())
+    return public_job(job)
+
+
+@router.post('/jobs/{job_id}/file/{file_id}')
+async def file_action(job_id:str,file_id:str,request:Request):
+    user,_ = await auth(request)
+    job = owned(job_id,user)
+    item = next((f for f in job['files'] if f['id']==file_id),None)
+    if not item or not Path(item['path']).is_file():
+        raise HTTPException(404,'Файл недоступен.')
+    data = await request.json()
+    if data.get('name') is not None:
+        suffix = '.jpg' if item.get('mime') == 'image/jpeg' else '.mp4'
+        item['name'] = clean_name(data['name']).removesuffix(suffix) + suffix
+    if not SIGNING_KEY:
+        raise HTTPException(503,'Скачивание временно недоступно.')
+    expires = str(int(time.time())+900)
+    content = job_id + ':' + file_id + ':' + expires
+    signature = hmac.new(SIGNING_KEY.encode(),content.encode(),hashlib.sha256).hexdigest()
+    return {'name':item['name'],'url':'/archive/download/' + job_id + '/' + file_id + '?expires=' + expires + '&signature=' + signature}
+
+
+@router.get('/download/{job_id}/{file_id}')
+async def download(job_id:str,file_id:str,expires:int,signature:str):
+    content = job_id + ':' + file_id + ':' + str(expires)
+    expected = hmac.new(SIGNING_KEY.encode(),content.encode(),hashlib.sha256).hexdigest()
+    if not SIGNING_KEY or expires < time.time() or not hmac.compare_digest(signature,expected):
+        raise HTTPException(403,'Ссылка устарела. Нажми «Скачать» заново.')
+    job = JOBS.get(job_id)
+    item = next((f for f in job['files'] if f['id']==file_id),None) if job else None
+    if not item or not Path(item['path']).is_file():
+        raise HTTPException(404,'Файл недоступен.')
+    return FileResponse(item['path'],media_type=item.get('mime','video/mp4'),filename=item['name'],headers={'Cache-Control':'private,no-store'})
+
+# Cloud OAuth credentials belong to EdPVZ's registered applications.
+# Connection tokens are encrypted before being written under the user's RLS scope.
+from base64 import urlsafe_b64encode
+from cryptography.fernet import Fernet
+from fastapi.responses import RedirectResponse
+from urllib.parse import urlencode
+
+OAUTH_STATES = {}
+CLOUD_LOCKS = {}
+
+
+def cloud_cipher():
+    if not SIGNING_KEY:
+        raise HTTPException(503,'Подключение диска временно недоступно.')
+    return Fernet(urlsafe_b64encode(hashlib.sha256(('cloud:' + SIGNING_KEY).encode()).digest()))
+
+
+async def cloud_data(user, headers, provider, value=None):
+    namespace = 'archive-cloud-' + provider
+    url = BASE + '/rest/v1/edpvz_user_data'
+    async with httpx.AsyncClient(timeout=15) as client:
+        if value is not None:
+            encrypted = cloud_cipher().encrypt(json.dumps(value).encode()).decode()
+            response = await client.post(url + '?on_conflict=user_id,namespace',headers={**headers,'Prefer':'resolution=merge-duplicates,return=minimal'},json={'user_id':user,'namespace':namespace,'payload':{'encrypted':encrypted,'owner':user},'updated_at':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())})
+            if response.status_code not in (200,201,204):
+                raise HTTPException(502,'Не удалось сохранить подключение диска.')
+            return value
+        response = await client.get(url,headers=headers,params={'user_id':'eq.'+user,'namespace':'eq.'+namespace,'select':'payload'})
+    if response.status_code != 200:
+        raise HTTPException(502,'Не удалось прочитать подключение диска.')
+    rows = response.json()
+    if not rows:
+        return {}
+    payload = rows[0].get('payload') or {}
+    if payload.get('owner') != user:
+        raise HTTPException(403,'Доступ запрещён.')
+    try:
+        return json.loads(cloud_cipher().decrypt(payload['encrypted'].encode()))
+    except Exception:
+        raise HTTPException(409,'Подключи диск заново.')
+
+
+def cloud_config(provider):
+    if provider not in ('google','yandex'):
+        raise HTTPException(400,'Неизвестный диск.')
+    prefix = 'ARCHIVE_' + provider.upper()
+    return os.getenv(prefix+'_CLIENT_ID',''),os.getenv(prefix+'_CLIENT_SECRET','')
+
+
+@router.get('/cloud')
+async def cloud_status(request:Request):
+    user,headers = await auth(request)
+    result = {}
+    for provider in ('google','yandex'):
+        client_id,secret = cloud_config(provider)
+        stored = await cloud_data(user,headers,provider)
+        result[provider] = {'configured':bool(client_id and secret),'connected':bool(stored.get('access_token'))}
+    return result
+
+
+@router.post('/cloud/{provider}/connect')
+async def cloud_connect(provider:str,request:Request):
+    user,headers = await auth(request)
+    client_id,secret = cloud_config(provider)
+    if not client_id or not secret:
+        raise HTTPException(503,'OAuth-приложение для этого диска ещё не подключено администратором.')
+    state = secrets.token_urlsafe(32)
+    for key,value in list(OAUTH_STATES.items()):
+        if time.time()-value['created'] > 600:
+            del OAUTH_STATES[key]
+    callback = 'https://edpvz-telegram-collector.onrender.com/archive/cloud/' + provider + '/callback'
+    OAUTH_STATES[state] = {'user':user,'headers':headers,'provider':provider,'callback':callback,'created':time.time()}
+    params = {'client_id':client_id,'redirect_uri':callback,'response_type':'code','state':state}
+    if provider == 'google':
+        params.update(scope='https://www.googleapis.com/auth/drive.file',access_type='offline',prompt='consent')
+        endpoint = 'https://accounts.google.com/o/oauth2/v2/auth'
+    else:
+        params.update(scope='cloud_api:disk.write cloud_api:disk.info')
+        endpoint = 'https://oauth.yandex.ru/authorize'
+    return {'url':endpoint+'?'+urlencode(params)}
+
+
+@router.get('/cloud/{provider}/callback')
+async def cloud_callback(provider:str,state:str='',code:str='',error:str=''):
+    saved = OAUTH_STATES.pop(state,None)
+    if not saved or saved['provider'] != provider or time.time()-saved['created'] > 600:
+        raise HTTPException(403,'Вход устарел. Повтори подключение диска из «Эд ПВЗ».')
+    destination = 'https://edpvz.ru/apps/surveillance/ivideon.html'
+    if error or not code:
+        return RedirectResponse(destination+'#cloud=cancelled',303)
+    client_id,secret = cloud_config(provider)
+    token_url = 'https://oauth2.googleapis.com/token' if provider=='google' else 'https://oauth.yandex.ru/token'
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.post(token_url,data={'grant_type':'authorization_code','code':code,'client_id':client_id,'client_secret':secret,'redirect_uri':saved['callback']})
+    if response.status_code != 200:
+        return RedirectResponse(destination+'#cloud=failed',303)
+    value = response.json()
+    value['expires_at'] = time.time()+value.get('expires_in',3600)
+    await cloud_data(saved['user'],saved['headers'],provider,value)
+    return RedirectResponse(destination+'#cloud=connected',303)
+
+
+@router.post('/cloud/{provider}/disconnect')
+async def cloud_disconnect(provider:str,request:Request):
+    cloud_config(provider)
+    user,headers = await auth(request)
+    await cloud_data(user,headers,provider,{})
+    return {'connected':False}
+
+
+async def cloud_token(provider,user,headers):
+    value = await cloud_data(user,headers,provider)
+    if not value.get('access_token'):
+        raise HTTPException(409,'Сначала подключи диск.')
+    if value.get('expires_at',0) < time.time()+120:
+        if not value.get('refresh_token'):
+            raise HTTPException(409,'Подключи диск заново: срок доступа истёк.')
+        client_id,secret = cloud_config(provider)
+        endpoint = 'https://oauth2.googleapis.com/token' if provider=='google' else 'https://oauth.yandex.ru/token'
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(endpoint,data={'grant_type':'refresh_token','refresh_token':value['refresh_token'],'client_id':client_id,'client_secret':secret})
+        if response.status_code != 200:
+            raise HTTPException(409,'Диск отклонил доступ. Подключи его заново.')
+        value.update(response.json())
+        value['expires_at'] = time.time()+value.get('expires_in',3600)
+        await cloud_data(user,headers,provider,value)
+    return value['access_token']
+
+
+async def upload_cloud(provider,token,path,name,mime):
+    async def file_bytes():
+        with open(path,'rb') as source:
+            while block := source.read(1024*1024):
+                yield block
+                await asyncio.sleep(0)
+    size = Path(path).stat().st_size
+    async with httpx.AsyncClient(timeout=120) as client:
+        if provider=='yandex':
+            headers = {'Authorization':'OAuth '+token}
+            target = 'disk:/Эд ПВЗ/' + clean_name(name)
+            folder = await client.put('https://cloud-api.yandex.net/v1/disk/resources',headers=headers,params={'path':'disk:/Эд ПВЗ'})
+            if folder.status_code not in (201,409):
+                raise HTTPException(502,'Не удалось создать папку на Яндекс Диске.')
+            link = await client.get('https://cloud-api.yandex.net/v1/disk/resources/upload',headers=headers,params={'path':target,'overwrite':'false'})
+            if link.status_code != 200:
+                raise HTTPException(409,'Яндекс Диск отклонил файл. Проверь место и имя файла.')
+            href = link.json().get('href','')
+            parsed = urlparse(href)
+            if parsed.scheme!='https' or not parsed.hostname.endswith('.yandex.net'):
+                raise HTTPException(502,'Некорректный ответ Яндекс Диска.')
+            response = await client.put(href,headers={'Content-Length':str(size),'Content-Type':mime},content=file_bytes())
+        else:
+            response = await client.post('https://www.googleapis.com/upload/drive/v3/files',params={'uploadType':'resumable'},headers={'Authorization':'Bearer '+token,'X-Upload-Content-Type':mime,'X-Upload-Content-Length':str(size)},json={'name':name})
+            href = response.headers.get('location','')
+            parsed = urlparse(href)
+            if response.status_code != 200 or parsed.scheme!='https' or parsed.hostname not in ('www.googleapis.com','content.googleapis.com'):
+                raise HTTPException(502,'Google Диск не создал загрузку.')
+            response = await client.put(href,headers={'Content-Length':str(size),'Content-Type':mime},content=file_bytes())
+        if response.status_code not in (200,201,202):
+            raise HTTPException(502,'Диск не подтвердил сохранение файла. Проверь свободное место.')
+    return {'saved':True}
+
+
+@router.post('/jobs/{job_id}/file/{file_id}/cloud/{provider}')
+async def save_cloud(job_id:str,file_id:str,provider:str,request:Request):
+    cloud_config(provider)
+    user,headers = await auth(request)
+    job = owned(job_id,user)
+    item = next((f for f in job['files'] if f['id']==file_id),None)
+    if not item or not Path(item['path']).is_file():
+        raise HTTPException(404,'Файл недоступен.')
+    lock = CLOUD_LOCKS.setdefault((user,provider),asyncio.Lock())
+    async with lock:
+        token = await cloud_token(provider,user,headers)
+        return await upload_cloud(provider,token,item['path'],item['name'],item.get('mime','video/mp4'))
+
+
+@router.post('/jobs/{job_id}/file/{file_id}/frame')
+async def frame(job_id:str,file_id:str,request:Request):
+    user,_ = await auth(request)
+    job = owned(job_id,user)
+    item = next((f for f in job['files'] if f['id']==file_id),None)
+    data = await request.json()
+    second = data.get('second')
+    if not item or not isinstance(second,(int,float)) or not math.isfinite(second) or not 0 <= second < item['duration']:
+        raise HTTPException(400,'Выбери кадр внутри готовой записи.')
+    output = ROOT/job_id/(file_id+'-frame-'+secrets.token_hex(4)+'.jpg')
+    await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-ss',str(second),'-i',item['path'],'-frames:v','1','-q:v','2',str(output)],job,60)
+    frame_id = 'frame-' + secrets.token_hex(8)
+    job['files'].append({'id':frame_id,'path':str(output),'cameraId':clip['cameraId'],'sourceStart':clip['start'],'name':Path(item['name']).stem+'.jpg','size':output.stat().st_size,'duration':0,'width':item['width'],'height':item['height'],'mime':'image/jpeg'})
+    return {'id':frame_id,'name':job['files'][-1]['name']}

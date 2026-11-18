@@ -265,3 +265,9 @@ async def avito_status():
         return {'connected':True,'items':[],'reason':'avito_oauth_ok_vacancy_search_not_verified'}
     except Exception as exc:
         return {'connected':False,'items':[],'reason':'avito_oauth_unreachable','error_type':type(exc).__name__}
+
+# Archive processing is authenticated independently of the Telegram collector.
+from archive_worker import router as archive_router
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(CORSMiddleware, allow_origins=['https://edpvz.ru'], allow_methods=['GET','POST','OPTIONS'], allow_headers=['authorization','apikey','content-type','range'], expose_headers=['Content-Disposition','Content-Length','Content-Range','Accept-Ranges'])
+app.include_router(archive_router)
