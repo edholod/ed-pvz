@@ -29,8 +29,8 @@ export function createArchiveStudio(options) {
     </div>
     <details class="as-day"><summary>Выбрать на шкале дня</summary>
       <label>День<input class="as-date" type="date"></label>
-      <label>Начало на шкале <output class="as-from-text"></output><input class="as-from" type="range" min="0" max="86399" step="1" value="32400"></label>
-      <label>Конец на шкале <output class="as-to-text"></output><input class="as-to" type="range" min="1" max="86400" step="1" value="32700"></label>
+      <label>Начало на шкале <output class="as-from-text"></output><input class="as-from" aria-label="Начало на шкале" type="range" min="0" max="86399" step="1" value="32400"></label>
+      <label>Конец на шкале <output class="as-to-text"></output><input class="as-to" aria-label="Конец на шкале" type="range" min="1" max="86400" step="1" value="32700"></label>
     </details>
     <p class="as-note">Шкала задаёт время запроса. Наличие записи зависит от архива камеры. Большой интервал можно добавить в очередь целиком.</p>
     <div class="as-actions"><button class="primary as-preview">Просмотреть</button><button class="secondary as-mark-start">Начало по текущему кадру</button><button class="secondary as-mark-end">Конец по текущему кадру</button><button class="secondary as-frame">Сохранить кадр</button></div>
@@ -84,6 +84,7 @@ export function createArchiveStudio(options) {
     const from = start.getHours()*3600 + start.getMinutes()*60 + start.getSeconds();
     const to = start.toDateString() === end.toDateString() ? end.getHours()*3600 + end.getMinutes()*60 + end.getSeconds() : 86400;
     get('from').value = from; get('to').value = Math.max(from+1,to);
+    get('from').setAttribute('aria-valuetext',duration(from));get('to').setAttribute('aria-valuetext',duration(Math.max(from+1,to)));
     get('from-text').textContent = duration(from); get('to-text').textContent = duration(Math.max(from+1,to));
   }
   function applyTimeline() {
@@ -92,6 +93,7 @@ export function createArchiveStudio(options) {
     get('to').value = to;
     get('start').value = dateValue(day.getTime()/1000 + from);
     get('end').value = dateValue(day.getTime()/1000 + to);
+    get('from').setAttribute('aria-valuetext',duration(from));get('to').setAttribute('aria-valuetext',duration(Math.max(from+1,to)));
     get('from-text').textContent = duration(from); get('to-text').textContent = duration(to);
   }
   for (const field of ['from','to','date']) get(field).addEventListener('input',applyTimeline);
@@ -305,7 +307,7 @@ export function createArchiveStudio(options) {
   window.addEventListener('pagehide',()=>{clearTimeout(poll);stop();for(const url of urls)URL.revokeObjectURL(url);});
   void sync();
   return {
-    open(nextCamera){camera=nextCamera;root.hidden=false;live.hidden=false;previewStart=undefined;liveName.textContent=camera.displayName||camera.name;const now=Math.floor(Date.now()/1000);get('start').value=dateValue(now-600);get('end').value=dateValue(now-300);get('name').value='';syncTimeline();drawClips();drawJobs();},
-    reset(){generation++;stop();camera=undefined;previewStart=undefined;root.hidden=true;},
+    open(nextCamera){root.insertBefore(video,get('head').nextSibling);camera=nextCamera;root.hidden=false;live.hidden=false;previewStart=undefined;liveName.textContent=camera.displayName||camera.name;const now=Math.floor(Date.now()/1000);get('start').value=dateValue(now-600);get('end').value=dateValue(now-300);get('name').value='';syncTimeline();drawClips();drawJobs();},
+    reset(){generation++;stop();live.appendChild(video);camera=undefined;previewStart=undefined;root.hidden=true;},
   };
 }
