@@ -207,8 +207,10 @@ async def run(job):
                             del fallback[at:at+2]
                             at=fallback.index('-protocol_whitelist');del fallback[at:at+2]
                             job['message']='Обрабатываем совместимую запись'
-                            await process(fallback,job)
-                            Path(exported).unlink(missing_ok=True)
+                            try:
+                                await process(fallback,job)
+                            finally:
+                                Path(exported).unlink(missing_ok=True)
                         duration, fps, w, h = await probe(path, job)
                         await verify_frames(path,job,fps)
                         if abs(duration - (end-start)) > max(.25, 2/fps):
@@ -576,10 +578,10 @@ async def frame(job_id:str,file_id:str,request:Request):
     item = next((f for f in job['files'] if f['id']==file_id),None)
     data = await request.json()
     second = data.get('second')
-    if not item or not isinstance(second,(int,float)) or not math.isfinite(second) or not 0 <= second < item['duration']:
+    if not item or not isinstance(second,(int,float)) or not math.isfinite(second) or not 0 <= second < item.get('duration',0):
         raise HTTPException(400,'Выбери кадр внутри готовой записи.')
     output = ROOT/job_id/(file_id+'-frame-'+secrets.token_hex(4)+'.jpg')
     await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-ss',str(second),'-i',item['path'],'-frames:v','1','-q:v','2',str(output)],job,60)
     frame_id = 'frame-' + secrets.token_hex(8)
-    job['files'].append({'id':frame_id,'path':str(output),'cameraId':clip['cameraId'],'sourceStart':clip['start'],'name':Path(item['name']).stem+'.jpg','size':output.stat().st_size,'duration':0,'width':item['width'],'height':item['height'],'mime':'image/jpeg'})
+    job['files'].append({'id':frame_id,'path':str(output),'cameraId':item.get('cameraId'),'sourceStart':item.get('sourceStart',0)+int(second),'name':Path(item['name']).stem+'.jpg','size':output.stat().st_size,'duration':0,'width':item['width'],'height':item['height'],'mime':'image/jpeg'})
     return {'id':frame_id,'name':job['files'][-1]['name']}

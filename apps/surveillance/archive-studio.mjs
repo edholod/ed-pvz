@@ -113,7 +113,7 @@ export function createArchiveStudio(options) {
       if(fallbackStarted||active!==generation)return;
       fallbackStarted=true;stop();
       status.textContent='Готовим совместимый MP4 для просмотра…';
-      const job=await request('/jobs',{clips:[{cameraId:chosen.id,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID()});
+      const job=await request('/jobs',{clips:[{cameraId:chosen.id,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('profile').value==='low'?'480':get('profile').value==='high'?'source':'720',profile:get('profile').value,requestId:crypto.randomUUID()});
       if(active!==generation)return;
       job.previewGeneration=active;jobs.unshift(job);persist();drawJobs();schedule();
     }
