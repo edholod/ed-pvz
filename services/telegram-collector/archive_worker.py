@@ -269,7 +269,7 @@ def expire():
 
 @router.get('/health')
 async def health():
-    return {'ok':bool(shutil.which('ffmpeg') and SIGNING_KEY), 'version':1, 'googleClientId':os.getenv('ARCHIVE_GOOGLE_CLIENT_ID',''), 'yandexClientId':os.getenv('ARCHIVE_YANDEX_CLIENT_ID','')}
+    return {'ok':bool(shutil.which('ffmpeg') and SIGNING_KEY), 'version':2, 'googleClientId':os.getenv('ARCHIVE_GOOGLE_CLIENT_ID',''), 'yandexClientId':os.getenv('ARCHIVE_YANDEX_CLIENT_ID','')}
 
 
 @router.post('/jobs')

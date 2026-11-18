@@ -83,7 +83,7 @@ async function checkIvideon(key,cameraId,quality,action,archive){await ensure();
 async function archiveRequest(path,body){
  await ensure();
  if(!session)throw Error('Войдите в аккаунт');
- if(!/^\/(jobs|cloud)(\/|$)/.test(path)||path.includes('..')||path.includes('?'))throw Error('Некорректный запрос архива');
+ if(!/^\/(jobs|cloud|health)(\/|$)/.test(path)||path.includes('..')||path.includes('?'))throw Error('Некорректный запрос архива');
  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),120000);
  try{
   const r=await fetch('https://edpvz-telegram-collector.onrender.com/archive'+path,{method:body===undefined?'GET':'POST',signal:controller.signal,headers:headers(session.access_token),body:body===undefined?undefined:JSON.stringify(body)});

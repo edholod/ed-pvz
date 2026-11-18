@@ -112,6 +112,7 @@ export function createArchiveStudio(options) {
     async function compatiblePreview() {
       if(fallbackStarted||active!==generation)return;
       fallbackStarted=true;stop();
+      await ensureWorker();
       status.textContent='Готовим совместимый MP4 для просмотра…';
       const job=await request('/jobs',{clips:[{cameraId:chosen.id,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('profile').value==='low'?'480':get('profile').value==='high'?'source':'720',profile:get('profile').value,requestId:crypto.randomUUID()});
       if(active!==generation)return;
@@ -159,7 +160,9 @@ export function createArchiveStudio(options) {
     clips.push({cameraId:camera.id,cameraName:camera.displayName||camera.name,...range,name:get('name').value.trim() || (camera.displayName||camera.name)+' '+stamp(range.start)});
     persist();drawClips();feedback('Фрагмент добавлен. Можно выбрать следующий участок или другую камеру.');
   }
+  async function ensureWorker(){const health=await request('/health');if(!health.ok||health.version<2)throw Error('Подготовка файлов временно недоступна: обновление сервиса ещё не завершилось. Очередь сохранена в аккаунте.');}
   async function prepare() {
+    await ensureWorker();
     if(!loaded)throw Error('Не удалось прочитать сохранённую очередь. Обнови страницу.');
     if (!clips.length) throw Error('Добавь хотя бы один фрагмент.');
     const owner = user;
@@ -218,7 +221,7 @@ export function createArchiveStudio(options) {
     const result=await fileLink(job,file);
     stop();stopPlayback();previewStart=file.sourceStart;previewBase=0;
     if(file.cameraId){camera={id:file.cameraId,name:file.name};get('start').value=dateValue(file.sourceStart);get('end').value=dateValue(file.sourceStart+Math.floor(file.duration));syncTimeline();}
-    video.src=result.url;video.load();video.play().catch(()=>{});
+    video.crossOrigin='anonymous';video.src=result.url;video.load();video.play().catch(()=>{});
     liveName.textContent=file.name;
     status.textContent='Готовый файл. Можно отметить начало и конец следующего фрагмента.';
   }
@@ -278,6 +281,7 @@ export function createArchiveStudio(options) {
     } catch(error){get('cloud-status').textContent=error.message;}
   }
   async function capture() {
+    await ensureWorker();
     if(!video.videoWidth)throw Error('Сначала открой видео и выбери кадр.');
     const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;
     try {
