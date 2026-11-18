@@ -135,9 +135,9 @@ async def download_source(url,path,job):
                         raise RuntimeError('Не удалось скачать исходный MP4 из Ivideon.')
                     if response.status_code==206 and not response.headers.get('content-range','').startswith('bytes 0-'):
                         raise RuntimeError('Ivideon вернул неправильную часть файла.')
-                    print('archive-source status='+str(response.status_code)+' expected='+response.headers.get('content-length','unknown'),flush=True)
+                    print('archive-source host='+str(urlparse(url).hostname)+' status='+str(response.status_code)+' expected='+response.headers.get('content-length','unknown')+' range='+response.headers.get('content-range','none'),flush=True)
                     with path.open('wb') as output:
-                        async for block in response.aiter_bytes(64*1024):
+                        async for block in response.aiter_bytes(1024):
                             if job.get('cancelled'):
                                 raise RuntimeError('Подготовка отменена.')
                             if shutil.disk_usage(ROOT).free < 128*1024*1024:
@@ -223,19 +223,25 @@ async def run(job):
                             if job.get('cancelled'):
                                 raise
                             job['message']='Получаем совместимую запись от Ivideon'
-                            exported=await export_source(job,clip,start,end)
-                            exported=await download_source(exported,folder/('source-'+str(index)+'-'+str(start)+'.mp4'),job)
+                            source_url=await export_source(job,clip,start,end)
+                            local_source=True
+                            try:
+                                exported=await download_source(source_url,folder/('source-'+str(index)+'-'+str(start)+'.mp4'),job)
+                            except (httpx.TimeoutException,httpx.RemoteProtocolError):
+                                exported=source_url;local_source=False
+                                print('archive-source using direct decoder',flush=True)
                             job['use_export']=True
                             fallback=args[:]
                             fallback[fallback.index('-i')+1]=exported
                             at=fallback.index('-allowed_extensions')
                             del fallback[at:at+2]
-                            at=fallback.index('-protocol_whitelist');del fallback[at:at+2]
+                            if local_source:
+                                at=fallback.index('-protocol_whitelist');del fallback[at:at+2]
                             job['message']='Обрабатываем совместимую запись'
                             try:
                                 await process(fallback,job)
                             finally:
-                                Path(exported).unlink(missing_ok=True)
+                                if local_source:Path(exported).unlink(missing_ok=True)
                         duration, fps, w, h = await probe(path, job)
                         await verify_frames(path,job,fps)
                         if abs(duration - (end-start)) > max(.25, 2/fps):
