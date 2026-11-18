@@ -112,6 +112,36 @@ async def probe(path, job):
     return float(video.get('duration') or info['format']['duration']), max(rate, 1), video['width'], video['height']
 
 
+async def download_source(url,path,job):
+    # Provider MP4s can place moov at the end; the edge relay does not support
+    # remote byte-range seeking. Download once, then let FFmpeg seek locally.
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(180,read=45),follow_redirects=False) as client:
+            async with client.stream('GET',url) as response:
+                if response.status_code!=200:
+                    raise RuntimeError('Не удалось скачать исходный MP4 из Ivideon.')
+                with path.open('wb') as output:
+                    async for block in response.aiter_bytes(1024*1024):
+                        if job.get('cancelled'):
+                            raise RuntimeError('Подготовка отменена.')
+                        if shutil.disk_usage(ROOT).free < 128*1024*1024:
+                            raise RuntimeError('На сервере недостаточно места для записи.')
+                        output.write(block)
+        if path.stat().st_size<1000:
+            raise RuntimeError('Ivideon вернул пустой файл.')
+        return str(path)
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
+
+
+async def verify_frames(path,job,rate):
+    raw=await process(['ffprobe','-v','error','-select_streams','v:0','-show_entries','packet=pts_time','-of','csv=p=0',str(path)],job,120)
+    points=sorted(float(line.strip()) for line in raw.decode().splitlines() if line.strip() and line.strip()!='N/A')
+    if not points or any(b-a>max(.3,3/rate) for a,b in zip(points,points[1:])):
+        raise RuntimeError('В видеодорожке есть пропущенные кадры. Выбери непрерывный участок архива.')
+
+
 async def export_source(job, clip, start, end):
     result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export','start':start,'end':end}})
     export_id=result['exportId']
@@ -141,6 +171,7 @@ async def run(job):
             for index, clip in enumerate(job['clips']):
                 job['message'] = 'Фрагмент ' + str(index + 1) + ' из ' + str(len(job['clips']))
                 pieces = []
+                piece_durations = []
                 # Retry a refused interval by bisecting it, down to one minute.
                 pending = list(chunks(clip['start'], clip['end']))
                 width = None
@@ -168,13 +199,18 @@ async def run(job):
                                 raise
                             job['message']='Получаем совместимую запись от Ivideon'
                             exported=await export_source(job,clip,start,end)
+                            exported=await download_source(exported,folder/('source-'+str(index)+'-'+str(start)+'.mp4'),job)
                             job['use_export']=True
                             fallback=args[:]
                             fallback[fallback.index('-i')+1]=exported
                             at=fallback.index('-allowed_extensions')
                             del fallback[at:at+2]
+                            at=fallback.index('-protocol_whitelist');del fallback[at:at+2]
+                            job['message']='Обрабатываем совместимую запись'
                             await process(fallback,job)
+                            Path(exported).unlink(missing_ok=True)
                         duration, fps, w, h = await probe(path, job)
+                        await verify_frames(path,job,fps)
                         if abs(duration - (end-start)) > max(.25, 2/fps):
                             raise RuntimeError('Длительность полученной записи не совпадает с выбранным интервалом. Возможно, в архиве есть пропуск.')
                     except RuntimeError:
@@ -186,6 +222,7 @@ async def run(job):
                         raise
                     width = width or (w,h)
                     pieces.append(path)
+                    piece_durations.append(end-start)
                     completed += end-start
                     job['progress'] = min(98, round(completed/total*98))
                 output = folder / (str(index) + '.mp4')
@@ -193,9 +230,10 @@ async def run(job):
                     pieces[0].replace(output)
                 else:
                     manifest = folder / ('concat-' + str(index) + '.txt')
-                    manifest.write_text(''.join("file '" + str(p) + "'\n" for p in pieces))
+                    manifest.write_text(''.join("file '" + str(p) + "'\nduration " + str(seconds) + "\n" for p, seconds in zip(pieces,piece_durations)))
                     await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',str(manifest),'-map','0','-c','copy','-movflags','+faststart',str(output)],job)
                 duration, fps, w, h = await probe(output,job)
+                await verify_frames(output,job,fps)
                 if abs(duration-(clip['end']-clip['start'])) > max(.3, 2/fps):
                     raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
                 job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':duration,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'sourceStart':clip['start']})

@@ -105,13 +105,29 @@ export function createArchiveStudio(options) {
     const active = ++generation;
     stop(); stopPlayback();
     status.textContent = 'Загружаем запись…';
-    const result = await account().checkIvideon(undefined,camera.id,undefined,'load',{start,end,profile:get('profile').value});
-    if (active !== generation) return;
-    previewStart = start; previewBase = 0;
-    liveName.textContent = camera.displayName || camera.name;
-    playback = playHls(video,result.streamUrl,(message) => {
-      if (active === generation) status.textContent = message || ('Архив · '+stamp(start));
-    });
+    const chosen={...camera};
+    let fallbackStarted=false;
+    async function compatiblePreview() {
+      if(fallbackStarted||active!==generation)return;
+      fallbackStarted=true;stop();
+      status.textContent='Готовим совместимый MP4 для просмотра…';
+      const job=await request('/jobs',{clips:[{cameraId:chosen.id,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID()});
+      if(active!==generation)return;
+      job.previewGeneration=active;jobs.unshift(job);persist();drawJobs();schedule();
+    }
+    try {
+      const result = await account().checkIvideon(undefined,chosen.id,undefined,'load',{start,end,profile:get('profile').value});
+      if (active !== generation) return;
+      previewStart = start; previewBase = 0;
+      liveName.textContent = chosen.displayName || chosen.name;
+      playback = playHls(video,result.streamUrl,(message,meta={}) => {
+        if (active !== generation)return;
+        status.textContent = message || ('Архив · '+stamp(start));
+        if(message&&!meta.started)void compatiblePreview().catch(error=>{if(active===generation)status.textContent=error.message;});
+      });
+    } catch(error) {
+      if(active===generation)await compatiblePreview();
+    }
   }
   video.addEventListener('loadedmetadata',() => {
     if (previewStart !== undefined) previewBase = video.seekable.length ? video.seekable.start(0) : 0;
@@ -230,7 +246,7 @@ export function createArchiveStudio(options) {
     poll=setTimeout(async()=>{
       const owner=user;
       for(const job of jobs.filter(j=>!['ready','failed','cancelled','expired'].includes(j.state))) {
-        try { const result=await request('/jobs/'+job.id);if(owner!==user)return;Object.assign(job,result); }
+        try { const result=await request('/jobs/'+job.id);if(owner!==user)return;Object.assign(job,result);if(job.state==='ready'&&job.previewGeneration===generation&&job.files?.[0]){delete job.previewGeneration;await showFile(job,job.files[0]);}else if(job.state==='failed'&&job.previewGeneration===generation){status.textContent=job.message;} }
         catch(error){if(error.status===404)Object.assign(job,{state:'expired',message:error.message});else feedback(error.message);}
       }
       drawJobs();schedule();
