@@ -84,7 +84,10 @@ async def process(args, job, timeout=None):
             raise RuntimeError('Подготовка отменена.')
         if proc.returncode:
             # ffmpeg logs contain private media URLs. Never expose them.
-            raise RuntimeError('Не удалось обработать видео. В записи может быть пробел или неподдерживаемый поток.')
+            categories = ['Option not found','Invalid argument','Protocol not found','not on whitelist','Server returned 403','Server returned 401','Server returned 404','Connection timed out','Input/output error','Error opening input','Unable to open resource','No such file','Invalid data found','Unrecognized option','Error while opening encoder','does not contain any stream']
+            category = next((value for value in categories if value in err.decode(errors='ignore')), 'processing error')
+            print('archive-process failed code=' + str(proc.returncode) + ' reason=' + category, flush=True)
+            raise RuntimeError('Не удалось обработать видео (' + category + '). В записи может быть пробел или неподдерживаемый поток.')
         return out
     finally:
         if proc.returncode is None:

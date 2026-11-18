@@ -263,6 +263,7 @@ export function createArchiveStudio(options) {
     if(!id)return;
     try{const saved=await account().load('ivideon-archive-project');if(user!==id)return;clips=Array.isArray(saved?.payload?.clips)?saved.payload.clips.slice(0,50):[];jobs=Array.isArray(saved?.payload?.jobs)?saved.payload.jobs.slice(0,50):[];loaded=true;drawClips();drawJobs();schedule();void clouds();}catch(error){feedback(error.message);}
   }
+  get('cloud').closest('details').addEventListener('toggle', event => {if(event.target.open)void clouds();});
   get('preview').addEventListener('click',()=>preview().catch(e=>feedback(e.message)));
   get('mark-start').addEventListener('click',()=>{try{mark('start');}catch(e){feedback(e.message);}});
   get('mark-end').addEventListener('click',()=>{try{mark('end');}catch(e){feedback(e.message);}});
