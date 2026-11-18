@@ -1,5 +1,6 @@
 """Authenticated archive preparation, independent of provider MP4 export limits."""
 import asyncio
+import base64
 import hashlib
 import hmac
 import json
@@ -68,6 +69,8 @@ def media_url(value):
     parsed = urlparse(value)
     if parsed.scheme != 'https' or parsed.username or parsed.password or parsed.port:
         raise RuntimeError('Неверный адрес видеосервера.')
+    if parsed.hostname == urlparse(BASE).hostname and parsed.path == '/functions/v1/edpvz-ivideon-check' and parsed.query.startswith(('download=','hls=')):
+        return value
     if not any(parsed.hostname == d or parsed.hostname.endswith('.' + d) for d in ('ivideon.com', 'iv-cdn.com', 'extcam.com')):
         raise RuntimeError('Неверный домен видеосервера.')
     return value
@@ -109,6 +112,22 @@ async def probe(path, job):
     return float(video.get('duration') or info['format']['duration']), max(rate, 1), video['width'], video['height']
 
 
+async def export_source(job, clip, start, end):
+    result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export','start':start,'end':end}})
+    export_id=result['exportId']
+    deadline=time.time()+600
+    while time.time()<deadline:
+        if job.get('cancelled'):
+            raise RuntimeError('Подготовка отменена.')
+        result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export-status','exportId':export_id}})
+        if result['state']=='ready':
+            return media_url(result['downloadUrl'])
+        if result['state']=='failed':
+            raise RuntimeError('Ivideon не подготовил экспорт этого участка.')
+        await asyncio.sleep(3)
+    raise RuntimeError('Ivideon не завершил экспорт за 10 минут. Попробуй меньший участок.')
+
+
 async def run(job):
     async with LOCK:
         if job.get('cancelled'):
@@ -132,7 +151,7 @@ async def run(job):
                     result = await edge(job, {'action':'load', 'cameraId':clip['cameraId'], 'quality': 'hls', 'archive':{'start':start, 'end':end, 'profile':job['profile']}})
                     url = media_url(result['streamUrl'])
                     path = folder / ('part-' + str(index) + '-' + str(start) + '.mp4')
-                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-i', url, '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
+                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-filter_threads', '1', '-i', url, '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
                     target = PROFILES[job['quality']]
                     if width:
                         args += ['-vf', f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
@@ -140,7 +159,21 @@ async def run(job):
                         args += ['-vf', f"scale=-2:'min({target},ih)',setsar=1"]
                     args += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-pix_fmt', 'yuv420p', '-fps_mode', 'passthrough', '-c:a', 'aac', '-ar', '48000', '-af', 'aresample=async=1:first_pts=0', '-movflags', '+faststart', str(path)]
                     try:
-                        await process(args, job)
+                        try:
+                            if job.get('use_export'):
+                                raise RuntimeError('Используется совместимый экспорт.')
+                            await process(args, job)
+                        except RuntimeError:
+                            if job.get('cancelled'):
+                                raise
+                            job['message']='Получаем совместимую запись от Ivideon'
+                            exported=await export_source(job,clip,start,end)
+                            job['use_export']=True
+                            fallback=args[:]
+                            fallback[fallback.index('-i')+1]=exported
+                            at=fallback.index('-allowed_extensions')
+                            del fallback[at:at+2]
+                            await process(fallback,job)
                         duration, fps, w, h = await probe(path, job)
                         if abs(duration - (end-start)) > max(.25, 2/fps):
                             raise RuntimeError('Длительность полученной записи не совпадает с выбранным интервалом. Возможно, в архиве есть пропуск.')
@@ -234,6 +267,39 @@ async def create(request: Request):
     task = asyncio.create_task(run(job))
     TASKS.add(task)
     task.add_done_callback(TASKS.discard)
+    return public_job(job)
+
+
+@router.post('/jobs/frame')
+async def save_frame(request:Request):
+    user, headers = await auth(request)
+    raw = await request.body()
+    if len(raw) > 24*1024*1024:
+        raise HTTPException(413,'Кадр слишком большой.')
+    try:
+        data = json.loads(raw)
+        image = base64.b64decode(data.get('jpeg',''),validate=True)
+    except (ValueError,TypeError):
+        raise HTTPException(400,'Не удалось прочитать кадр.')
+    if not 4 <= len(image) <= 16*1024*1024 or not image.startswith(b'\xff\xd8') or not image.endswith(b'\xff\xd9'):
+        raise HTTPException(400,'Ожидается кадр JPEG.')
+    expire()
+    job = {'id':secrets.token_urlsafe(18),'user':user,'headers':headers,'requestId':secrets.token_urlsafe(18),'state':'ready','message':'Кадр готов','progress':100,'files':[],'created':time.time(),'updated':time.time()}
+    folder = ROOT/job['id']
+    folder.mkdir()
+    path=folder/'frame.jpg'
+    try:
+        path.write_bytes(image)
+        info=json.loads(await process(['ffprobe','-v','error','-show_streams','-of','json',str(path)],job,30))
+        stream=info['streams'][0]
+        width,height=stream['width'],stream['height']
+        if not 0<width<=16384 or not 0<height<=16384:
+            raise ValueError('dimensions')
+    except Exception:
+        shutil.rmtree(folder,ignore_errors=True)
+        raise HTTPException(400,'Кадр не прошёл проверку изображения.')
+    job['files'].append({'id':'frame','name':clean_name(data.get('name','Кадр')).removesuffix('.jpg')+'.jpg','mime':'image/jpeg','size':len(image),'width':width,'height':height,'path':str(path)})
+    JOBS[job['id']]=job
     return public_job(job)
 
 

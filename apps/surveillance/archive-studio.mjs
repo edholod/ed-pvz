@@ -238,7 +238,7 @@ export function createArchiveStudio(options) {
   }
   async function clouds() {
     try {
-      config=await request('/cloud');
+      config=await request('/cloud');get('cloud-status').textContent='';
       const box=get('cloud');box.replaceChildren();
       for(const provider of ['yandex','google']) {
         const cloud=config[provider];const name=provider==='yandex'?'Яндекс Диск':'Google Диск';
@@ -254,8 +254,15 @@ export function createArchiveStudio(options) {
   async function capture() {
     if(!video.videoWidth)throw Error('Сначала открой видео и выбери кадр.');
     const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;
-    try {canvas.getContext('2d').drawImage(video,0,0);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.95));if(!blob)throw Error();const url=URL.createObjectURL(blob);urls.add(url);const name='Кадр '+new Date().toISOString().replace(/[:.]/g,'-')+'.jpg';download(url,name);if(navigator.canShare?.({files:[new File([blob],name,{type:'image/jpeg'})]}))feedback('Кадр скачан. Для сохранения на диск используй меню «Поделиться» готового файла.');}
-    catch{throw Error('Камера ограничивает сохранение кадра в браузере. Подготовь MP4, открой его и нажми «Кадр из файла» — кадр будет доступен для сохранения на диск.');}
+    try {
+      canvas.getContext('2d').drawImage(video,0,0);
+      const jpeg=canvas.toDataURL('image/jpeg',.95).split(',')[1];
+      const job=await request('/jobs/frame',{jpeg,name:'Кадр '+new Date().toISOString().replace(/[:.]/g,'-')});
+      jobs.unshift(job);persist();drawJobs();feedback('Кадр готов. Переименуй и выбери способ сохранения в списке файлов.');
+    } catch(error) {
+      if(error.name==='SecurityError')throw Error('Камера ограничивает сохранение кадра в браузере. Подготовь MP4, открой его и нажми «Кадр из файла».');
+      throw error;
+    }
   }
   async function sync() {
     const id=account()?.user?.id;if(id===user)return;
