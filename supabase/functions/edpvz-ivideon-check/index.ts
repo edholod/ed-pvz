@@ -279,15 +279,15 @@ Deno.serve(async (req) => {
           const download = hlsTarget(record.video_url);
           download.searchParams.set('access_token',key);
           if (archive.ingest === true) {
-            let source=download;
-            for(let hop=0;hop<4;hop++){
-              const response=await fetch(source,{redirect:'manual',signal:AbortSignal.timeout(10000)});
-              const location=response.headers.get('location');
-              await response.body?.cancel();
-              if(response.status>=300&&response.status<400&&location){source=hlsTarget(location,source.href);continue;}
-              if(response.ok&&!decodeURIComponent(source.href).includes(key))return reply({state:'ready',sourceUrl:source.href});
-              break;
-            }
+            // Bind the server-ingestion envelope to this authenticated request.
+            // Never return the provider API key as a plaintext media URL.
+            const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('edpvz-archive-ingest:'+authorization));
+            const cipherKey=await crypto.subtle.importKey('raw',digest,'AES-GCM',false,['encrypt']);
+            const iv=crypto.getRandomValues(new Uint8Array(12));
+            const plain=new TextEncoder().encode(JSON.stringify({url:download.href,expires:Date.now()+15*60*1000}));
+            const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},cipherKey,plain));
+            const sealedSource=btoa(Array.from([...iv,...cipher],byte=>String.fromCharCode(byte)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+            return reply({state:'ready',sealedSource});
           }
           const link = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
           link.searchParams.set('download',await issueTicket(download,Date.now()+15*60*1000,'download'));

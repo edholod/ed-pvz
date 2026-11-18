@@ -11,9 +11,10 @@ import secrets
 import shutil
 import time
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
 import httpx
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 
@@ -57,12 +58,22 @@ async def auth(request):
 
 
 async def edge(job, payload):
+    headers={**job['headers'], 'origin':'https://edpvz.ru'}
     async with httpx.AsyncClient(timeout=25) as client:
-        result = await client.post(BASE + '/functions/v1/edpvz-ivideon-check', headers={**job['headers'], 'origin': 'https://edpvz.ru'}, json=payload)
+        result = await client.post(BASE + '/functions/v1/edpvz-ivideon-check', headers=headers, json=payload)
     if result.status_code != 200:
         data = result.json()
         raise RuntimeError(data.get('error', 'Ivideon не отдал запись.'))
-    return result.json()
+    data=result.json()
+    if data.get('sealedSource'):
+        packed=base64.urlsafe_b64decode(data['sealedSource']+'='*((-len(data['sealedSource']))%4))
+        key=hashlib.sha256(('edpvz-archive-ingest:'+headers['authorization']).encode()).digest()
+        clear=json.loads(AESGCM(key).decrypt(packed[:12],packed[12:],None))
+        if clear['expires']<time.time()*1000:
+            raise RuntimeError('Ссылка Ivideon устарела. Повтори подготовку.')
+        data['sourceUrl']=media_url(clear['url'])
+        del data['sealedSource']
+    return data
 
 
 def media_url(value):
@@ -113,29 +124,33 @@ async def probe(path, job):
 
 
 async def download_source(url,path,job):
-    # Provider MP4s can place moov at the end; the edge relay does not support
-    # remote byte-range seeking. Download once, then let FFmpeg seek locally.
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(180,read=45),follow_redirects=False) as client:
-            async with client.stream('GET',url,headers={'Range':'bytes=0-','Accept-Encoding':'identity'}) as response:
-                if response.status_code not in (200,206):
-                    raise RuntimeError('Не удалось скачать исходный MP4 из Ivideon.')
-                if response.status_code==206 and not response.headers.get('content-range','').startswith('bytes 0-'):
-                    raise RuntimeError('Ivideon вернул неправильную часть файла.')
-                print('archive-source status='+str(response.status_code)+' expected='+response.headers.get('content-length','unknown'),flush=True)
-                with path.open('wb') as output:
-                    async for block in response.aiter_bytes(64*1024):
-                        if job.get('cancelled'):
-                            raise RuntimeError('Подготовка отменена.')
-                        if shutil.disk_usage(ROOT).free < 128*1024*1024:
-                            raise RuntimeError('На сервере недостаточно места для записи.')
-                        output.write(block)
-                        job['message']='Получаем исходную запись: '+str(round(output.tell()/1024))+' КБ'
-        print('archive-source received='+str(path.stat().st_size),flush=True)
-        if path.stat().st_size<1000:
-            raise RuntimeError('Ivideon вернул пустой файл.')
-        return str(path)
+            for hop in range(5):
+                async with client.stream('GET',url,headers={'Range':'bytes=0-','Accept-Encoding':'identity'}) as response:
+                    if response.status_code in (301,302,303,307,308):
+                        url=media_url(urljoin(url,response.headers.get('location','')))
+                        continue
+                    if response.status_code not in (200,206):
+                        raise RuntimeError('Не удалось скачать исходный MP4 из Ivideon.')
+                    if response.status_code==206 and not response.headers.get('content-range','').startswith('bytes 0-'):
+                        raise RuntimeError('Ivideon вернул неправильную часть файла.')
+                    print('archive-source status='+str(response.status_code)+' expected='+response.headers.get('content-length','unknown'),flush=True)
+                    with path.open('wb') as output:
+                        async for block in response.aiter_bytes(64*1024):
+                            if job.get('cancelled'):
+                                raise RuntimeError('Подготовка отменена.')
+                            if shutil.disk_usage(ROOT).free < 128*1024*1024:
+                                raise RuntimeError('На сервере недостаточно места для записи.')
+                            output.write(block)
+                            job['message']='Получаем исходную запись: '+str(round(output.tell()/1024))+' КБ'
+                    print('archive-source received='+str(path.stat().st_size),flush=True)
+                    if path.stat().st_size<1000:
+                        raise RuntimeError('Ivideon вернул пустой файл.')
+                    return str(path)
+            raise RuntimeError('Слишком много перенаправлений видеосервера.')
     except Exception:
+        print('archive-source aborted bytes='+str(path.stat().st_size if path.exists() else 0),flush=True)
         path.unlink(missing_ok=True)
         raise
 
