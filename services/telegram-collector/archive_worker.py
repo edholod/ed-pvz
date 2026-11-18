@@ -86,7 +86,9 @@ async def process(args, job, timeout=None):
             # ffmpeg logs contain private media URLs. Never expose them.
             categories = ['Option not found','Invalid argument','Protocol not found','not on whitelist','Server returned 403','Server returned 401','Server returned 404','Connection timed out','Input/output error','Error opening input','Unable to open resource','No such file','Invalid data found','Unrecognized option','Error while opening encoder','does not contain any stream']
             category = next((value for value in categories if value in err.decode(errors='ignore')), 'processing error')
-            print('archive-process failed code=' + str(proc.returncode) + ' reason=' + category, flush=True)
+            detail = re.sub(r'https?://[^\s\"\']+', '[media-url]', err.decode(errors='ignore'))
+            detail = re.sub(r'xtok-[^\s]+', '[redacted]', detail)
+            print('archive-process failed code=' + str(proc.returncode) + ' reason=' + category + ' detail=' + detail[-1800:].replace('\n', ' | '), flush=True)
             raise RuntimeError('Не удалось обработать видео (' + category + '). В записи может быть пробел или неподдерживаемый поток.')
         return out
     finally:
@@ -130,7 +132,7 @@ async def run(job):
                     result = await edge(job, {'action':'load', 'cameraId':clip['cameraId'], 'quality': 'hls', 'archive':{'start':start, 'end':end, 'profile':job['profile']}})
                     url = media_url(result['streamUrl'])
                     path = folder / ('part-' + str(index) + '-' + str(start) + '.mp4')
-                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-i', url, '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
+                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-i', url, '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
                     target = PROFILES[job['quality']]
                     if width:
                         args += ['-vf', f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
