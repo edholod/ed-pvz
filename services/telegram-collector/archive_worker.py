@@ -120,6 +120,7 @@ async def download_source(url,path,job):
             async with client.stream('GET',url) as response:
                 if response.status_code!=200:
                     raise RuntimeError('Не удалось скачать исходный MP4 из Ivideon.')
+                print('archive-source status='+str(response.status_code)+' expected='+response.headers.get('content-length','unknown'),flush=True)
                 with path.open('wb') as output:
                     async for block in response.aiter_bytes(1024*1024):
                         if job.get('cancelled'):
@@ -127,6 +128,7 @@ async def download_source(url,path,job):
                         if shutil.disk_usage(ROOT).free < 128*1024*1024:
                             raise RuntimeError('На сервере недостаточно места для записи.')
                         output.write(block)
+        print('archive-source received='+str(path.stat().st_size),flush=True)
         if path.stat().st_size<1000:
             raise RuntimeError('Ivideon вернул пустой файл.')
         return str(path)
@@ -149,9 +151,9 @@ async def export_source(job, clip, start, end):
     while time.time()<deadline:
         if job.get('cancelled'):
             raise RuntimeError('Подготовка отменена.')
-        result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export-status','exportId':export_id}})
+        result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export-status','exportId':export_id,'ingest':True}})
         if result['state']=='ready':
-            return media_url(result['downloadUrl'])
+            return media_url(result.get('sourceUrl') or result['downloadUrl'])
         if result['state']=='failed':
             raise RuntimeError('Ivideon не подготовил экспорт этого участка.')
         await asyncio.sleep(3)
@@ -248,6 +250,7 @@ async def run(job):
                     part.unlink(missing_ok=True)
             job.update(state='ready',progress=100,message='Файлы готовы')
         except Exception as exc:
+            print('archive-job failed type='+type(exc).__name__,flush=True)
             job.update(state='cancelled' if job.get('cancelled') else 'failed',message=str(exc) if isinstance(exc,RuntimeError) else 'Подготовка прервана. Повтори запрос.')
         finally:
             job['updated'] = time.time()

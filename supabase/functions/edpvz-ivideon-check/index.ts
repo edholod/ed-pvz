@@ -278,6 +278,17 @@ Deno.serve(async (req) => {
         if (record.status === 'ready' && typeof record.video_url === 'string') {
           const download = hlsTarget(record.video_url);
           download.searchParams.set('access_token',key);
+          if (archive.ingest === true) {
+            let source=download;
+            for(let hop=0;hop<4;hop++){
+              const response=await fetch(source,{redirect:'manual',signal:AbortSignal.timeout(10000)});
+              const location=response.headers.get('location');
+              await response.body?.cancel();
+              if(response.status>=300&&response.status<400&&location){source=hlsTarget(location,source.href);continue;}
+              if(response.ok&&!decodeURIComponent(source.href).includes(key))return reply({state:'ready',sourceUrl:source.href});
+              break;
+            }
+          }
           const link = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
           link.searchParams.set('download',await issueTicket(download,Date.now()+15*60*1000,'download'));
           return reply({state:'ready',downloadUrl:link.href});
