@@ -179,10 +179,15 @@ async def run(job):
                     start, end = pending.pop(0)
                     if shutil.disk_usage(ROOT).free < 256 * 1024 * 1024:
                         raise RuntimeError('На сервере недостаточно места. Скачай готовые файлы и повтори позже.')
-                    result = await edge(job, {'action':'load', 'cameraId':clip['cameraId'], 'quality': 'hls', 'archive':{'start':start, 'end':end, 'profile':job['profile']}})
-                    url = media_url(result['streamUrl'])
+                    url = None
+                    if not job.get('use_export'):
+                        try:
+                            result = await edge(job, {'action':'load', 'cameraId':clip['cameraId'], 'quality': 'hls', 'archive':{'start':start, 'end':end, 'profile':job['profile']}})
+                            url = media_url(result['streamUrl'])
+                        except RuntimeError:
+                            pass
                     path = folder / ('part-' + str(index) + '-' + str(start) + '.mp4')
-                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-filter_threads', '1', '-i', url, '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
+                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-filter_threads', '1', '-i', url or '', '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
                     target = PROFILES[job['quality']]
                     if width:
                         args += ['-vf', f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
@@ -191,7 +196,7 @@ async def run(job):
                     args += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-pix_fmt', 'yuv420p', '-fps_mode', 'passthrough', '-c:a', 'aac', '-ar', '48000', '-af', 'aresample=async=1:first_pts=0', '-movflags', '+faststart', str(path)]
                     try:
                         try:
-                            if job.get('use_export'):
+                            if job.get('use_export') or not url:
                                 raise RuntimeError('Используется совместимый экспорт.')
                             await process(args, job)
                         except RuntimeError:
@@ -542,7 +547,7 @@ async def upload_cloud(provider,token,path,name,mime):
                 raise HTTPException(409,'Яндекс Диск отклонил файл. Проверь место и имя файла.')
             href = link.json().get('href','')
             parsed = urlparse(href)
-            if parsed.scheme!='https' or not parsed.hostname.endswith('.yandex.net'):
+            if parsed.scheme!='https' or not (parsed.hostname or '').endswith('.yandex.net'):
                 raise HTTPException(502,'Некорректный ответ Яндекс Диска.')
             response = await client.put(href,headers={'Content-Length':str(size),'Content-Type':mime},content=file_bytes())
         else:

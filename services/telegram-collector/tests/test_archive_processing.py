@@ -1,4 +1,4 @@
-import asyncio, importlib.util, os, tempfile, time, json, subprocess
+import asyncio, importlib.util, os, tempfile, time, json, subprocess, shutil
 from pathlib import Path
 from unittest.mock import patch
 os.environ['ARCHIVE_SIGNING_KEY']='test-signing-key-only'
@@ -37,5 +37,24 @@ async def main():
     with patch.object(w,'process',local_process),patch.object(w,'edge',edge),patch.object(w,'media_url',lambda x:x):
       await w.run(broken)
     assert broken['state']=='failed' and not broken['files'],broken
+    async def unavailable(job,payload):raise RuntimeError('HLS unavailable')
+    async def exported(job,clip,start,end):return str(source)
+    async def received(url,path,job):
+      shutil.copyfile(source,path)
+      return str(path)
+    fallback={**job,'id':'test-mp4-fallback','state':'queued','clips':[{'cameraId':'100-test:0','start':100,'end':102,'name':'MP4 fallback'}],'files':[]}
+    with patch.object(w,'process',local_process),patch.object(w,'edge',unavailable),patch.object(w,'export_source',exported),patch.object(w,'download_source',received):
+      await w.run(fallback)
+    assert fallback['state']=='ready',fallback
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    app=FastAPI();app.include_router(w.router);w.JOBS[job['id']]=job
+    async def owner(request):return ('a',{})
+    with patch.object(w,'auth',owner),TestClient(app) as client:
+      response=client.post('/archive/jobs/test-concat/file/0/frame',json={'second':1.5})
+      assert response.status_code==200,response.text
+      link=client.post('/archive/jobs/test-concat/file/'+response.json()['id'],json={}).json()
+      jpeg=client.get(link['url'])
+      assert jpeg.status_code==200 and jpeg.content.startswith(b'\xff\xd8') and jpeg.content.endswith(b'\xff\xd9')
     print(json.dumps({'concat':True,'duration':duration,'fps':rate,'downloadBytes':Path(job['files'][0]['path']).stat().st_size}))
 asyncio.run(main())
