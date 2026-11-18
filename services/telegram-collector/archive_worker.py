@@ -117,17 +117,20 @@ async def download_source(url,path,job):
     # remote byte-range seeking. Download once, then let FFmpeg seek locally.
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(180,read=45),follow_redirects=False) as client:
-            async with client.stream('GET',url) as response:
-                if response.status_code!=200:
+            async with client.stream('GET',url,headers={'Range':'bytes=0-','Accept-Encoding':'identity'}) as response:
+                if response.status_code not in (200,206):
                     raise RuntimeError('Не удалось скачать исходный MP4 из Ivideon.')
+                if response.status_code==206 and not response.headers.get('content-range','').startswith('bytes 0-'):
+                    raise RuntimeError('Ivideon вернул неправильную часть файла.')
                 print('archive-source status='+str(response.status_code)+' expected='+response.headers.get('content-length','unknown'),flush=True)
                 with path.open('wb') as output:
-                    async for block in response.aiter_bytes(1024*1024):
+                    async for block in response.aiter_bytes(64*1024):
                         if job.get('cancelled'):
                             raise RuntimeError('Подготовка отменена.')
                         if shutil.disk_usage(ROOT).free < 128*1024*1024:
                             raise RuntimeError('На сервере недостаточно места для записи.')
                         output.write(block)
+                        job['message']='Получаем исходную запись: '+str(round(output.tell()/1024))+' КБ'
         print('archive-source received='+str(path.stat().st_size),flush=True)
         if path.stat().st_size<1000:
             raise RuntimeError('Ivideon вернул пустой файл.')
