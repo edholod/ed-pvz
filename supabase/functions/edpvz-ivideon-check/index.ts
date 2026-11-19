@@ -212,6 +212,22 @@ async function connectionCipher(userId: string, value: string, encrypt: boolean)
   return new TextDecoder().decode(result);
 }
 
+async function extraConnections(userId: string, id?: string, method = 'GET', data?: object) {
+  const secret = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!secret) throw Error('Connection storage unavailable');
+  const endpoint = new URL(Deno.env.get('SUPABASE_URL') + '/rest/v1/edpvz_ivideon_extra_connections');
+  if (method !== 'POST') {
+    endpoint.searchParams.set('user_id', 'eq.' + userId);
+    if (id) endpoint.searchParams.set('id', 'eq.' + id);
+  }
+  if (method === 'GET') endpoint.searchParams.set('select', id ? 'encrypted_key,label' : 'id,label');
+  const response = await fetch(endpoint, {method, headers:{
+    apikey:secret, authorization:'Bearer ' + secret, 'content-type':'application/json',
+  }, body:data ? JSON.stringify(data) : undefined, signal:AbortSignal.timeout(3500)});
+  if (!response.ok) throw Error('Connection storage unavailable');
+  return method === 'GET' ? await response.json() : [];
+}
+
 async function connectionRequest(userId: string, method: string, encryptedKey?: string) {
   const secret = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!secret) throw Error('Connection storage unavailable');
@@ -255,11 +271,14 @@ Deno.serve(async (req) => {
     if (raw.length > 2048) return reply({error:'Некорректный запрос'}, 400);
     let payload;
     try { payload = JSON.parse(raw); } catch { return reply({error:'Некорректный запрос'}, 400); }
-    const {cameraId, quality, action, archive} = payload ?? {};
+    const {cameraId, quality, action} = payload ?? {};
+    const {connectionId, accountLabel, ...options} = payload?.archive ?? {};
+    const archive = Object.keys(options).length ? options : undefined;
+    if (connectionId !== undefined && (typeof connectionId !== 'string' || !/^[a-f0-9-]{36}$/i.test(connectionId))) return reply({error:'Некорректное подключение Ivideon.'},400);
     let {key} = payload ?? {};
     let userId;
     if (action !== undefined) {
-      if (!['save','load','disconnect'].includes(action) ||
+      if (!['save','add','accounts','load','disconnect'].includes(action) ||
           (action !== 'load' && cameraId !== undefined)) {
         return reply({error:'Некорректное действие Ivideon'}, 400);
       }
@@ -270,12 +289,19 @@ Deno.serve(async (req) => {
       if (!identity.ok) return reply({error:'Войдите в Эд ПВЗ'}, 401);
       userId = (await identity.json())?.id;
       if (typeof userId !== 'string' || !/^[a-f0-9-]{36}$/i.test(userId)) return reply({error:'Войдите в Эд ПВЗ'}, 401);
+      if (action === 'accounts') {
+        return reply({accounts:await extraConnections(userId)});
+      }
+      if (action === 'add' && (typeof accountLabel !== 'string' || !accountLabel.trim() || accountLabel.trim().length > 80)) {
+        return reply({error:'Укажи название аккаунта Ivideon.'},400);
+      }
       if (action === 'disconnect') {
-        await connectionRequest(userId, 'DELETE');
+        if (connectionId) await extraConnections(userId, connectionId, 'DELETE');
+        else await connectionRequest(userId, 'DELETE');
         return reply({connected:false});
       }
       if (action === 'load') {
-        const encrypted = await connectionRequest(userId, 'GET');
+        const encrypted = connectionId ? (await extraConnections(userId, connectionId))[0]?.encrypted_key : await connectionRequest(userId, 'GET');
         if (!encrypted) return cameraId === undefined ? reply({connected:false,cameras:[]}) : reply({error:'Подключите Ivideon к аккаунту.'}, 409);
         key = await connectionCipher(userId, encrypted, false);
       }
@@ -425,6 +451,12 @@ Deno.serve(async (req) => {
         ? items.flatMap((server) => Array.isArray(server?.cameras) ? server.cameras : [])
         : items;
       if (resource === 'servers' && items.length && !items.some((server) => Array.isArray(server?.cameras))) continue;
+      if (action === 'add') {
+        await extraConnections(userId, undefined, 'POST', {
+          user_id:userId, id:crypto.randomUUID(), label:accountLabel.trim(),
+          encrypted_key:await connectionCipher(userId, key, true),
+        });
+      }
       if (action === 'save') await connectionRequest(userId, 'POST', await connectionCipher(userId, key, true));
       return reply({connected:action !== undefined,cameras:list.slice(0,250).map((item) => ({
         id: typeof item?.id === 'string' && /^[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}$/.test(item.id) ? item.id : null,
