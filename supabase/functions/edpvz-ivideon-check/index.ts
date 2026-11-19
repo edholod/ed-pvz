@@ -40,8 +40,9 @@ async function serveHls(req: Request, ticket: string) {
     const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, await ticketKey(), bytes.slice(12));
     const {url, expires, purpose} = JSON.parse(new TextDecoder().decode(plain));
     const download = new URL(req.url).searchParams.has('download');
-    if (purpose !== (download ? 'download' : 'hls') || typeof expires !== 'number' || expires < Date.now()) throw Error();
+    if (!(download ? ['download','browser-download'].includes(purpose) : purpose === 'hls') || typeof expires !== 'number' || expires < Date.now()) throw Error();
     let target = hlsTarget(url);
+    const providerKey = target.searchParams.get('access_token');
     let response: Response | undefined;
     const requestHeaders = new Headers();
     const range = req.headers.get('range');
@@ -55,6 +56,12 @@ async function serveHls(req: Request, ticket: string) {
       await response.body?.cancel();
       if (!location) throw Error();
       target = hlsTarget(location, target.href);
+      if (purpose === 'browser-download' && providerKey &&
+          /^rr\d+\.extcam\.com$/.test(target.hostname) &&
+          !target.searchParams.has('access_token') &&
+          !decodeURIComponent(target.href).includes(providerKey)) {
+        return new Response(null,{status:302,headers:{...headers,Location:target.href,'Referrer-Policy':'no-referrer'}});
+      }
     }
     if (!response?.ok) return reply({error:download ? 'Ivideon не отдал файл. Подготовь MP4 заново.' : 'Ivideon не отдал данные HLS.'}, 502);
     const contentType = response.headers.get('content-type') ?? '';
@@ -310,7 +317,7 @@ Deno.serve(async (req) => {
             return reply({state:'ready',sealedSource});
           }
           const link = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
-          link.searchParams.set('download',await issueTicket(download,Date.now()+15*60*1000,'download'));
+          link.searchParams.set('download',await issueTicket(download,Date.now()+5*60*1000,archive.browserDownload === true ? 'browser-download' : 'download'));
           return reply({state:'ready',downloadUrl:link.href});
         }
         if (['failed','error','cancelled','expired','deleted'].includes(record.status)) return reply({state:'failed'});

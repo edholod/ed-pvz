@@ -34,7 +34,7 @@ export function createArchiveStudio(options) {
     </details>
     <p class="as-note">Шкала задаёт время запроса. Наличие записи зависит от архива камеры. Большой интервал можно добавить в очередь целиком.</p>
     <p><a href="https://my.ivideon.com/exported_records" target="_blank" rel="noopener noreferrer">Скачать готовые записи в Ivideon ↗</a></p>
-    <div class="as-actions"><button class="primary as-preview">Просмотреть</button><button class="secondary as-mark-start">Начало по текущему кадру</button><button class="secondary as-mark-end">Конец по текущему кадру</button><button class="secondary as-frame">Сохранить кадр</button></div>
+    <div class="as-actions"><button type="button" class="secondary as-original">Скачать исходный MP4</button><button class="primary as-preview">Просмотреть</button><button class="secondary as-mark-start">Начало по текущему кадру</button><button class="secondary as-mark-end">Конец по текущему кадру</button><button class="secondary as-frame">Сохранить кадр</button></div>
     <div class="as-inputs"><label>Название фрагмента<input class="as-name" maxlength="100" placeholder="Например, Отказ клиента"></label><label>Качество файла<select class="as-output"><option value="source">Исходное разрешение</option><option value="1080">До 1080p</option><option value="720">До 720p</option><option value="480">До 480p</option></select></label></div>
     <div class="as-actions"><button class="primary as-add">Добавить фрагмент</button></div>
     <p class="as-feedback" role="status"></p>
@@ -46,6 +46,45 @@ export function createArchiveStudio(options) {
     <details><summary>Яндекс Диск и Google Диск</summary><div class="as-cloud"></div><p class="as-cloud-status" role="status"></p></details>`;
   live.insertBefore(root, video);
   const get = name => $(root, '.as-' + name);
+  get('original').addEventListener('click', async () => {
+    const button = get('original');
+    const feedback = get('feedback');
+    button.disabled = true;
+    try {
+      const {start,end} = interval();
+      if (!camera || end - start > 3600) throw Error('Выбери камеру и интервал до одного часа.');
+      const cameraId = camera.id;
+      const requestExport = archive => window.EdPVZAccount.checkIvideon(undefined,cameraId,undefined,'load',archive);
+      feedback.textContent = 'Ivideon готовит исходный MP4…';
+      const {exportId} = await requestExport({mode:'export',start,end});
+      if (!exportId) throw Error('Ivideon не начал экспорт.');
+      const deadline = Date.now() + 600000;
+      while (Date.now() < deadline) {
+        const result = await requestExport({mode:'export-status',exportId,browserDownload:true});
+        if (result.state === 'failed') throw Error('Ivideon не подготовил запись.');
+        if (result.state === 'ready') {
+          const url = new URL(result.downloadUrl);
+          if (url.protocol !== 'https:' || url.hostname !== 'duerixyhzapotoeclggz.supabase.co' ||
+              url.pathname !== '/functions/v1/edpvz-ivideon-check' || !url.searchParams.has('download')) {
+            throw Error('Получен неверный адрес файла.');
+          }
+          const link = document.createElement('a');
+          link.href = url.href;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Открыть готовый MP4';
+          feedback.replaceChildren(link);
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve,3000));
+      }
+      throw Error('Ivideon ещё не завершил экспорт. Готовый файл появится в кабинете Ivideon.');
+    } catch (error) {
+      feedback.textContent = error.message || 'Не удалось подготовить исходный MP4.';
+    } finally {
+      button.disabled = false;
+    }
+  });
   get('zone').textContent = 'Время устройства · ' + Intl.DateTimeFormat().resolvedOptions().timeZone;
   const account = () => window.EdPVZAccount;
   let camera, playback, previewStart, previewBase = 0, user, generation = 0, poll, saving;
