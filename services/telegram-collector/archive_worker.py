@@ -447,12 +447,14 @@ async def run(job):
                     token = await cloud_token('yandex',job['user'],job['headers'])
                     saved = await save_to_owner_disk(job['files'][-1],token,job)
                     job.setdefault('cloudFiles',[]).append(saved['name'])
+                    await persist_job(job)
                     job['files'].pop()
                     output.unlink()
                 elif DISK_TOKEN:
                     job['message'] = 'Сохраняем готовый MP4 на Яндекс Диск'
                     item = job['files'][-1]
                     item['diskKey'] = await store_archive(output, job['id'], index)
+                    await persist_job(job)
                     item.pop('path')
                     output.unlink()
                 for part in pieces:
@@ -521,7 +523,7 @@ async def restore_job(job_id,user,headers):
             job.update(state='failed',message='После перезапуска требуется повторная загрузка исходных файлов.')
     elif job.get('state')=='uploading':
         job.update(state='failed',message='Загрузка прервана перезапуском. Загрузи части повторно.')
-    elif job.get('state')=='ready' and not job.get('cloudFiles'):
+    elif job.get('state')=='ready' and not job.get('cloudFiles') and not all(item.get('diskKey') for item in job.get('files',[])):
         job.update(state='failed',message='Временный MP4 удалён при перезапуске. Создай запрос снова.')
     JOBS[job_id]=job
     await persist_job(job)
