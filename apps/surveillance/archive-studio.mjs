@@ -450,16 +450,36 @@ export function createArchiveStudio(options) {
       card.append(diskFolderLink());
     }
     if (['queued','processing','uploading'].includes(job.state)) {
-      const progress = document.createElement('progress');
-      progress.max = 100;
-      if (job.progress > 0) progress.value = job.progress;
-      progress.setAttribute('aria-label','Общий прогресс подготовки');
-      card.append(progress);
+      const progressBox = document.createElement('div');
+      progressBox.className = 'archive-wait';
+      progressBox.setAttribute('role','status');
+      progressBox.setAttribute('aria-label','Подготовка видео продолжается');
+      const symbol = document.createElement('span');
+      symbol.className = 'archive-wait-symbol';
+      symbol.setAttribute('aria-hidden','true');
+      symbol.textContent = '✦';
+      const body = document.createElement('div');
+      body.className = 'archive-wait-body';
+      const headline = document.createElement('span');
+      headline.className = 'archive-wait-title';
+      headline.textContent = job.state === 'queued' ? 'В очереди на подготовку' : job.state === 'uploading' ? 'Сохраняем видео' : 'Подготавливаем видео';
+      const subline = document.createElement('small');
+      subline.textContent = job.progress > 0 ? 'Общий прогресс: ' + job.progress + '%' : 'Ожидаем следующий этап · задание выполняется';
+      body.append(headline,subline);
       if (job.progress > 0) {
-        const percentage = document.createElement('small');
-        percentage.textContent = 'Общий прогресс: ' + job.progress + '%';
-        card.append(percentage);
+        const track = document.createElement('div');
+        track.className = 'archive-wait-track';
+        track.setAttribute('role','progressbar');
+        track.setAttribute('aria-valuemin','0');
+        track.setAttribute('aria-valuemax','100');
+        track.setAttribute('aria-valuenow',String(job.progress));
+        const fill = document.createElement('span');
+        fill.style.width = Math.min(100,Math.max(0,job.progress)) + '%';
+        track.append(fill);
+        body.append(track);
       }
+      progressBox.append(symbol,body);
+      card.append(progressBox);
     }
   }
   function drawJobs() {
