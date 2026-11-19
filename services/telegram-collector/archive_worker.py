@@ -274,7 +274,7 @@ async def disk_link(client, action, key):
     href = response.json().get('href', '')
     target = urlparse(href)
     if (target.scheme != 'https' or target.username or target.password or target.port
-            or not (target.hostname or '').endswith('.yandex.net')):
+            or not (target.hostname or '').endswith(('.yandex.net', '.disk.yandex.ru', '.disk.yandex.com'))):
         raise RuntimeError('Яндекс Диск вернул неподдерживаемый адрес.')
     return href
 
