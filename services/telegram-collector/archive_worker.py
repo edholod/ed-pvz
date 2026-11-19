@@ -210,10 +210,11 @@ async def run(job):
                     args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-live_start_index', '0', '-prefer_x_start', '1', '-filter_threads', '1', '-threads', '1', '-i', url or '', '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
                     target = PROFILES[job['quality']]
                     if width:
-                        args += ['-vf', f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
+                        args += ['-vf', f'setpts=PTS-STARTPTS,scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
                     elif target:
-                        args += ['-vf', f"scale=-2:'min({target},ih)',setsar=1"]
-                    args += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-pix_fmt', 'yuv420p', '-fps_mode', 'passthrough', '-c:a', 'aac', '-ar', '48000', '-af', 'aresample=async=1:first_pts=0', '-movflags', '+faststart', str(path)]
+                        args += ['-vf', f"setpts=PTS-STARTPTS,scale=-2:'min({target},ih)',setsar=1"]
+                    if not width and not target:args += ['-vf','setpts=PTS-STARTPTS,setsar=1']
+                    args += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-pix_fmt', 'yuv420p', '-fps_mode', 'passthrough', '-c:a', 'aac', '-ar', '48000', '-af', 'asetpts=PTS-STARTPTS,aresample=async=1:first_pts=0', '-movflags', '+faststart', str(path)]
                     try:
                         try:
                             if job.get('use_export') or not url:
