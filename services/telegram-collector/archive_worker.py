@@ -369,6 +369,7 @@ async def run(job):
         folder = ROOT / job['id']
         folder.mkdir(exist_ok=True)
         job.update(state='processing', message='Подготавливаем запись')
+        await persist_job(job)
         try:
             total = sum(x['end'] - x['start'] for x in job['clips'])
             completed = 0
@@ -462,6 +463,7 @@ async def run(job):
             job.update(state='cancelled' if job.get('cancelled') else 'failed',message=str(exc) if isinstance(exc,RuntimeError) else 'Подготовка прервана. Повтори запрос.')
         finally:
             job['updated'] = time.time()
+            await persist_job(job)
 
 
 def public_job(job):
@@ -477,6 +479,53 @@ def public_job(job):
     if job.get('cloudFiles'):
         public['cloudFiles'] = job['cloudFiles']
     return public | {'files':[{k:v for k,v in f.items() if k not in ('path','diskKey')} for f in job['files']]}
+
+
+async def persist_job(job):
+    """Persist non-secret job state; never store bearer tokens or signed media URLs."""
+    headers = job.get('headers')
+    if not headers:
+        return
+    keys = ('id','clips','quality','profile','requestId','saveToYandex','state','message','progress','created','updated','files','cloudFiles','importSizes','importNext','importName')
+    payload = {k:job[k] for k in keys if k in job}
+    payload['files'] = [{k:v for k,v in item.items() if k not in ('path',)} for item in job.get('files',[])]
+    async with httpx.AsyncClient(timeout=12) as client:
+        response = await client.post(BASE+'/rest/v1/edpvz_archive_jobs',
+            headers={**headers,'prefer':'resolution=merge-duplicates'},
+            json={'id':job['id'],'user_id':job['user'],'request_id':job.get('requestId'),
+                  'payload':payload,'state':job['state'],'updated_at':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())})
+    if response.status_code not in (200,201,204):
+        print('archive persistence error status='+str(response.status_code),flush=True)
+
+
+async def restore_job(job_id,user,headers):
+    async with httpx.AsyncClient(timeout=12) as client:
+        response = await client.get(BASE+'/rest/v1/edpvz_archive_jobs',
+            headers=headers,params={'id':'eq.'+job_id,'user_id':'eq.'+user,'select':'payload','limit':'1'})
+    if response.status_code != 200 or not response.json():
+        return None
+    saved=response.json()[0]['payload']
+    if saved.get('id')!=job_id:
+        return None
+    job={**saved,'user':user,'headers':headers}
+    # Render's ephemeral filesystem cannot recover partially encoded files.
+    if job.get('state') in ('queued','processing'):
+        if job.get('clips') and job.get('quality') in PROFILES:
+            job.update(state='queued',message='Сервер перезапущен. Возобновляем подготовку с начала.',progress=0,files=[])
+            JOBS[job_id]=job
+            await persist_job(job)
+            task=asyncio.create_task(run(job))
+            TASKS.add(task)
+            task.add_done_callback(TASKS.discard)
+        else:
+            job.update(state='failed',message='После перезапуска требуется повторная загрузка исходных файлов.')
+    elif job.get('state')=='uploading':
+        job.update(state='failed',message='Загрузка прервана перезапуском. Загрузи части повторно.')
+    elif job.get('state')=='ready' and not job.get('cloudFiles'):
+        job.update(state='failed',message='Временный MP4 удалён при перезапуске. Создай запрос снова.')
+    JOBS[job_id]=job
+    await persist_job(job)
+    return job
 
 
 def owned(job_id, user):
@@ -544,6 +593,7 @@ async def create(request: Request):
         await cloud_token('yandex',user,headers)
     job = {'id':secrets.token_urlsafe(18),'user':user,'headers':headers,'clips':normalized,'saveToYandex':save_to_yandex,'quality':data['quality'],'profile':data['profile'],'requestId':request_id,'state':'queued','message':'Ожидание обработки','progress':0,'files':[],'created':time.time()}
     JOBS[job['id']] = job
+    await persist_job(job)
     task = asyncio.create_task(run(job))
     TASKS.add(task)
     task.add_done_callback(TASKS.discard)
@@ -696,7 +746,11 @@ async def save_frame(request:Request):
 @router.get('/jobs/{job_id}')
 async def status(job_id:str, request:Request):
     user, headers = await auth(request)
-    job = owned(job_id,user)
+    job = JOBS.get(job_id)
+    if not job or job.get('user') != user:
+        job = await restore_job(job_id,user,headers)
+    if not job:
+        raise HTTPException(404,'Задание не найдено.')
     job['headers'] = headers
     return public_job(job)
 
