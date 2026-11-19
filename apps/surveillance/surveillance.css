@@ -176,3 +176,11 @@ form button{margin-top:12px}
   .camera-tabs {width:100%}
   .camera-tabs [role="tab"] {flex:1}
 }
+
+#archive-records {overflow-wrap:anywhere}
+.archive-original-files > li {flex-wrap:wrap;justify-content:flex-start}
+.archive-original-files > li > a {flex-basis:100%}
+#open-records {margin-top:12px}
+@media(max-width:760px) {
+  .camera-tabs [role="tab"] {min-width:0;padding:8px 7px;font-size:.82rem;line-height:1.2;flex:1 1 0}
+}
