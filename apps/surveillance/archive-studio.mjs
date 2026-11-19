@@ -40,11 +40,11 @@ export function createArchiveStudio(options) {
     <p class="as-feedback" role="status"></p>
     <h3>Фрагменты к подготовке</h3><div class="as-clips"></div>
     <div class="as-actions"><button class="primary as-build">Подготовить файлы</button></div>
-    <p class="as-note">Длинная запись обрабатывается частями и склеивается на сервере. При пробеле или несовпадении длительности появится ошибка. Пониженное разрешение не увеличивает детализацию исходной записи.</p>
+    <p class="as-note">Длинная запись обрабатывается частями и склеивается на сервере. Лишние секунды из экспорта Ivideon сохраняются. При обнаружении пропуска появится ошибка. Пониженное разрешение не увеличивает детализацию исходной записи.</p>
     <h3>Готовые файлы и задания</h3><div class="as-jobs"></div>
     <p class="as-note">Готовые файлы временно хранятся до 24 часов. Перезапуск сервера может удалить временные файлы — в этом случае подготовь их заново.</p>
     <div class="as-actions"><button type="button" class="secondary as-save-yandex" hidden>Сохранить выбранный интервал на Яндекс Диск</button></div>
-    <details><summary>Яндекс Диск и Google Диск</summary><div class="as-cloud"></div><p class="as-cloud-status" role="status"></p></details>`;
+    <p><a href="./#cloud-settings">Настройки облачных дисков</a></p>`;
   live.insertBefore(root, video);
   const get = name => $(root, '.as-' + name);
   const originalStatus = document.createElement('p');
@@ -404,20 +404,13 @@ export function createArchiveStudio(options) {
     finally{control.disabled=false;}
   });
   async function clouds() {
-    try {
-      config=await request('/cloud');get('cloud-status').textContent='';
-      get('save-yandex').hidden=!(config?.yandex?.configured && config.yandex.connected);
-      const box=get('cloud');box.replaceChildren();
-      for(const provider of ['yandex','google']) {
-        const cloud=config[provider];const name=provider==='yandex'?'Яндекс Диск':'Google Диск';
-        if(!cloud.configured){const note=document.createElement('p');note.textContent=name+': подключение OAuth-приложения ещё не настроено.';box.append(note);continue;}
-        box.append(button(cloud.connected?'Отключить '+name:'Подключить '+name,async()=>{
-          if(cloud.connected){await request('/cloud/'+provider+'/disconnect',{});await clouds();drawJobs();}
-          else {const tab=window.open('about:blank','_blank');try{const result=await request('/cloud/'+provider+'/connect',{});if(tab)tab.location.href=result.url;else window.location.href=result.url;}catch(e){tab?.close();throw e;}}
-        }));
-      }
-      drawJobs();
-    } catch(error){get('cloud-status').textContent=error.message;}
+    const user = account()?.user?.id;
+    if (!user) return;
+    const status = await request('/cloud').catch(() => null);
+    if (account()?.user?.id !== user) return;
+    config = status;
+    get('save-yandex').hidden = !(config?.yandex?.configured && config.yandex.connected);
+    drawJobs();
   }
   async function capture() {
     await ensureWorker('frame');
@@ -439,7 +432,7 @@ export function createArchiveStudio(options) {
     if(!id)return;
     try{const saved=await account().load('ivideon-archive-project');if(user!==id)return;clips=Array.isArray(saved?.payload?.clips)?saved.payload.clips.slice(0,50):[];jobs=Array.isArray(saved?.payload?.jobs)?saved.payload.jobs.slice(0,50):[];loaded=true;drawClips();drawJobs();schedule();void clouds();}catch(error){feedback(error.message);}
   }
-  get('cloud').closest('details').addEventListener('toggle', event => {if(event.target.open)void clouds();});
+  window.addEventListener('pageshow', clouds);
   get('preview').addEventListener('click',()=>preview().catch(e=>feedback(e.message)));
   get('mark-start').addEventListener('click',()=>{try{mark('start');}catch(e){feedback(e.message);}});
   get('mark-end').addEventListener('click',()=>{try{mark('end');}catch(e){feedback(e.message);}});
