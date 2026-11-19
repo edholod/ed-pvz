@@ -579,6 +579,12 @@ async def create(request: Request):
     for j in JOBS.values():
         if j['user']==user and j['requestId']==request_id:
             return public_job(j)
+    async with httpx.AsyncClient(timeout=12) as client:
+        previous = await client.get(BASE+'/rest/v1/edpvz_archive_jobs',headers=headers,params={'user_id':'eq.'+user,'request_id':'eq.'+request_id,'select':'id','limit':'1'})
+    if previous.status_code == 200 and previous.json():
+        restored = await restore_job(previous.json()[0]['id'],user,headers)
+        if restored:
+            return public_job(restored)
     existing = [j for j in JOBS.values() if j['user']==user and j['state'] in ('queued','processing')]
     if len(existing) >= 2:
         raise HTTPException(409,'Уже готовятся два запроса. Дождись завершения или отмени один.')
