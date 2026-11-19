@@ -12,6 +12,22 @@
     return button;
   }
 
+  function archiveLink(body) {
+    if (typeof body !== 'string' || !body.startsWith(location.origin + '/apps/surveillance/archive-share.html#')) return null;
+    try {
+      const url = new URL(body);
+      if (url.origin !== location.origin || url.pathname !== '/apps/surveillance/archive-share.html' || !url.hash) return null;
+      const link = document.createElement('a');
+      link.href = url.href;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Посмотреть запись камеры';
+      return link;
+    } catch {
+      return null;
+    }
+  }
+
   function render(message, {selection, author, delivery = '', onForward, onDelete, onError}) {
     const deleted = !!message.deleted_at || message.body === 'Сообщение удалено';
     const bubble = document.createElement('div');
@@ -26,6 +42,7 @@
     }
 
     const attachment = deleted ? null : (
+      archiveLink(message.body) ||
       window.EdPVZChatTask.render(message.body) ||
       window.EdPVZChatQR.render(message.body) ||
       window.EdPVZChatLocation.render(message.body) ||
