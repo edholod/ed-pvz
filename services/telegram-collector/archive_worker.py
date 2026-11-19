@@ -449,7 +449,8 @@ def owned(job_id, user):
 def expire():
     now = time.time()
     for key, job in list(JOBS.items()):
-        if job['state'] in ('ready','failed','cancelled') and now-job.get('updated',job['created']) > 86400:
+        abandoned = job['state'] == 'uploading' and not job.get('importBusy') and now-job['updated'] > 1800
+        if abandoned or (job['state'] in ('ready','failed','cancelled') and now-job.get('updated',job['created']) > 86400):
             shutil.rmtree(ROOT/key,ignore_errors=True)
             del JOBS[key]
 
@@ -499,6 +500,116 @@ async def create(request: Request):
     return public_job(job)
 
 
+IMPORT_LIMIT = 2_000_000_000
+IMPORT_PARTS = 12
+
+
+@router.post('/jobs/import')
+async def create_import(request: Request):
+    user, _ = await auth(request)
+    if not DISK_TOKEN:
+        raise HTTPException(503, 'Яндекс Диск не подключён.')
+    data = await request.json()
+    sizes = data.get('sizes') if isinstance(data, dict) else None
+    if (not isinstance(sizes, list) or not 1 <= len(sizes) <= IMPORT_PARTS
+            or any(type(size) is not int or size < 16 for size in sizes)
+            or sum(sizes) > IMPORT_LIMIT):
+        raise HTTPException(400, 'Выбери до 12 MP4 общим размером до 2 ГБ.')
+    expire()
+    active = [j for j in JOBS.values() if j.get('importSizes') and j['state'] in ('uploading','queued','processing')]
+    if any(j['user'] == user for j in active) or len(active) >= 2:
+        raise HTTPException(409, 'Уже идёт сборка из файлов. Попробуй позже.')
+    if shutil.disk_usage(ROOT).free < 2 * sum(sizes) + 256 * 1024 * 1024:
+        raise HTTPException(507, 'На сервере недостаточно места для сборки.')
+    now = time.time()
+    job = {'id':secrets.token_urlsafe(18), 'user':user, 'state':'uploading',
+           'created':now, 'updated':now, 'message':'Загружаем части', 'progress':0,
+           'files':[], 'importSizes':sizes, 'importNext':0, 'importName':clean_name(data.get('name') or 'Объединённое видео')}
+    (ROOT / job['id']).mkdir()
+    JOBS[job['id']] = job
+    return public_job(job)
+
+
+@router.post('/jobs/{job_id}/import/{index}')
+async def import_part(job_id: str, index: int, request: Request):
+    user, _ = await auth(request)
+    job = owned(job_id,user)
+    sizes = job.get('importSizes')
+    if not sizes or job['state'] != 'uploading' or index != job['importNext'] or job.get('importBusy'):
+        raise HTTPException(409, 'Часть пришла не по порядку или загрузка завершена.')
+    size = sizes[index]
+    folder = ROOT / job_id
+    part = folder / (str(index) + '-input.mp4')
+    received = 0
+    job['importBusy'] = True
+    try:
+        with part.open('wb') as output:
+            async for block in request.stream():
+                received += len(block)
+                if received > size:
+                    raise HTTPException(413, 'Размер части отличается от указанного.')
+                output.write(block)
+        if received != size:
+            raise HTTPException(400, 'Часть получена не полностью.')
+        with part.open('rb') as source:
+            if source.read(8)[4:] != b'ftyp':
+                raise HTTPException(400, 'Ожидается файл MP4.')
+        job['importNext'] += 1
+        job['updated'] = time.time()
+        job['progress'] = int(70 * sum(sizes[:index+1]) / sum(sizes))
+    except BaseException:
+        part.unlink(missing_ok=True)
+        raise
+    finally:
+        job['importBusy'] = False
+    if job['importNext'] == len(sizes):
+        job.update(state='queued',message='Части получены. Ожидаем сборку.')
+        task = asyncio.create_task(merge_import(job))
+        TASKS.add(task)
+        task.add_done_callback(TASKS.discard)
+    return public_job(job)
+
+
+async def merge_import(job):
+    folder = ROOT / job['id']
+    try:
+        async with LOCK:
+            if job.get('cancelled'):
+                return
+            job.update(state='processing',message='Склеиваем MP4',progress=75)
+            parts = [folder / (str(i) + '-input.mp4') for i in range(len(job['importSizes']))]
+            expected = 0
+            dimensions = None
+            for part in parts:
+                seconds, fps, width, height = await probe(part,job)
+                if dimensions and dimensions != (width,height):
+                    raise RuntimeError('Части имеют разное разрешение. Выбери экспорты одной камеры.')
+                dimensions = (width,height)
+                expected += seconds
+            manifest = folder / 'inputs.txt'
+            manifest.write_text(''.join("file " + part.name + "\n" for part in parts))
+            output = folder / 'merged.mp4'
+            await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-xerror','-y',
+                           '-protocol_whitelist','file','-f','concat','-safe','1','-i',str(manifest),
+                           '-map','0:v:0','-map','0:a:0?','-c','copy','-movflags','+faststart',str(output)],job,600)
+            duration, fps, width, height = await probe(output,job)
+            if abs(duration - expected) > max(0.5, 0.15 * len(parts)):
+                raise RuntimeError('Склейка не прошла проверку длительности.')
+            job.update(message='Сохраняем один MP4 на Яндекс Диск',progress=90)
+            key = await store_archive(output,job['id'],0)
+            job['files'].append({'id':'0','name':job['importName'].removesuffix('.mp4')+'.mp4',
+                                 'size':output.stat().st_size,'duration':duration,'fps':fps,
+                                 'width':width,'height':height,'diskKey':key,'sourceStart':0})
+            job.update(state='ready',message='Один MP4 готов',progress=100)
+    except Exception as error:
+        print('archive import failed: ' + type(error).__name__,flush=True)
+        job.update(state='cancelled' if job.get('cancelled') else 'failed',
+                   message=str(error) if isinstance(error,RuntimeError) else 'Не удалось собрать MP4.')
+    finally:
+        job['updated'] = time.time()
+        shutil.rmtree(folder,ignore_errors=True)
+
+
 @router.post('/jobs/frame')
 async def save_frame(request:Request):
     user, headers = await auth(request)
@@ -544,7 +655,9 @@ async def status(job_id:str, request:Request):
 async def cancel(job_id:str,request:Request):
     user,_ = await auth(request)
     job = owned(job_id,user)
-    if job['state'] in ('queued','processing'):
+    if job['state'] in ('uploading','queued','processing'):
+        if job['state'] == 'uploading' and not job.get('importBusy'):
+            shutil.rmtree(ROOT/job_id,ignore_errors=True)
         job['cancelled'] = True
         if job.get('process') and job['process'].returncode is None:
             job['process'].terminate()

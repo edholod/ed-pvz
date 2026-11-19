@@ -84,9 +84,10 @@ async function archiveRequest(path,body){
  await ensure();
  if(!session)throw Error('Войдите в аккаунт');
  if(!/^\/(jobs|cloud|health)(\/|$)/.test(path)||path.includes('..')||path.includes('?'))throw Error('Некорректный запрос архива');
- const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),120000);
+ const isVideoPart = body instanceof Blob && /^\/jobs\/[\w-]+\/import\/\d+$/.test(path);
+ const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),isVideoPart?900000:120000);
  try{
-  const r=await fetch('https://edpvz-archive.onrender.com/archive'+path,{method:body===undefined?'GET':'POST',signal:controller.signal,headers:headers(session.access_token),body:body===undefined?undefined:JSON.stringify(body)});
+  const r=await fetch('https://edpvz-archive.onrender.com/archive'+path,{method:body===undefined?'GET':'POST',signal:controller.signal,headers:headers(session.access_token),body:body===undefined?undefined:isVideoPart?body:JSON.stringify(body)});
   const data=await r.json().catch(()=>({detail:'Сервер архива вернул непонятный ответ.'}));
   if(!r.ok){const e=Error(typeof data.detail==='string'?data.detail:'Не удалось выполнить запрос архива');e.status=r.status;throw e;}
   return data;

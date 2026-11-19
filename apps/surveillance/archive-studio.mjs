@@ -49,7 +49,43 @@ export function createArchiveStudio(options) {
   const originalStatus = document.createElement('p');
   originalStatus.setAttribute('role','status');
   const originalFiles = document.createElement('ul');
-  get('original').parentElement.after(originalStatus,originalFiles);
+  const importPanel = document.createElement('details');
+  const importTitle = document.createElement('summary');
+  importTitle.textContent = 'Склеить скачанные MP4 и сохранить на Яндекс Диск';
+  const importInput = document.createElement('input');
+  importInput.type = 'file'; importInput.accept = 'video/mp4,.mp4'; importInput.multiple = true;
+  importInput.setAttribute('aria-label','Части MP4');
+  const importInfo = document.createElement('p');
+  const importStatus = document.createElement('p');
+  importStatus.setAttribute('role','status');
+  importInput.addEventListener('change',()=>{
+    importInfo.textContent = [...importInput.files].sort((a,b)=>a.name.localeCompare(b.name,'ru',{numeric:true})).map(f=>f.name).join(' → ');
+  });
+  const merge = document.createElement('button');
+  merge.type = 'button'; merge.className = 'secondary'; merge.textContent = 'Склеить и сохранить';
+  merge.addEventListener('click',async()=>{
+    const files = [...importInput.files].sort((a,b)=>a.name.localeCompare(b.name,'ru',{numeric:true}));
+    merge.disabled = true;
+    let job;
+    try {
+      if (!loaded) throw Error('Дождись загрузки списка заданий.');
+      const owner = user;
+      job = await request('/jobs/import',{sizes:files.map(f=>f.size),name:get('name').value.trim()});
+      for (const [i,file] of files.entries()) {
+        if (owner !== user) return;
+        importStatus.textContent = 'Загружаем часть '+(i+1)+' из '+files.length+'…';
+        Object.assign(job,await request('/jobs/'+job.id+'/import/'+i,file));
+      }
+      if (owner !== user) return;
+      jobs.unshift(job); persist(); drawJobs(); schedule();
+      importStatus.textContent = 'Части загружены. Один MP4 появится в готовых файлах.';
+    } catch (error) {
+      if (job) await request('/jobs/'+job.id+'/cancel',{}).catch(()=>{});
+      importStatus.textContent = error.message || 'Не удалось загрузить части.';
+    } finally { merge.disabled = false; }
+  });
+  importPanel.append(importTitle,'Порядок склейки определяется именами файлов. ',importInput,importInfo,merge,importStatus);
+  get('original').parentElement.after(originalStatus,originalFiles,importPanel);
   get('original').addEventListener('click', async () => {
     const button = get('original');
     button.disabled = true;
