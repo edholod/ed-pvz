@@ -159,7 +159,7 @@ async def download_source(url,path,job):
                         block=response.read(64*1024)
                         if not block:break
                         output.write(block);received+=len(block)
-                        job['message']='Получаем запись: '+str(round(received/1024))+' КБ'+(' из '+str(round(expected/1024))+' КБ' if expected else '')
+                        job['message']='Загружаем на сервер: '+str(round(received/1024))+' КБ'+(' из '+str(round(expected/1024))+' КБ' if expected else '')
                 if received<1000 or (expected is not None and received!=expected):
                     raise RuntimeError('Исходный файл передан не полностью. Повтори подготовку.')
                 print('archive-source received='+str(received),flush=True)
@@ -197,7 +197,7 @@ async def download_source(url,path,job):
                     if received != end - first + 1:
                         raise RuntimeError('Часть файла получена не полностью.')
                 offset = end + 1
-                job['message'] = f'Получаем запись: {offset // 1024} из {total // 1024} КБ'
+                job['message'] = f'Загружаем на сервер: {offset // 1024} из {total // 1024} КБ'
         if offset < 1000:
             raise RuntimeError('Ivideon вернул слишком короткий файл.')
         return str(path)
@@ -220,7 +220,7 @@ async def download_source(url,path,job):
                             if job.get('cancelled'):raise RuntimeError('Подготовка отменена.')
                             if shutil.disk_usage(ROOT).free<128*1024*1024:raise RuntimeError('На сервере недостаточно места.')
                             output.write(block);received+=len(block)
-                            job['message']='Получаем запись: '+str(round(received/1024))+' КБ'+(' из '+str(round(expected/1024))+' КБ' if expected else '')
+                            job['message']='Загружаем на сервер: '+str(round(received/1024))+' КБ'+(' из '+str(round(expected/1024))+' КБ' if expected else '')
                     if received<1000 or (expected is not None and received!=expected):raise RuntimeError('Исходный файл передан не полностью.')
                     print('archive-source protocol='+response.http_version+' received='+str(received),flush=True)
                     return str(path)
@@ -256,7 +256,7 @@ async def export_source(job, clip, start, end):
             raise RuntimeError('Подготовка отменена.')
         result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{**({'connectionId':clip['connectionId']} if clip.get('connectionId') else {}),'mode':'export-status','exportId':export_id,'ingest':True}})
         if result['state']=='ready':
-            job['message']='Скачиваем готовый файл Ivideon'
+            job['message']='Загружаем файл Ivideon на сервер «Эд ПВЗ»'
             print('archive-export ready id='+str(export_id),flush=True)
             return media_url(result.get('sourceUrl') or result['downloadUrl'])
         if result['state']=='failed':
@@ -369,12 +369,13 @@ async def run(job):
                 width = None
                 while pending:
                     start, end = pending.pop(0)
+                    job['part'] = {'index':len(pieces)+1,'total':len(pieces)+len(pending)+1}
                     if shutil.disk_usage(ROOT).free < 256 * 1024 * 1024:
                         raise RuntimeError('На сервере недостаточно места. Скачай готовые файлы и повтори позже.')
                     path=folder/('part-'+str(index)+'-'+str(start)+'.mp4')
                     source=folder/('source-'+str(index)+'-'+str(start)+'.mp4')
                     try:
-                        job['message']='Получаем архивный файл Ivideon'
+                        job['message']='Запрашиваем запись у Ivideon'
                         source_url=await export_source(job,clip,start,end)
                         await download_source(source_url,source,job)
                         original_duration,original_fps,_,_=await probe(source,job)
@@ -383,12 +384,16 @@ async def run(job):
                             raise RuntimeError(f'Ivideon вернул {original_duration:.2f} с видео на запрос {end-start} с. Файл не сохранён: запись короче выбранного интервала.')
                         args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-xerror','-err_detect','explode','-i',str(source),'-map','0:v:0','-map','0:a:0?','-threads','1']
                         target=PROFILES[job['quality']]
+                        # Keep every frame even when Ivideon delivers duplicate timestamps.
+                        filters=["settb=1/90000","setpts='if(eq(N,0),PTS,max(PTS,PREV_OUTPTS+1))'"]
                         if width:
-                            args+=['-vf',f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
+                            filters += [f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease',
+                                        f'pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2','setsar=1']
                         elif target:
-                            args+=['-vf',f"scale=-2:'min({target},ih)',setsar=1"]
+                            filters += [f"scale=-2:'min({target},ih)'",'setsar=1']
+                        args+=['-vf',','.join(filters),'-enc_time_base','1:90000','-bf','0']
                         args+=['-c:v','libx264','-preset','veryfast','-crf','19','-pix_fmt','yuv420p','-fps_mode','passthrough','-video_track_timescale','90000','-c:a','aac','-ar','48000','-af','aresample=async=1:first_pts=0','-movflags','+faststart',str(path)]
-                        job['message']='Обрабатываем архивный файл'
+                        job['message']='Обрабатываем видео и звук'
                         try:
                             await process(args,job)
                         finally:
@@ -409,6 +414,8 @@ async def run(job):
                     piece_durations.append(duration)
                     completed += end-start
                     job['progress'] = min(98, round(completed/total*98))
+                job.pop('part',None)
+                job['message'] = 'Собираем один MP4 из частей' if len(pieces)>1 else 'Проверяем готовый MP4'
                 output = folder / (str(index) + '.mp4')
                 if len(pieces) == 1:
                     pieces[0].replace(output)
@@ -416,15 +423,17 @@ async def run(job):
                     manifest = folder / ('concat-' + str(index) + '.txt')
                     manifest.write_text(''.join("file '" + str(p) + "'\n" for p in pieces))
                     await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',str(manifest),'-map','0','-c','copy','-movflags','+faststart',str(output)],job)
+                job['message'] = 'Проверяем готовый MP4'
                 duration, fps, w, h = await probe(output,job)
                 await verify_frames(output,job,fps)
                 if duration < sum(piece_durations) - max(.05,2/fps):
                     raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
                 job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':clip['end']-clip['start'],'measuredDuration':duration,'fps':fps,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'connectionId':clip.get('connectionId'),'cameraName':clip.get('cameraName','Камера'),'sourceStart':clip['start']})
                 if job.get('saveToYandex'):
-                    job['message'] = 'Сохраняем запись на твой Яндекс Диск'
+                    job['message'] = 'Подключаемся к твоему Яндекс Диску'
                     token = await cloud_token('yandex',job['user'],job['headers'])
-                    await save_to_owner_disk(job['files'][-1],token)
+                    saved = await save_to_owner_disk(job['files'][-1],token,job)
+                    job.setdefault('cloudFiles',[]).append(saved['name'])
                     job['files'].pop()
                     output.unlink()
                 elif DISK_TOKEN:
@@ -444,7 +453,18 @@ async def run(job):
 
 
 def public_job(job):
-    return {k:job[k] for k in ('id','state','progress','message','created')} | {'files':[{k:v for k,v in f.items() if k not in ('path','diskKey')} for f in job['files']]}
+    public = {k:job[k] for k in ('id','state','progress','message','created')}
+    clips = job.get('clips') or []
+    if clips:
+        clip = clips[0]
+        public.update(title=clip['name'],cameraName=clip['cameraName'],start=clip['start'],end=clip['end'])
+    if job.get('part') and job['state'] == 'processing':
+        public['part'] = job['part']
+    if job.get('saveToYandex'):
+        public['destination'] = 'yandex'
+    if job.get('cloudFiles'):
+        public['cloudFiles'] = job['cloudFiles']
+    return public | {'files':[{k:v for k,v in f.items() if k not in ('path','diskKey')} for f in job['files']]}
 
 
 def owned(job_id, user):
@@ -886,29 +906,47 @@ async def upload_cloud(provider,token,path,name,mime):
     return {'saved':True}
 
 
-async def save_to_owner_disk(item, token):
+async def save_to_owner_disk(item, token, job=None):
     name = Path(item['name'])
     suffix = name.suffix or '.mp4'
     target = 'app:/' + clean_name(name.stem)[:80] + '-' + secrets.token_hex(5) + suffix
     headers = {'Content-Length': str(item['size']), 'Content-Type': item.get('mime', 'video/mp4')}
     async with httpx.AsyncClient(timeout=120) as client:
         destination = await disk_link(client,'upload',target,token)
+        async def report(blocks):
+            written = 0
+            if job is not None:
+                job['message'] = 'Загружаем MP4 на твой Яндекс Диск'
+            async for block in blocks:
+                if job is not None:
+                    if job.get('cancelled'):
+                        raise RuntimeError('Загрузка отменена.')
+                    written += len(block)
+                    job['message'] = f'Загружаем на Яндекс Диск: {written/1048576:.1f} из {item["size"]/1048576:.1f} МБ'
+                yield block
+            if job is not None:
+                job['message'] = 'Ждём подтверждения загрузки от Яндекс Диска'
         if item.get('diskKey'):
             source_url = await disk_link(client,'download',item['diskKey'])
             async with client.stream('GET',source_url) as source:
                 if source.status_code != 200:
                     raise RuntimeError('Временная копия записи недоступна.')
-                response = await client.put(destination,headers=headers,content=source.aiter_bytes(1024 * 1024))
+                response = await client.put(destination,headers=headers,content=report(source.aiter_bytes(1024 * 1024)))
         else:
             async def blocks():
                 with open(item['path'],'rb') as source:
                     while block := await asyncio.to_thread(source.read,1024 * 1024):
                         yield block
-            response = await client.put(destination,headers=headers,content=blocks())
+            response = await client.put(destination,headers=headers,content=report(blocks()))
         if response.status_code not in (200,201,202):
             raise RuntimeError('Яндекс Диск отклонил сохранение видео.')
-        metadata = await client.get(DISK_API,headers={'Authorization':'OAuth ' + token},params={'path':target})
-        if metadata.status_code != 200 or metadata.json().get('size') != item['size']:
+        for attempt in range(5):
+            metadata = await client.get(DISK_API,headers={'Authorization':'OAuth ' + token},params={'path':target})
+            if metadata.status_code == 200 and metadata.json().get('size') == item['size']:
+                break
+            if attempt < 4:
+                await asyncio.sleep(1)
+        else:
             raise RuntimeError('Яндекс Диск не подтвердил размер сохранённого файла.')
     return {'saved':True,'name':target.removeprefix('app:/')}
 
