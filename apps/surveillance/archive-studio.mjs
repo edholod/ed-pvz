@@ -17,7 +17,7 @@ export function splitIntervals(start, end, maxSeconds = 900) {
   return result;
 }
 export function createArchiveStudio(options) {
-  const {video, live, liveName, status, playHls, stopPlayback} = options;
+  const {video, live, liveName, status, records, playHls, stopPlayback} = options;
   const root = document.createElement('section');
   root.className = 'archive-studio';
   root.hidden = true;
@@ -42,8 +42,6 @@ export function createArchiveStudio(options) {
     <h3>Фрагменты к подготовке</h3><div class="as-clips"></div>
     <div class="as-actions"><button class="primary as-build">Подготовить файлы</button></div>
     <p class="as-note">Длинная запись обрабатывается частями и склеивается на сервере. Лишние секунды из экспорта Ivideon сохраняются. При обнаружении пропуска появится ошибка. Пониженное разрешение не увеличивает детализацию исходной записи.</p>
-    <h3>Готовые файлы и задания</h3><div class="as-jobs"></div>
-    <p class="as-note">Готовые файлы временно хранятся до 24 часов. Перезапуск сервера может удалить временные файлы — в этом случае подготовь их заново.</p>
     <div class="as-actions"><button type="button" class="secondary as-save-yandex" hidden>Сохранить выбранный интервал на Яндекс Диск</button></div>
     <p><a href="./#cloud-settings">Настройки облачных дисков</a></p>`;
   live.insertBefore(root, video);
@@ -51,6 +49,8 @@ export function createArchiveStudio(options) {
   const originalStatus = document.createElement('p');
   originalStatus.setAttribute('role','status');
   const originalFiles = document.createElement('ul');
+  originalFiles.className = 'shortcut-list archive-original-files';
+  records.querySelector('.as-jobs').before(originalFiles);
   const importPanel = document.createElement('details');
   const importTitle = document.createElement('summary');
   importTitle.textContent = 'Склеить скачанные MP4 и сохранить на Яндекс Диск';
@@ -80,29 +80,30 @@ export function createArchiveStudio(options) {
       }
       if (owner !== user) return;
       jobs.unshift(job); persist(); drawJobs(); schedule();
-      importStatus.textContent = 'Части загружены. Один MP4 появится в готовых файлах.';
+      importStatus.textContent = 'Части загружены. Один MP4 появится во вкладке «Список архивов».';
     } catch (error) {
       if (job) await request('/jobs/'+job.id+'/cancel',{}).catch(()=>{});
       importStatus.textContent = error.message || 'Не удалось загрузить части.';
     } finally { merge.disabled = false; }
   });
   importPanel.append(importTitle,'Порядок склейки определяется именами файлов. ',importInput,importInfo,merge,importStatus);
-  get('original').parentElement.after(originalStatus,originalFiles,importPanel);
+  get('original').parentElement.after(originalStatus,importPanel);
   get('original').addEventListener('click', async () => {
     const originalButton = get('original');
     setLoading(originalButton,true);
-    originalFiles.replaceChildren();
+    const owner = user;
     try {
       const {start,end} = interval();
       if (!camera) throw Error('Выбери камеру.');
-      const {id:cameraId, connectionId} = camera;
+      const selected = camera;
+      const {id:cameraId, connectionId} = selected;
       if (end-start > 18000) {
         const health = await request('/health');
         if (!health.ok || !health.exportReady || !health.temporaryDiskConfigured) {
           throw Error('Сборка одного файла через Яндекс Диск временно недоступна.');
         }
-        const owner = user;
-        const cameraName = camera.displayName || camera.name;
+        if (owner !== user) return;
+        const cameraName = selected.displayName || selected.name;
         originalStatus.textContent = 'Отправляем длинную запись на сборку…';
         const job = await request('/jobs',{
           clips:[{cameraId,connectionId,cameraName,start,end,name:get('name').value.trim() || cameraName+' '+stamp(start)}],
@@ -123,7 +124,9 @@ export function createArchiveStudio(options) {
         const deadline = Date.now() + 600000;
         let result;
         while (Date.now() < deadline) {
+          if (owner !== user) return;
           result = await getStatus(exportId);
+          if (owner !== user) return;
           if (result.state === 'ready') break;
           if (result.state === 'failed') throw Error('Ivideon не подготовил часть ' + (index+1) + '.');
           await new Promise(resolve => setTimeout(resolve,3000));
@@ -171,9 +174,10 @@ export function createArchiveStudio(options) {
           sendToMessenger(shared.downloadUrl);
         });
         row.append(link,' ',refresh,' ',share,' ',send);
-        originalFiles.append(row);
+        originalFiles.prepend(row);
+        drawJobs();
       }
-      originalStatus.textContent = parts.length === 1 ? 'MP4 готов.' : 'Готово файлов: ' + parts.length + '. Скачай их по очереди.';
+      originalStatus.textContent = 'MP4 готов. Открой «Список архивов», чтобы скачать файл.';
     } catch (error) {
       originalStatus.textContent = error.message || 'Не удалось подготовить исходный MP4.';
     } finally {
@@ -185,7 +189,7 @@ export function createArchiveStudio(options) {
   let camera, playback, previewStart, previewBase = 0, user, generation = 0, poll, saving;
   let clips = [], jobs = [], loaded = false, config;
   const urls = new Set();
-  const feedback = text => { get('feedback').textContent = text; };
+  const feedback = text => { (root.hidden ? records.querySelector('.as-records-feedback') : get('feedback')).textContent = text; };
   const request = (path, body) => account().archiveRequest(path, body);
   function button(text, fn) {
     const b = document.createElement('button');
@@ -308,7 +312,7 @@ export function createArchiveStudio(options) {
     feedback('Отправляем запись на подготовку…');
     const job = await request('/jobs',payload);
     if (owner!==user) return;
-    jobs.unshift(job);persist();drawJobs();schedule();feedback('Задание принято. Файлы появятся ниже по мере готовности.');
+    jobs.unshift(job);persist();drawJobs();schedule();feedback('Задание принято. Файлы появятся во вкладке «Список архивов».');
   }
   function sharePlayer(url) {
     const href = new URL(url);
@@ -380,7 +384,8 @@ export function createArchiveStudio(options) {
   async function showFile(job,file,active=++generation) {
     const owner=user;
     const result=await fileLink(job,file);
-    if(active!==generation || owner!==user || !camera) return;
+    if(active!==generation || owner!==user) return;
+    live.hidden=false;
     stop();stopPlayback();previewStart=file.sourceStart;previewBase=0;
     if(file.cameraId){camera={id:file.cameraId,connectionId:file.connectionId,name:file.cameraName||file.name};get('start').value=dateValue(file.sourceStart);get('end').value=dateValue(file.sourceStart+Math.floor(file.duration));syncTimeline();}
     liveName.textContent=file.name;
@@ -394,7 +399,8 @@ export function createArchiveStudio(options) {
     video.crossOrigin='anonymous';video.src=result.url;video.load();video.play().catch(()=>{});
   }
   function drawJobs() {
-    const box=get('jobs');box.replaceChildren();
+    const box=records.querySelector('.as-jobs');box.replaceChildren();
+    records.querySelector('.as-empty').hidden = Boolean(jobs.length || originalFiles.children.length);
     for(const job of jobs) {
       const card=document.createElement('article');card.className='as-card';
       const title=document.createElement('strong');title.textContent=job.message||'Проверяем задание…';
@@ -495,7 +501,7 @@ export function createArchiveStudio(options) {
   }
   async function sync() {
     const id=account()?.user?.id;if(id===user)return;
-    generation++;stop();previewLoading(false);clearTimeout(poll);clearTimeout(saving);user=id;clips=[];jobs=[];config=undefined;loaded=false;camera=undefined;root.hidden=true;drawJobs();drawClips();
+    generation++;stop();previewLoading(false);clearTimeout(poll);clearTimeout(saving);user=id;originalFiles.replaceChildren();originalStatus.textContent='';records.querySelector('.as-records-feedback').textContent='';clips=[];jobs=[];config=undefined;loaded=false;camera=undefined;root.hidden=true;drawJobs();drawClips();
     if(!id)return;
     try{const saved=await account().load('ivideon-archive-project');if(user!==id)return;clips=Array.isArray(saved?.payload?.clips)?saved.payload.clips.slice(0,50):[];jobs=Array.isArray(saved?.payload?.jobs)?saved.payload.jobs.slice(0,50):[];loaded=true;drawClips();drawJobs();schedule();void clouds();}catch(error){feedback(error.message);}
   }
