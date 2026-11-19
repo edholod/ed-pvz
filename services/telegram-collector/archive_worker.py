@@ -96,13 +96,25 @@ def media_url(value):
     return value
 
 
-async def process(args, job, timeout=None):
+async def process(args, job, timeout=None, encode_seconds=None):
     if job.get('cancelled'):
         raise RuntimeError('Подготовка отменена.')
+    if encode_seconds:
+        args = [args[0], '-progress', 'pipe:1', '-nostats', *args[1:]]
     proc = await asyncio.create_subprocess_exec(*args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    async def read_encode_progress():
+        while line := await proc.stdout.readline():
+            key, _, raw = line.partition(b'=')
+            if key == b'out_time_us' and raw.strip().isdigit():
+                percent = min(99, int(int(raw) / (encode_seconds * 10000)))
+                job['message'] = f'Обрабатываем видео и звук · {percent}% текущей части'
+        return b''
     job['process'] = proc
     try:
-        out, err = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        if encode_seconds:
+            out, err, _ = await asyncio.wait_for(asyncio.gather(read_encode_progress(),proc.stderr.read(),proc.wait()), timeout=timeout)
+        else:
+            out, err = await asyncio.wait_for(proc.communicate(), timeout=timeout)
         if job.get('cancelled'):
             raise RuntimeError('Подготовка отменена.')
         if proc.returncode:
@@ -395,7 +407,7 @@ async def run(job):
                         args+=['-c:v','libx264','-preset','veryfast','-crf','19','-pix_fmt','yuv420p','-fps_mode','passthrough','-video_track_timescale','90000','-c:a','aac','-ar','48000','-af','aresample=async=1:first_pts=0','-movflags','+faststart',str(path)]
                         job['message']='Обрабатываем видео и звук'
                         try:
-                            await process(args,job)
+                            await process(args,job,encode_seconds=original_duration)
                         finally:
                             source.unlink(missing_ok=True)
                         duration,fps,w,h=await probe(path,job)
