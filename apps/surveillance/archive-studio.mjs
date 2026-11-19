@@ -46,41 +46,71 @@ export function createArchiveStudio(options) {
     <details><summary>Яндекс Диск и Google Диск</summary><div class="as-cloud"></div><p class="as-cloud-status" role="status"></p></details>`;
   live.insertBefore(root, video);
   const get = name => $(root, '.as-' + name);
+  const originalStatus = document.createElement('p');
+  originalStatus.setAttribute('role','status');
+  const originalFiles = document.createElement('ul');
+  get('original').parentElement.after(originalStatus,originalFiles);
   get('original').addEventListener('click', async () => {
     const button = get('original');
-    const feedback = get('feedback');
     button.disabled = true;
+    originalFiles.replaceChildren();
     try {
       const {start,end} = interval();
-      if (!camera || end - start > 3600) throw Error('Выбери камеру и интервал до одного часа.');
+      if (!camera) throw Error('Выбери камеру.');
       const cameraId = camera.id;
+      const parts = splitIntervals(start,end,3600);
       const requestExport = archive => window.EdPVZAccount.checkIvideon(undefined,cameraId,undefined,'load',archive);
-      feedback.textContent = 'Ivideon готовит исходный MP4…';
-      const {exportId} = await requestExport({mode:'export',start,end});
-      if (!exportId) throw Error('Ivideon не начал экспорт.');
-      const deadline = Date.now() + 600000;
-      while (Date.now() < deadline) {
-        const result = await requestExport({mode:'export-status',exportId,browserDownload:true});
-        if (result.state === 'failed') throw Error('Ivideon не подготовил запись.');
-        if (result.state === 'ready') {
-          const url = new URL(result.downloadUrl);
-          if (url.protocol !== 'https:' || url.hostname !== 'duerixyhzapotoeclggz.supabase.co' ||
+      const getStatus = exportId => requestExport({mode:'export-status',exportId,browserDownload:true});
+      for (const [index,[from,to]] of parts.entries()) {
+        originalStatus.textContent = 'Ivideon готовит MP4: часть ' + (index+1) + ' из ' + parts.length + '…';
+        const {exportId} = await requestExport({mode:'export',start:from,end:to});
+        if (!exportId) throw Error('Ivideon не начал экспорт.');
+        const deadline = Date.now() + 600000;
+        let result;
+        while (Date.now() < deadline) {
+          result = await getStatus(exportId);
+          if (result.state === 'ready') break;
+          if (result.state === 'failed') throw Error('Ivideon не подготовил часть ' + (index+1) + '.');
+          await new Promise(resolve => setTimeout(resolve,3000));
+        }
+        if (result?.state !== 'ready') throw Error('Ivideon ещё готовит часть ' + (index+1) + '. Она появится в кабинете Ivideon.');
+        const row = document.createElement('li');
+        const link = document.createElement('a');
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Скачать MP4 · ' + stamp(from) + ' — ' + stamp(to);
+        function assignDownload(data) {
+          const url = new URL(data.downloadUrl);
+          if (url.origin !== 'https://duerixyhzapotoeclggz.supabase.co' ||
               url.pathname !== '/functions/v1/edpvz-ivideon-check' || !url.searchParams.has('download')) {
             throw Error('Получен неверный адрес файла.');
           }
-          const link = document.createElement('a');
           link.href = url.href;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          link.textContent = 'Открыть готовый MP4';
-          feedback.replaceChildren(link);
-          return;
         }
-        await new Promise(resolve => setTimeout(resolve,3000));
+        assignDownload(result);
+        const refresh = document.createElement('button');
+        refresh.type = 'button';
+        refresh.className = 'secondary';
+        refresh.textContent = 'Обновить ссылку';
+        refresh.addEventListener('click', async () => {
+          refresh.disabled = true;
+          try {
+            const fresh = await getStatus(exportId);
+            if (fresh.state !== 'ready') throw Error('Файл больше недоступен. Подготовь его заново.');
+            assignDownload(fresh);
+            originalStatus.textContent = 'Ссылка обновлена.';
+          } catch (error) {
+            originalStatus.textContent = error.message || 'Не удалось обновить ссылку на MP4.';
+          } finally {
+            refresh.disabled = false;
+          }
+        });
+        row.append(link,' ',refresh);
+        originalFiles.append(row);
       }
-      throw Error('Ivideon ещё не завершил экспорт. Готовый файл появится в кабинете Ivideon.');
+      originalStatus.textContent = parts.length === 1 ? 'MP4 готов.' : 'Готово файлов: ' + parts.length + '. Скачай их по очереди.';
     } catch (error) {
-      feedback.textContent = error.message || 'Не удалось подготовить исходный MP4.';
+      originalStatus.textContent = error.message || 'Не удалось подготовить исходный MP4.';
     } finally {
       button.disabled = false;
     }
