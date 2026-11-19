@@ -1,5 +1,21 @@
 # Ivideon archive studio
 
+## Release status — 2026-11-19
+
+This development version is NOT ready for a general owner release. Real archive
+ingestion did not pass: HLS yielded a single frame (0.067 s), and MP4 transfer
+stalled. A subsequent timestamp-normalization test returned no usable duration.
+Local FFmpeg processing, concatenation, quality conversion and authenticated file/
+frame download tests passed using an existing MP4 downloaded via Ivideon UI.
+Those local results do not establish successful end-to-end provider ingestion.
+
+`ARCHIVE_EXPORT_ENABLED` defaults to `false`. Video job submission remains disabled
+until live ingestion, complete file downloads and mobile playback are verified.
+The selected-clip queue and camera settings are preserved. Do not enable it merely
+because unit tests pass. Cloud OAuth applications are also not configured.
+Cloud Browser became unavailable before remaining interactive tests could finish.
+
+
 The archive router is mounted at `/archive` in the existing FastAPI service.
 The browser module is `apps/surveillance/archive-studio.mjs`.
 

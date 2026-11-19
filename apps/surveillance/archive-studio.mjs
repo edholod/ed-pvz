@@ -21,7 +21,7 @@ export function createArchiveStudio(options) {
   root.className = 'archive-studio';
   root.hidden = true;
   root.innerHTML = `
-    <header class="as-head"><h2>Архив</h2><span class="as-zone"></span></header>
+    <header class="as-head"><h2>Архив</h2><span class="as-zone"></span></header><p class="as-note as-service-state" role="status" hidden></p>
     <div class="as-inputs">
       <label>Начало<input class="as-start" type="datetime-local" step="1"></label>
       <label>Конец<input class="as-end" type="datetime-local" step="1"></label>
@@ -160,7 +160,7 @@ export function createArchiveStudio(options) {
     clips.push({cameraId:camera.id,cameraName:camera.displayName||camera.name,...range,name:get('name').value.trim() || (camera.displayName||camera.name)+' '+stamp(range.start)});
     persist();drawClips();feedback('Фрагмент добавлен. Можно выбрать следующий участок или другую камеру.');
   }
-  async function ensureWorker(){const health=await request('/health');if(!health.ok||health.version<2)throw Error('Подготовка файлов временно недоступна: обновление сервиса ещё не завершилось. Очередь сохранена в аккаунте.');}
+  async function ensureWorker(mode='video'){const health=await request('/health');if(!health.ok||health.version<2)throw Error('Сервис временно недоступен. Очередь сохранена в аккаунте.');if(mode==='video'&&health.exportReady===false)throw Error('Подготовка видео временно недоступна. Выбранные фрагменты сохранены в аккаунте.');}
   async function prepare() {
     await ensureWorker();
     if(!loaded)throw Error('Не удалось прочитать сохранённую очередь. Обнови страницу.');
@@ -281,7 +281,7 @@ export function createArchiveStudio(options) {
     } catch(error){get('cloud-status').textContent=error.message;}
   }
   async function capture() {
-    await ensureWorker();
+    await ensureWorker('frame');
     if(!video.videoWidth)throw Error('Сначала открой видео и выбери кадр.');
     const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;
     try {
@@ -311,7 +311,7 @@ export function createArchiveStudio(options) {
   window.addEventListener('pagehide',()=>{clearTimeout(poll);stop();for(const url of urls)URL.revokeObjectURL(url);});
   void sync();
   return {
-    open(nextCamera){root.insertBefore(video,get('head').nextSibling);camera=nextCamera;root.hidden=false;live.hidden=false;previewStart=undefined;liveName.textContent=camera.displayName||camera.name;const now=Math.floor(Date.now()/1000);get('start').value=dateValue(now-600);get('end').value=dateValue(now-300);get('name').value='';syncTimeline();drawClips();drawJobs();},
+    open(nextCamera){root.insertBefore(video,get('head').nextSibling);camera=nextCamera;get('build').disabled=false;void request('/health').then(health=>{get('service-state').hidden=health.exportReady!==false;get('service-state').textContent='Подготовка видео временно недоступна. Можно сохранить выбранные фрагменты в очереди.';get('build').disabled=health.exportReady===false;}).catch(()=>{});root.hidden=false;live.hidden=false;previewStart=undefined;liveName.textContent=camera.displayName||camera.name;const now=Math.floor(Date.now()/1000);get('start').value=dateValue(now-600);get('end').value=dateValue(now-300);get('name').value='';syncTimeline();drawClips();drawJobs();},
     reset(){generation++;stop();live.appendChild(video);camera=undefined;previewStart=undefined;root.hidden=true;},
   };
 }

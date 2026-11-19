@@ -28,6 +28,7 @@ TASKS = set()
 LOCK = asyncio.Semaphore(1)
 SIGNING_KEY = os.environ.get('ARCHIVE_SIGNING_KEY', '')
 PROFILES = {'source': None, '1080': 1080, '720': 720, '480': 480}
+EXPORT_ENABLED = os.environ.get('ARCHIVE_EXPORT_ENABLED','false').lower() == 'true'
 
 
 def clean_name(value):
@@ -303,12 +304,14 @@ def expire():
 
 @router.get('/health')
 async def health():
-    return {'ok':bool(shutil.which('ffmpeg') and SIGNING_KEY), 'version':2, 'googleClientId':os.getenv('ARCHIVE_GOOGLE_CLIENT_ID',''), 'yandexClientId':os.getenv('ARCHIVE_YANDEX_CLIENT_ID','')}
+    return {'ok':bool(shutil.which('ffmpeg') and SIGNING_KEY), 'version':2, 'exportReady':EXPORT_ENABLED, 'googleClientId':os.getenv('ARCHIVE_GOOGLE_CLIENT_ID',''), 'yandexClientId':os.getenv('ARCHIVE_YANDEX_CLIENT_ID','')}
 
 
 @router.post('/jobs')
 async def create(request: Request):
     user, headers = await auth(request)
+    if not EXPORT_ENABLED:
+        raise HTTPException(503,'Подготовка архива временно недоступна. Выбранные фрагменты сохранены в аккаунте.')
     data = await request.json()
     if not isinstance(data,dict) or data.get('quality') not in PROFILES or data.get('profile') not in ('auto','high','low'):
         raise HTTPException(400,'Выбери качество записи.')
