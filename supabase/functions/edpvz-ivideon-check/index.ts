@@ -319,11 +319,11 @@ Deno.serve(async (req) => {
           return reply({exportId:id});
         }
         let status = 0;
-        const requestedProfiles = archive.profile === 'high' ? ['2'] : archive.profile === 'low' ? ['1'] : ['1','2'];
+        const requestedProfiles = archive.profile === 'high' ? ['2'] : archive.profile === 'low' ? ['1'] : ['2','1'];
         for (const profile of requestedProfiles) {
           const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/archive_stream');
           endpoint.search = new URLSearchParams({
-            op:'GET',access_token:key,format:'hls',q:profile,start_time:String(start),end_time:String(end),
+            op:'GET',access_token:key,format:'hls',q:profile,start_time:String(start),end_time:String(Math.min(now,Math.max(end,start+60))),
           }).toString();
           const response = await fetch(endpoint,{redirect:'manual',signal:deadline});
           status = response.status;
