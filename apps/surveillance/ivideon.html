@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
-  <link rel="stylesheet" href="surveillance.css?v=camera-layout-3">
+  <link rel="stylesheet" href="surveillance.css?v=camera-layout-4">
   <link rel="stylesheet" href="archive-studio.css?v=8">
   <script defer src="../../assets/account.js?v=archive-studio-4"></script>
   <script type="module" src="ivideon.mjs?v=3"></script>
@@ -38,6 +38,7 @@
     <button id="cameras-tab" type="button" role="tab" aria-selected="true" aria-controls="cameras-view">Онлайн-просмотр</button>
     <button id="archive-tab" type="button" role="tab" aria-selected="false" aria-controls="archive-view" tabindex="-1">Скачать архив</button>
     <button id="records-tab" type="button" role="tab" aria-selected="false" aria-controls="records-view" tabindex="-1">Список архивов</button>
+    <button id="access-tab" type="button" role="tab" aria-selected="false" aria-controls="access-view" tabindex="-1">Доступ</button>
   </div>
   <div id="cameras-view" role="tabpanel" aria-labelledby="cameras-tab">
   <div class="camera-layout" id="cameras-layout">
@@ -110,6 +111,14 @@
       <p class="note">Готовые файлы временно хранятся до 24 часов. Перезапуск сервера может удалить временные файлы.</p>
     </section>
   </div>
+  <div id="access-view" role="tabpanel" aria-labelledby="access-tab" hidden>
+    <section class="panel" aria-labelledby="access-title">
+      <h2 id="access-title">Доступ к камерам</h2>
+      <p id="access-empty">Нет подключённых камер.</p>
+      <ul id="access-cameras" class="shortcut-list camera-list"></ul>
+      <div class="actions"><a class="secondary" href="./shared.html">Камеры, доступные мне</a></div>
+    </section>
+  </div>
 </main>
 <script type="module">
   import {createArchiveStudio} from './archive-studio.mjs?v=20';
@@ -125,7 +134,9 @@
   const recordsTab = document.getElementById('records-tab');
   const recordsView = document.getElementById('records-view');
   const recordsPlayer = document.getElementById('records-player');
-  const tabs = [cameraTab,archiveTab,recordsTab];
+  const accessTab = document.getElementById('access-tab');
+  const accessView = document.getElementById('access-view');
+  const tabs = [cameraTab,archiveTab,recordsTab,accessTab];
   const cameraView = document.getElementById('cameras-view');
   const archiveView = document.getElementById('archive-view');
   const archiveCamera = document.getElementById('archive-camera');
@@ -138,6 +149,7 @@
     cameraView.hidden = tab !== cameraTab;
     archiveView.hidden = tab !== archiveTab;
     recordsView.hidden = tab !== recordsTab;
+    accessView.hidden = tab !== accessTab;
     document.getElementById('ivideon-live-quality-label').hidden = tab !== cameraTab;
     for (const button of tabs) {
       button.setAttribute('aria-selected',String(button === tab));
@@ -249,10 +261,11 @@
   cameraTab.parentElement.addEventListener('keydown',event=>{
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
     event.preventDefault();
-    const index = tabs.indexOf(document.activeElement);
-    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length-1
-      : (index+(event.key === 'ArrowLeft' ? -1 : 1)+tabs.length)%tabs.length;
-    tabs[next].click();
+    const ordered = matchMedia('(max-width:760px)').matches ? [cameraTab,accessTab,archiveTab,recordsTab] : tabs;
+    const index = ordered.indexOf(document.activeElement);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? ordered.length-1
+      : (index+(event.key === 'ArrowLeft' ? -1 : 1)+ordered.length)%ordered.length;
+    ordered[next].click();
   });
   archiveCamera.addEventListener('change',()=>{
     const selected = cameraRows.find(entry=>entry.camera.id===archiveCamera.value);
@@ -478,7 +491,20 @@
     }
     return row;
   }
+  function drawAccessCameras() {
+    const list = document.getElementById('access-cameras');
+    list.replaceChildren();
+    document.getElementById('access-empty').hidden = cameraRows.length > 0;
+    for (const {camera} of cameraRows) {
+      const row = document.createElement('li');
+      const title = document.createElement('strong');
+      title.textContent = camera.displayName || camera.name;
+      row.append(title,makeButton('Настроить доступ',()=>void manageShares(camera)));
+      list.append(row);
+    }
+  }
   function drawCameras() {
+    drawAccessCameras();
     updateArchiveCameras();
     const groups = new Map();
     for (const item of cameraRows) {
@@ -577,6 +603,7 @@
     accountId = nextId;
     generation++;
     cameraRows = [];
+    drawAccessCameras();
     updateArchiveCameras();
     selectTab(cameraTab);
     accountsBox.replaceChildren();
