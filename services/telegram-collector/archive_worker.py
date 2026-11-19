@@ -266,9 +266,9 @@ async def export_source(job, clip, start, end):
     raise RuntimeError('Ivideon не завершил экспорт за 10 минут. Попробуй меньший участок.')
 
 
-async def disk_link(client, action, key):
+async def disk_link(client, action, key, token=None):
     response = await client.get(DISK_API + '/' + action,
-        headers={'Authorization': 'OAuth ' + DISK_TOKEN}, params={'path': key})
+        headers={'Authorization': 'OAuth ' + (token or DISK_TOKEN)}, params={'path': key})
     if response.status_code != 200:
         raise RuntimeError('Яндекс Диск не выдал ссылку. Проверь подключение хранилища.')
     href = response.json().get('href', '')
@@ -783,7 +783,7 @@ async def cloud_connect(provider:str,request:Request):
         params.update(scope='https://www.googleapis.com/auth/drive.file',access_type='offline',prompt='consent')
         endpoint = 'https://accounts.google.com/o/oauth2/v2/auth'
     else:
-        params.update(scope='cloud_api:disk.write cloud_api:disk.info')
+        params.update(scope='cloud_api:disk.app_folder')
         endpoint = 'https://oauth.yandex.ru/authorize'
     return {'url':endpoint+'?'+urlencode(params)}
 
@@ -869,17 +869,53 @@ async def upload_cloud(provider,token,path,name,mime):
     return {'saved':True}
 
 
+async def save_to_owner_disk(item, token):
+    name = Path(item['name'])
+    suffix = name.suffix or '.mp4'
+    target = 'app:/' + clean_name(name.stem)[:80] + '-' + secrets.token_hex(5) + suffix
+    headers = {'Content-Length': str(item['size']), 'Content-Type': item.get('mime', 'video/mp4')}
+    async with httpx.AsyncClient(timeout=120) as client:
+        destination = await disk_link(client,'upload',target,token)
+        if item.get('diskKey'):
+            source_url = await disk_link(client,'download',item['diskKey'])
+            async with client.stream('GET',source_url) as source:
+                if source.status_code != 200:
+                    raise RuntimeError('Временная копия записи недоступна.')
+                response = await client.put(destination,headers=headers,content=source.aiter_bytes(1024 * 1024))
+        else:
+            async def blocks():
+                with open(item['path'],'rb') as source:
+                    while block := await asyncio.to_thread(source.read,1024 * 1024):
+                        yield block
+            response = await client.put(destination,headers=headers,content=blocks())
+        if response.status_code not in (200,201,202):
+            raise RuntimeError('Яндекс Диск отклонил сохранение видео.')
+        metadata = await client.get(DISK_API,headers={'Authorization':'OAuth ' + token},params={'path':target})
+        if metadata.status_code != 200 or metadata.json().get('size') != item['size']:
+            raise RuntimeError('Яндекс Диск не подтвердил размер сохранённого файла.')
+    return {'saved':True,'name':target.removeprefix('app:/')}
+
+
 @router.post('/jobs/{job_id}/file/{file_id}/cloud/{provider}')
 async def save_cloud(job_id:str,file_id:str,provider:str,request:Request):
     cloud_config(provider)
     user,headers = await auth(request)
     job = owned(job_id,user)
     item = next((f for f in job['files'] if f['id']==file_id),None)
-    if not item or not item.get('path') or not Path(item['path']).is_file():
+    if not item or job['state'] != 'ready' or (
+        not (provider == 'yandex' and item.get('diskKey')) and
+        (not item.get('path') or not Path(item['path']).is_file())
+    ):
         raise HTTPException(404,'Файл недоступен.')
     lock = CLOUD_LOCKS.setdefault((user,provider),asyncio.Lock())
     async with lock:
         token = await cloud_token(provider,user,headers)
+        if provider == 'yandex':
+            try:
+                return await save_to_owner_disk(item,token)
+            except (RuntimeError,httpx.HTTPError) as error:
+                detail = str(error) if isinstance(error,RuntimeError) else 'Не удалось передать файл на Яндекс Диск.'
+                raise HTTPException(502,detail) from None
         return await upload_cloud(provider,token,item['path'],item['name'],item.get('mime','video/mp4'))
 
 
