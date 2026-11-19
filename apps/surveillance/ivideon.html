@@ -54,6 +54,11 @@
       <button type="button" class="secondary" id="ivideon-disconnect" hidden>Отключить основной аккаунт</button>
     </form>
     <div id="ivideon-accounts" class="actions"></div>
+    <details id="ivideon-hidden" hidden>
+      <summary>Убранные камеры</summary>
+      <ul id="ivideon-hidden-list" class="shortcut-list"></ul>
+    </details>
+    <p id="ivideon-visibility-status" role="status"></p>
     <p><a href="https://my.ivideon.com/" target="_blank" rel="noopener noreferrer">Открыть кабинет Ivideon ↗</a></p>
     </details>
     <p id="ivideon-check-status" role="status"></p>
@@ -251,6 +256,9 @@
   const accountsBox = document.getElementById('ivideon-accounts');
   const grouping = document.getElementById('ivideon-group');
   let cameraRows = [];
+  let hiddenCameras = new Set(), visibilityReady, visibilityBusy = false;
+  const visibilityNamespace = 'ivideon-hidden-cameras';
+  const visibleCameras = () => cameraRows.filter(({camera}) => !hiddenCameras.has(camera.id));
   function switchTab(tab) {
     if (tab.getAttribute('aria-selected') === 'true') return;
     stopLive();
@@ -268,17 +276,20 @@
     ordered[next].click();
   });
   archiveCamera.addEventListener('change',()=>{
-    const selected = cameraRows.find(entry=>entry.camera.id===archiveCamera.value);
+    const selected = visibleCameras().find(entry=>entry.camera.id===archiveCamera.value);
     if (selected) void openArchive(selected.camera);
     else stopLive();
   });
   function updateArchiveCameras() {
     const selected = archiveCamera.value;
     archiveCamera.replaceChildren(new Option('Выбери камеру',''));
-    for (const {camera} of cameraRows) archiveCamera.add(new Option(camera.displayName || camera.name,camera.id));
-    archiveCamera.value = cameraRows.some(entry=>entry.camera.id===selected) ? selected : '';
-    archiveCamera.disabled = !cameraRows.length;
-    document.getElementById('archive-camera-status').hidden = !!cameraRows.length;
+    const available = visibleCameras();
+    for (const {camera} of available) archiveCamera.add(new Option(camera.displayName || camera.name,camera.id));
+    archiveCamera.value = available.some(entry=>entry.camera.id===selected) ? selected : '';
+    archiveCamera.disabled = !available.length;
+    const message = document.getElementById('archive-camera-status');
+    message.hidden = available.length > 0;
+    message.textContent = cameraRows.length ? 'Верни камеру в списке «Убранные камеры» во вкладке «Онлайн-просмотр».' : 'Подключи Ivideon во вкладке «Онлайн-просмотр», чтобы открыть архив.';
   }
   let generation = 0;
   let accountId;
@@ -424,7 +435,6 @@
     if (!camera.id) return row;
     row.append(makeButton('Смотреть эфир', event => openLive(camera,event.currentTarget)), makeButton('Архив', event => openArchive(camera,event.currentTarget)));
     row.append(makeButton('Поделиться камерой', () => void manageShares(camera)));
-    if (!points) return row;
     const edit = makeButton('Настроить', openEditor);
     edit.setAttribute('aria-label','Настроить камеру ' + title.textContent);
     edit.setAttribute('aria-expanded','false');
@@ -449,8 +459,8 @@
       nameLabel.append('Название в «Эд ПВЗ»', customName);
       const select = document.createElement('select');
       select.add(new Option('Без привязки к ПВЗ', ''));
-      for (const p of points) select.add(new Option(p.name || p.point_id, p.point_id));
-      select.value = points.some(p => p.point_id === camera.pointId) ? camera.pointId : '';
+      for (const p of points || []) select.add(new Option(p.name || p.point_id, p.point_id));
+      select.value = points?.some(p => p.point_id === camera.pointId) ? camera.pointId : '';
       const pointLabel = document.createElement('label');
       pointLabel.append('Пункт выдачи', select);
       const save = document.createElement('button');
@@ -459,7 +469,14 @@
       save.textContent = 'Сохранить';
       const feedback = document.createElement('p');
       feedback.setAttribute('role','status');
-      editor.append(nameLabel,pointLabel,save,feedback);
+      const remove = makeButton('Убрать из списка', event => {
+        if (confirm('Убрать камеру «' + (camera.displayName || camera.name) + '» из списка «Эд ПВЗ»?')) {
+          void setCameraHidden(camera,true,event.currentTarget,feedback);
+        }
+      });
+      remove.classList.add('text-button');
+      if (points) editor.append(nameLabel,pointLabel,save);
+      editor.append(remove,feedback);
       editor.addEventListener('submit', async event => {
         event.preventDefault();
         const currentEditor = editor;
@@ -491,11 +508,55 @@
     }
     return row;
   }
+  function drawHiddenCameras() {
+    const panel = document.getElementById('ivideon-hidden');
+    const list = document.getElementById('ivideon-hidden-list');
+    const removed = cameraRows.filter(({camera}) => hiddenCameras.has(camera.id));
+    panel.hidden = removed.length === 0;
+    list.replaceChildren();
+    for (const {camera} of removed) {
+      const row = document.createElement('li');
+      const title = document.createElement('strong');
+      title.textContent = camera.displayName || camera.name;
+      row.append(title,makeButton('Вернуть в список',event=>{
+        void setCameraHidden(camera,false,event.currentTarget,document.getElementById('ivideon-visibility-status'));
+      }));
+      list.append(row);
+    }
+  }
+  async function setCameraHidden(camera, hidden, control, feedback) {
+    const owner = accountId;
+    if (!owner || visibilityBusy) return;
+    visibilityBusy = true;
+    setLoading(control,true);
+    const account = window.EdPVZAccount;
+    try {
+      await visibilityReady;
+      if (owner !== accountId || account.user?.id !== owner) return;
+      const next = new Set(hiddenCameras);
+      if (hidden) next.add(camera.id);
+      else next.delete(camera.id);
+      await account.save(visibilityNamespace,{cameraIds:[...next]});
+      if (owner !== accountId) return;
+      hiddenCameras = next;
+      if (hidden && activeCameraId === camera.id) stopLive();
+      drawCameras();
+      const name = camera.displayName || camera.name;
+      status.textContent = hidden ? 'Камера «' + name + '» убрана. Вернуть её можно в «Подключениях Ivideon».'
+        : 'Камера «' + name + '» возвращена в список.';
+    } catch {
+      if (owner === accountId) feedback.textContent = 'Не удалось сохранить список камер. Обнови страницу и повтори.';
+    } finally {
+      if (owner === accountId) visibilityBusy = false;
+      setLoading(control,false);
+    }
+  }
   function drawAccessCameras() {
     const list = document.getElementById('access-cameras');
     list.replaceChildren();
-    document.getElementById('access-empty').hidden = cameraRows.length > 0;
-    for (const {camera} of cameraRows) {
+    const available = visibleCameras();
+    document.getElementById('access-empty').hidden = available.length > 0;
+    for (const {camera} of available) {
       const row = document.createElement('li');
       const title = document.createElement('strong');
       title.textContent = camera.displayName || camera.name;
@@ -504,10 +565,11 @@
     }
   }
   function drawCameras() {
+    drawHiddenCameras();
     drawAccessCameras();
     updateArchiveCameras();
     const groups = new Map();
-    for (const item of cameraRows) {
+    for (const item of visibleCameras()) {
       const pointId = item.camera.pointId;
       const byPoint = grouping.value === 'point';
       const byAccount = grouping.value === 'account';
@@ -555,6 +617,8 @@
         account.readTable('edpvz_ivideon_camera_settings?select=camera_id,display_name,point_id&user_id=eq.' + id),
         account.readTable('edpvz_points?select=point_id,name&order=name.asc&owner_id=eq.' + id),
       ]);
+      await visibilityReady.catch(()=>{});
+      if (check !== generation) return;
       const extras = directory.value?.accounts || [];
       const loaded = await Promise.allSettled(extras.map(entry => checkIvideon('load', undefined, {connectionId:entry.id})));
       if (check !== generation) return;
@@ -584,7 +648,7 @@
       }
       connected = Boolean(primary.value?.connected || extras.length);
       if (!connected) document.getElementById('ivideon-connections').open = true;
-      status.textContent = cameraRows.length ? 'Камер в общем списке: ' + cameraRows.length
+      status.textContent = cameraRows.length ? 'Камер в общем списке: ' + visibleCameras().length
         : connected ? 'В подключённых аккаунтах нет доступных камер.' : 'Добавь аккаунт Ivideon с помощью ключа API.';
       if (directory.status === 'rejected' || connections.some(entry => entry.result.status === 'rejected')) {
         status.textContent += ' Часть подключений не удалось загрузить.';
@@ -602,7 +666,16 @@
     if (nextId === accountId) return;
     accountId = nextId;
     generation++;
+    hiddenCameras = new Set();
+    visibilityBusy = false;
+    visibilityReady = nextId ? window.EdPVZAccount.load(visibilityNamespace).then(saved=>{
+      if (accountId === nextId && Array.isArray(saved?.payload?.cameraIds)) {
+        hiddenCameras = new Set(saved.payload.cameraIds.filter(id=>typeof id === 'string'));
+      }
+    }) : Promise.resolve();
+    void visibilityReady.catch(()=>{});
     cameraRows = [];
+    drawHiddenCameras();
     drawAccessCameras();
     updateArchiveCameras();
     selectTab(cameraTab);
