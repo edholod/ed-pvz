@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
-  <link rel="stylesheet" href="surveillance.css?v=camera-layout-2">
+  <link rel="stylesheet" href="surveillance.css?v=camera-layout-3">
   <link rel="stylesheet" href="archive-studio.css?v=8">
   <script defer src="../../assets/account.js?v=archive-studio-4"></script>
   <script type="module" src="ivideon.mjs?v=3"></script>
@@ -35,8 +35,9 @@
   <nav aria-label="Навигация"><a href="./">← Видеонаблюдение</a><a href="../cameras/">Настройка камер</a><a href="./#cloud-settings">Облачные диски</a><a href="./shared.html">Камеры, доступные мне</a></nav>
   <header><div><h1>Ivideon</h1><p>Видеонаблюдение твоих ПВЗ</p></div></header>
   <div class="camera-tabs" role="tablist" aria-label="Видеонаблюдение Ivideon">
-    <button id="cameras-tab" type="button" role="tab" aria-selected="true" aria-controls="cameras-view">Камеры</button>
-    <button id="archive-tab" type="button" role="tab" aria-selected="false" aria-controls="archive-view" tabindex="-1">Архив</button>
+    <button id="cameras-tab" type="button" role="tab" aria-selected="true" aria-controls="cameras-view">Онлайн-просмотр</button>
+    <button id="archive-tab" type="button" role="tab" aria-selected="false" aria-controls="archive-view" tabindex="-1">Скачать архив</button>
+    <button id="records-tab" type="button" role="tab" aria-selected="false" aria-controls="records-view" tabindex="-1">Список архивов</button>
   </div>
   <div id="cameras-view" role="tabpanel" aria-labelledby="cameras-tab">
   <div class="camera-layout" id="cameras-layout">
@@ -94,13 +95,24 @@
     <section class="panel camera-archive-picker">
       <label for="archive-camera">Камера</label>
       <select id="archive-camera"><option value="">Выбери камеру</option></select>
-      <p id="archive-camera-status" role="status" hidden>Подключи Ivideon во вкладке «Камеры», чтобы открыть архив.</p>
+      <p id="archive-camera-status" role="status" hidden>Подключи Ivideon во вкладке «Онлайн-просмотр», чтобы открыть архив.</p>
     </section>
     <div id="archive-player"></div>
+    <button id="open-records" type="button" class="secondary">Открыть список архивов</button>
+  </div>
+  <div id="records-view" role="tabpanel" aria-labelledby="records-tab" hidden>
+    <div id="records-player"></div>
+    <section id="archive-records" class="panel" aria-labelledby="archive-records-title">
+      <h2 id="archive-records-title">Список архивов</h2>
+      <p class="as-records-feedback" role="status"></p>
+      <p class="as-empty">Здесь появятся подготовленные записи и задания.</p>
+      <div class="as-jobs"></div>
+      <p class="note">Готовые файлы временно хранятся до 24 часов. Перезапуск сервера может удалить временные файлы.</p>
+    </section>
   </div>
 </main>
 <script type="module">
-  import {createArchiveStudio} from './archive-studio.mjs?v=19';
+  import {createArchiveStudio} from './archive-studio.mjs?v=20';
   import {revealPlayer,setLoading} from './player-interface.mjs?v=1';
   import {playIvideon, playIvideonHls} from './ivideon-live.mjs?v=9';
   const live = document.getElementById('ivideon-live');
@@ -110,23 +122,28 @@
   const liveQuality = document.getElementById('ivideon-live-quality');
   const cameraTab = document.getElementById('cameras-tab');
   const archiveTab = document.getElementById('archive-tab');
+  const recordsTab = document.getElementById('records-tab');
+  const recordsView = document.getElementById('records-view');
+  const recordsPlayer = document.getElementById('records-player');
+  const tabs = [cameraTab,archiveTab,recordsTab];
   const cameraView = document.getElementById('cameras-view');
   const archiveView = document.getElementById('archive-view');
   const archiveCamera = document.getElementById('archive-camera');
   const cameraLayout = document.getElementById('cameras-layout');
   const archivePlayer = document.getElementById('archive-player');
   let connected = false, stopPlayer, activeCameraId, liveCamera, launchControl, streamRequest = 0;
-  const archiveStudio = createArchiveStudio({video,live,liveName,status:liveStatus,playHls:playIvideonHls,
+  const archiveStudio = createArchiveStudio({video,live,liveName,status:liveStatus,records:document.getElementById('archive-records'),playHls:playIvideonHls,
     stopPlayback:()=>{streamRequest++;stopPlayer?.();stopPlayer=undefined;}});
   function selectTab(tab, focus = false) {
-    const archiveSelected = tab === archiveTab;
-    cameraView.hidden = archiveSelected;
-    archiveView.hidden = !archiveSelected;
-    for (const button of [cameraTab, archiveTab]) {
+    cameraView.hidden = tab !== cameraTab;
+    archiveView.hidden = tab !== archiveTab;
+    recordsView.hidden = tab !== recordsTab;
+    document.getElementById('ivideon-live-quality-label').hidden = tab !== cameraTab;
+    for (const button of tabs) {
       button.setAttribute('aria-selected',String(button === tab));
       button.tabIndex = button === tab ? 0 : -1;
     }
-    (archiveSelected ? archivePlayer : cameraLayout).append(live);
+    (tab === recordsTab ? recordsPlayer : tab === archiveTab ? archivePlayer : cameraLayout).append(live);
     if (focus) tab.focus();
   }
   function playerLoading(loading) {
@@ -144,11 +161,11 @@
     activeCameraId = undefined;
     liveCamera = undefined;
     archiveStudio.reset();
-    document.getElementById('ivideon-live-quality-label').hidden = false;
+    document.getElementById('ivideon-live-quality-label').hidden = cameraView.hidden;
     live.hidden = true;
     archiveCamera.value = '';
   }
-  document.getElementById('ivideon-live-stop').addEventListener('click', () => { const origin = launchControl; stopLive(); if (!archiveView.hidden) archiveCamera.focus(); else origin?.focus(); });
+  document.getElementById('ivideon-live-stop').addEventListener('click', () => { const origin = launchControl; stopLive(); if (!archiveView.hidden) archiveCamera.focus(); else if (!recordsView.hidden) recordsTab.focus(); else origin?.focus(); });
   window.addEventListener('pagehide', stopLive);
   async function openLive(camera, control = launchControl) {
     if (!connected || !window.EdPVZAccount?.user) return;
@@ -222,23 +239,20 @@
   const accountsBox = document.getElementById('ivideon-accounts');
   const grouping = document.getElementById('ivideon-group');
   let cameraRows = [];
-  cameraTab.addEventListener('click', () => {
-    if (!cameraView.hidden) return;
+  function switchTab(tab) {
+    if (tab.getAttribute('aria-selected') === 'true') return;
     stopLive();
-    selectTab(cameraTab,true);
-  });
-  archiveTab.addEventListener('click', () => {
-    if (!archiveView.hidden) return;
-    stopLive();
-    selectTab(archiveTab,true);
-  });
+    selectTab(tab,true);
+  }
+  for (const tab of tabs) tab.addEventListener('click',()=>switchTab(tab));
+  document.getElementById('open-records').addEventListener('click',()=>switchTab(recordsTab));
   cameraTab.parentElement.addEventListener('keydown',event=>{
     if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
     event.preventDefault();
-    const target = event.key === 'Home' ? cameraTab : event.key === 'End' ? archiveTab
-      : document.activeElement === cameraTab ? archiveTab : cameraTab;
-    target.click();
-    target.focus();
+    const index = tabs.indexOf(document.activeElement);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length-1
+      : (index+(event.key === 'ArrowLeft' ? -1 : 1)+tabs.length)%tabs.length;
+    tabs[next].click();
   });
   archiveCamera.addEventListener('change',()=>{
     const selected = cameraRows.find(entry=>entry.camera.id===archiveCamera.value);
