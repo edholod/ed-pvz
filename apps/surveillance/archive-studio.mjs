@@ -474,8 +474,8 @@ export function createArchiveStudio(options) {
       const card=document.createElement('article');card.className='as-card';
       renderJobStatus(card,job);
       if(job.state==='expired')card.append(document.createTextNode('Временная подготовка утрачена после перезапуска сервера. Исходная запись в Ivideon не удалена. Выбери тот же интервал и создай запрос заново.'));
-      if(job.destination==='google' && job.googleUpload==='pending')card.append(document.createTextNode('После подготовки MP4 начнётся загрузка на Google Диск.'));
-      if(job.destination==='google' && job.googleUpload==='uploading')card.append(document.createTextNode('Загружаем видео на Google Диск…'));
+      if(job.destination==='google' && job.googleUpload==='pending' && ['queued','processing','ready'].includes(job.state))card.append(document.createTextNode('После подготовки MP4 начнётся загрузка на Google Диск.'));
+      if(job.destination==='google' && job.googleUpload==='uploading' && job.state==='ready')card.append(document.createTextNode('Загружаем видео на Google Диск…'));
       if(job.destination==='google' && job.googleUpload==='failed')card.append(document.createTextNode('Загрузка не удалась. Повтори через кнопку Google Диска у готового файла.'));
       if(['processing','queued'].includes(job.state))card.append(button('Отменить',async()=>{Object.assign(job,await request('/jobs/'+job.id+'/cancel',{}));finishPreview(job);drawJobs();}));
       if(job.state==='failed'||job.state==='cancelled'||job.state==='expired')card.append(button('Убрать из списка',()=>{jobs=jobs.filter(x=>x!==job);persist();drawJobs();}));
