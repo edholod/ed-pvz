@@ -32,7 +32,7 @@
   </div>
 </section>
 <main data-surveillance-private="ivideon" hidden>
-  <nav aria-label="Навигация"><a href="./">← Видеонаблюдение</a><a href="../cameras/">Настройка камер</a><a href="./#cloud-settings">Облачные диски</a></nav>
+  <nav aria-label="Навигация"><a href="./">← Видеонаблюдение</a><a href="../cameras/">Настройка камер</a><a href="./#cloud-settings">Облачные диски</a><a href="./shared.html">Камеры, доступные мне</a></nav>
   <header><div><h1>Ivideon</h1><p>Видеонаблюдение твоих ПВЗ</p></div></header>
   <section class="panel" aria-labelledby="ivideon-access">
     <h2 id="ivideon-access">Камеры и архив</h2>
@@ -172,6 +172,86 @@
     element.addEventListener('click', action);
     return element;
   }
+  const sharePermissions = [
+    ['can_live','Смотреть эфир'], ['can_archive','Смотреть архив'],
+    ['can_download','Скачивать записи'], ['can_edit','Редактировать название и ПВЗ'],
+  ];
+  async function manageShares(camera) {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'panel';
+    dialog.style.cssText = 'width:min(32rem,92vw);max-height:90vh;overflow:auto';
+    const heading = document.createElement('h2');
+    heading.textContent = 'Доступ к камере «' + (camera.displayName || camera.name) + '»';
+    const close = makeButton('Закрыть', () => dialog.close());
+    const editor = document.createElement('form');
+    const user = document.createElement('input');
+    user.required = true; user.maxLength = 33; user.placeholder = '@логин';
+    const userLabel = document.createElement('label');
+    userLabel.append('Пользователь «Эд ПВЗ»',user);
+    const flags = document.createElement('fieldset');
+    const legend = document.createElement('legend');
+    legend.textContent = 'Что разрешено';
+    flags.append(legend);
+    const inputs = new Map();
+    for (const [key,title] of sharePermissions) {
+      const input = document.createElement('input');
+      input.type = 'checkbox'; input.checked = key === 'can_live';
+      input.style.width = 'auto';
+      inputs.set(key,input);
+      const label = document.createElement('label');
+      label.append(input,' ',title); flags.append(label);
+    }
+    const apply = makeButton('Сохранить доступ', () => {});
+    apply.type = 'submit'; apply.className = 'primary';
+    const status = document.createElement('p');
+    status.setAttribute('role','status');
+    const list = document.createElement('ul');
+    list.className = 'shortcut-list';
+    const request = (action,options) => window.EdPVZAccount.checkIvideon(
+      undefined,camera.id,undefined,action,{connectionId:camera.connectionId,...options});
+    async function refresh() {
+      const {shares} = await request('share-list');
+      list.replaceChildren();
+      for (const grant of shares) {
+        const row = document.createElement('li');
+        const text = document.createElement('span');
+        const permissions = sharePermissions.filter(([key])=>grant[key]).map(([,title])=>title);
+        text.textContent = '@' + grant.username + ' · ' + permissions.join(', ');
+        const edit = makeButton('Изменить', () => {
+          user.value = grant.username;
+          for (const [key,input] of inputs) input.checked = grant[key];
+          user.focus();
+        });
+        const revoke = makeButton('Отозвать', async () => {
+          revoke.disabled = true;
+          try {
+            await request('share-revoke',{shareId:grant.id});
+            status.textContent = 'Доступ отозван.';
+            await refresh();
+          } catch (error) { status.textContent = error.message; }
+          finally { revoke.disabled = false; }
+        });
+        row.append(text,edit,revoke);
+        list.append(row);
+      }
+    }
+    editor.addEventListener('submit',async event => {
+      event.preventDefault();
+      apply.disabled = true;
+      try {
+        await request('share-save',{username:user.value,...Object.fromEntries([...inputs].map(([key,input])=>[key,input.checked]))});
+        status.textContent = 'Доступ сохранён. Камера появится у пользователя в разделе «Камеры, доступные мне».';
+        await refresh();
+      } catch (error) { status.textContent = error.message; }
+      finally { apply.disabled = false; }
+    });
+    editor.append(userLabel,flags,apply);
+    dialog.append(heading,editor,status,list,close);
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+    document.body.append(dialog);
+    dialog.showModal();
+    try { await refresh(); } catch (error) { status.textContent = error.message; }
+  }
   function renderCamera(camera, settings, points) {
     const row = document.createElement('li');
     const name = document.createElement('span');
@@ -192,6 +272,7 @@
     showName();
     if (!camera.id) return row;
     row.append(makeButton('Смотреть эфир', () => openLive(camera)), makeButton('Архив', () => openArchive(camera)));
+    row.append(makeButton('Поделиться камерой', () => void manageShares(camera)));
     if (!points) return row;
     const edit = makeButton('Настроить', openEditor);
     edit.setAttribute('aria-label','Настроить камеру ' + title.textContent);
