@@ -517,7 +517,7 @@ Deno.serve(async (req) => {
             const source = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
             // Reuse the provider media redirect for the worker as well as the browser.
             source.searchParams.set('download',await issueTicket(download,Date.now()+15*60*1000,'browser-download'));
-            const plain=new TextEncoder().encode(JSON.stringify({url:source.href,expires:Date.now()+15*60*1000}));
+            const plain=new TextEncoder().encode(JSON.stringify({url:download.href,expires:Date.now()+15*60*1000}));
             const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},cipherKey,plain));
             const sealedSource=btoa(Array.from([...iv,...cipher],byte=>String.fromCharCode(byte)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
             return reply({state:'ready',sealedSource});
