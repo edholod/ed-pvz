@@ -21,7 +21,7 @@ The browser module is `apps/surveillance/archive-studio.mjs`.
 
 ## Server readiness
 
-`GET /archive/health` must return `ok: true, version: 2` before preparing files.
+`GET /archive/health` must return `ok: true, version: 2, exportReady: true` before preparing video files.
 The browser checks this capability before submitting export or frame jobs.
 Existing live-view, stored Ivideon connection, camera aliases and PVZ assignments
 continue to use the existing edge function and account data.
