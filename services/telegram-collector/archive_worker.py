@@ -1279,7 +1279,7 @@ async def save_cloud(job_id:str,file_id:str,provider:str,request:Request):
     job = owned(job_id,user)
     item = next((f for f in job['files'] if f['id']==file_id),None)
     if not item or job['state'] != 'ready' or (
-        not (provider == 'yandex' and item.get('diskKey')) and
+        not item.get('diskKey') and
         (not item.get('path') or not Path(item['path']).is_file())
     ):
         raise HTTPException(404,'Файл недоступен.')
@@ -1292,6 +1292,25 @@ async def save_cloud(job_id:str,file_id:str,provider:str,request:Request):
             except (RuntimeError,httpx.HTTPError) as error:
                 detail = str(error) if isinstance(error,RuntimeError) else 'Не удалось передать файл на Яндекс Диск.'
                 raise HTTPException(502,detail) from None
+        if item.get('diskKey') and not (item.get('path') and Path(item['path']).is_file()):
+            # Render may have restarted; retrieve the durable copy from Yandex.
+            local=ROOT/job_id/('google-'+file_id+'.mp4')
+            local.parent.mkdir(parents=True,exist_ok=True)
+            async with httpx.AsyncClient(timeout=240) as client:
+                source_url=await disk_link(client,'download',item['diskKey'])
+                async with client.stream('GET',source_url) as response:
+                    if response.status_code != 200:
+                        raise HTTPException(502,'Не удалось восстановить MP4 для Google Диска.')
+                    with local.open('wb') as output:
+                        async for block in response.aiter_bytes(1024*1024):
+                            output.write(block)
+            if local.stat().st_size != item['size']:
+                local.unlink(missing_ok=True)
+                raise HTTPException(502,'Восстановленный MP4 имеет неверный размер.')
+            try:
+                return await upload_cloud(provider,token,str(local),item['name'],item.get('mime','video/mp4'))
+            finally:
+                local.unlink(missing_ok=True)
         return await upload_cloud(provider,token,item['path'],item['name'],item.get('mime','video/mp4'))
 
 
