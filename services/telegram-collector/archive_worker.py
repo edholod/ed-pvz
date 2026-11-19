@@ -163,7 +163,26 @@ async def download_hls_source(job,clip,start,end,path):
           '-i',stream,'-t',str(end-start),'-map','0:v:0','-map','0:a:0?',
           '-c','copy','-movflags','+faststart',str(path)]
     try:
-        await process(args,job,timeout=min(900,max(120,(end-start)*3)))
+        task=asyncio.create_task(process(args,job,timeout=min(900,max(120,(end-start)*3))))
+        last_size=0
+        stalled=0
+        while not task.done():
+            await asyncio.sleep(10)
+            size=path.stat().st_size if path.exists() else 0
+            if size>last_size:
+                last_size=size
+                stalled=0
+                job['message']='Получаем архивный поток Ivideon: '+str(round(size/1048576,1))+' МБ'
+            else:
+                stalled+=10
+            if stalled>=50:
+                task.cancel()
+                try:
+                    await task
+                except (asyncio.CancelledError,Exception):
+                    pass
+                raise RuntimeError('Архивный HLS-поток Ivideon не передаёт данные.')
+        await task
     except Exception:
         path.unlink(missing_ok=True)
         raise
