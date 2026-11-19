@@ -18,7 +18,7 @@ async function ticketKey(context = 'edpvz-ivideon-live:') {
 }
 async function issueTicket(url: URL, expires = Date.now() + 30000, purpose = 'ws', grant?:MediaGrant) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const plaintext = new TextEncoder().encode(JSON.stringify({url: url.href, expires, purpose, grant}));
+  const plaintext = new TextEncoder().encode(JSON.stringify({url: url.href, expires: Math.min(expires, grant?.expiresAt ? Date.parse(grant.expiresAt) : Infinity), purpose, grant}));
   const cipher = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, await ticketKey(), plaintext));
   return btoa(Array.from([...iv,...cipher], (byte) => String.fromCharCode(byte)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
@@ -49,7 +49,10 @@ async function serveHls(req: Request, ticket: string) {
     const range = req.headers.get('range');
     if (range && /^bytes=\d+-\d*$/.test(range)) requestHeaders.set('range',range);
     const bounded = download && range !== null && /^bytes=\d+-\d+$/.test(range);
-    const deadline = AbortSignal.timeout(bounded ? 12000 : download ? 120000 : 12000);
+    const maxTransfer = bounded ? 12000 : download ? 120000 : 12000;
+    const remaining = grant?.expiresAt ? Date.parse(grant.expiresAt) - Date.now() : maxTransfer;
+    if (remaining <= 0) throw Error();
+    const deadline = AbortSignal.timeout(Math.min(maxTransfer,remaining));
     for (let i = 0; i < 4; i++) {
       response = await fetch(target, {redirect:'manual', headers:requestHeaders, signal:deadline});
       if (response.status < 300 || response.status >= 400) break;
@@ -132,7 +135,7 @@ async function relay(req: Request, ticket: string) {
     if (!/^[a-zA-Z0-9_-]{40,12000}$/.test(ticket)) throw Error();
     const bytes = Uint8Array.from(atob(ticket.replace(/-/g,'+').replace(/_/g,'/')), (char) => char.charCodeAt(0));
     const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, await ticketKey(), bytes.slice(12));
-    const {url, expires, purpose} = JSON.parse(new TextDecoder().decode(plain));
+    const {url, expires, purpose, grant} = JSON.parse(new TextDecoder().decode(plain));
     if ((purpose && purpose !== 'ws') || typeof expires !== 'number' || expires < Date.now() || !(upstreamUrl = secureStreamUrl(url))) throw Error();
     if (grant && !await grantActive(grant)) throw Error();
     connectionGrant = grant;
@@ -169,7 +172,7 @@ async function relay(req: Request, ticket: string) {
       });
       upstream.binaryType = 'nodebuffer';
       upstream.on('message', (data, isBinary) => {
-        if (socket.readyState !== WebSocket.OPEN) return end();
+        if (socket.readyState !== WebSocket.OPEN || (connectionGrant?.expiresAt && Date.parse(connectionGrant.expiresAt) <= Date.now())) return end();
         if (Array.isArray(data) || !(data instanceof Uint8Array)) return end();
         if (socket.bufferedAmount + Math.ceil(data.byteLength * (textTransport && isBinary ? 4 / 3 : 1)) > 16 * 1024 * 1024) return end();
         try {
@@ -254,7 +257,7 @@ async function connectionRequest(userId: string, method: string, encryptedKey?: 
 }
 
 type CameraPermission = 'can_live' | 'can_archive' | 'can_download' | 'can_edit';
-type MediaGrant = {id:string, permission:CameraPermission};
+type MediaGrant = {id:string, permission:CameraPermission, expiresAt?:string|null};
 const validId = (id:unknown): id is string => typeof id === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id);
 const validCamera = (id:unknown): id is string => typeof id === 'string' && /^[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}$/.test(id);
 const permissions = ['can_live','can_archive','can_download','can_edit'] as const;
@@ -274,10 +277,34 @@ async function serviceRows(table:string, filters:Record<string,string>, method='
 const sharesTable = 'edpvz_ivideon_camera_shares';
 const exportsTable = 'edpvz_ivideon_shared_exports';
 
+function shareExpiry(row: {expires_at?:string|null}) {
+  return row.expires_at == null ? Infinity : Date.parse(row.expires_at);
+}
+const activeShareFilter = () => '(expires_at.is.null,expires_at.gt.' + new Date().toISOString() + ')';
+
 async function grantActive(grant:MediaGrant) {
   if (!validId(grant.id) || !permissions.includes(grant.permission)) return false;
-  const [row] = await serviceRows(sharesTable,{id:'eq.'+grant.id,select:grant.permission});
-  return row?.[grant.permission] === true;
+  const [row] = await serviceRows(sharesTable,{id:'eq.'+grant.id,select:grant.permission+',expires_at'});
+  return row?.[grant.permission] === true && (row.expires_at ?? null) === (grant.expiresAt ?? null)
+    && shareExpiry(row) > Date.now();
+}
+function expirationFor(term: unknown, custom: unknown, now: number): string|null {
+  if (term === 'custom') {
+    if (typeof custom !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(custom)) return null;
+    const time = Date.parse(custom);
+    return time > now && new Date(time).toISOString() === custom ? custom : null;
+  }
+  const hours = term === 'hour' ? 1 : term === 'day' ? 24 : term === 'week' ? 168 : 0;
+  if (hours) return new Date(now + hours * 3600000).toISOString();
+  const months = term === 'month' ? 1 : term === 'quarter' ? 3 : term === 'half-year' ? 6 : term === 'year' ? 12 : 0;
+  if (!months) return null;
+  const date = new Date(now);
+  const day = date.getUTCDate();
+  date.setUTCDate(1);
+  date.setUTCMonth(date.getUTCMonth()+months);
+  const last = new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0)).getUTCDate();
+  date.setUTCDate(Math.min(day,last));
+  return date.toISOString();
 }
 async function cameraKey(owner:string, connection?:string) {
   const encrypted = connection ? (await extraConnections(owner,connection))[0]?.encrypted_key
@@ -302,20 +329,20 @@ async function findCamera(key:string, id:string) {
 }
 async function sharedAction(action:string, user:string, options:Record<string,any>, cameraId:unknown, connectionId?:string) {
   if (action === 'shared-list') {
-    const rows = await serviceRows(sharesTable,{recipient_id:'eq.'+user,select:'id,owner_id,camera_id,camera_name,can_live,can_archive,can_download,can_edit'});
+    const rows = await serviceRows(sharesTable,{recipient_id:'eq.'+user,or:activeShareFilter(),select:'id,owner_id,camera_id,camera_name,can_live,can_archive,can_download,can_edit,expires_at'});
     const cameras = await Promise.all(rows.map(async (row:any)=>{
       const [setting] = await serviceRows('edpvz_ivideon_camera_settings',{user_id:'eq.'+row.owner_id,camera_id:'eq.'+row.camera_id,select:'display_name'});
-      return {id:row.id,name:setting?.display_name || row.camera_name,
+      return {id:row.id,name:setting?.display_name || row.camera_name,expiresAt:row.expires_at,
         can_live:row.can_live,can_archive:row.can_archive,can_download:row.can_download,can_edit:row.can_edit};
     }));
     return reply({cameras});
   }
   if (action === 'share-list') {
     if (!validCamera(cameraId)) return reply({error:'Некорректная камера.'},400);
-    const rows = await serviceRows(sharesTable,{owner_id:'eq.'+user,camera_id:'eq.'+cameraId,select:'id,recipient_id,can_live,can_archive,can_download,can_edit'});
+    const rows = await serviceRows(sharesTable,{owner_id:'eq.'+user,camera_id:'eq.'+cameraId,select:'id,recipient_id,can_live,can_archive,can_download,can_edit,expires_at'});
     return reply({shares:await Promise.all(rows.map(async (row:any)=>{
       const [profile] = await serviceRows('edpvz_profiles',{user_id:'eq.'+row.recipient_id,select:'username'});
-      return {id:row.id,username:profile?.username || 'Пользователь',
+      return {id:row.id,username:profile?.username || 'Пользователь',expiresAt:row.expires_at,
         can_live:row.can_live,can_archive:row.can_archive,can_download:row.can_download,can_edit:row.can_edit};
     }))});
   }
@@ -330,11 +357,20 @@ async function sharedAction(action:string, user:string, options:Record<string,an
       return reply({error:'Укажи пользователя и хотя бы одно разрешение.'},400);
     const [profile] = await serviceRows('edpvz_profiles',{username:'eq.'+username,select:'user_id'});
     if (!profile || profile.user_id === user) return reply({error:'Укажи логин другого пользователя «Эд ПВЗ».'},400);
+    let expiresAt: string|null;
+    if (options.term === 'keep') {
+      const [existing] = await serviceRows(sharesTable,{owner_id:'eq.'+user,recipient_id:'eq.'+profile.user_id,camera_id:'eq.'+cameraId,select:'expires_at'});
+      if (!existing || shareExpiry(existing) <= Date.now()) return reply({error:'Выбери новый срок доступа.'},400);
+      expiresAt = existing.expires_at;
+    } else {
+      expiresAt = expirationFor(options.term ?? 'day', options.expiresAt, Date.now());
+      if (!expiresAt) return reply({error:'Выбери срок или укажи дату и время в будущем.'},400);
+    }
     const key = await cameraKey(user,connectionId);
     const name = key && await findCamera(key,cameraId);
     if (!name) return reply({error:'Камера недоступна в выбранном аккаунте Ivideon.'},404);
     await serviceRows(sharesTable,{on_conflict:'owner_id,recipient_id,camera_id'},'POST',{
-      owner_id:user,recipient_id:profile.user_id,camera_id:cameraId,connection_id:connectionId ?? null,camera_name:name,
+      owner_id:user,recipient_id:profile.user_id,camera_id:cameraId,connection_id:connectionId ?? null,camera_name:name,expires_at:expiresAt,
       ...Object.fromEntries(permissions.map(p=>[p,options[p]===true])),
     });
     return reply({ok:true});
@@ -342,7 +378,7 @@ async function sharedAction(action:string, user:string, options:Record<string,an
   if (action !== 'shared-edit') return null;
   if (!validId(options.shareId)) return reply({error:'Некорректный доступ.'},400);
   const [row] = await serviceRows(sharesTable,{id:'eq.'+options.shareId,recipient_id:'eq.'+user,can_edit:'eq.true'});
-  if (!row) return reply({error:'Редактирование камеры запрещено.'},403);
+  if (!row || shareExpiry(row) <= Date.now()) return reply({error:'Редактирование камеры запрещено.'},403);
   const points = await serviceRows('edpvz_points',{owner_id:'eq.'+row.owner_id,select:'point_id,name',order:'name.asc'});
   const [setting] = await serviceRows('edpvz_ivideon_camera_settings',{user_id:'eq.'+row.owner_id,camera_id:'eq.'+row.camera_id,select:'display_name,point_id'});
   if (options.displayName === undefined) return reply({points, displayName:setting?.display_name || '', pointId:setting?.point_id || ''});
@@ -415,7 +451,7 @@ Deno.serve(async (req) => {
         const mode = archive?.mode;
         const permission = mode === 'export' || mode === 'export-status' ? 'can_download'
           : mode === 'preview' ? 'can_archive' : !archive ? 'can_live' : null;
-        if (!row || !permission || !row[permission]) return reply({error:'Это действие запрещено владельцем камеры.'},403);
+        if (!row || shareExpiry(row) <= Date.now() || !permission || !row[permission]) return reply({error:'Это действие запрещено владельцем камеры.'},403);
         if (mode === 'export-status') {
           if (typeof archive.exportId !== 'string' || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(archive.exportId))
             return reply({error:'Некорректный экспорт.'},400);
@@ -430,7 +466,7 @@ Deno.serve(async (req) => {
         cameraId = row.camera_id;
         key = await cameraKey(row.owner_id,row.connection_id);
         if (!key) return reply({error:'Владелец отключил аккаунт Ivideon.'},409);
-        mediaGrant = {id:shareId,permission};
+        mediaGrant = {id:shareId,permission,expiresAt:row.expires_at};
       }
       if (action === 'accounts') {
         return reply({accounts:await extraConnections(userId)});
