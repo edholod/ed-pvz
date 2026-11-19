@@ -18,7 +18,7 @@ from urllib.parse import urlparse, urljoin
 import httpx
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 router = APIRouter(prefix='/archive')
 BASE = os.environ.get('SUPABASE_URL', 'https://duerixyhzapotoeclggz.supabase.co').rstrip('/')
@@ -30,6 +30,11 @@ JOBS = {}
 TASKS = set()
 LOCK = asyncio.Semaphore(1)
 SIGNING_KEY = os.environ.get('ARCHIVE_SIGNING_KEY', '')
+DISK_TOKEN = os.environ.get('ARCHIVE_YANDEX_STORAGE_TOKEN', '').strip()
+DISK_API = 'https://cloud-api.yandex.net/v1/disk/resources'
+DISK_PREFIX = 'app:/edpvz-'
+DISK_QUOTA = 8_000_000_000
+DISK_TTL = 86400
 PROFILES = {'source': None, '1080': 1080, '720': 720, '480': 480}
 EXPORT_ENABLED = os.environ.get('ARCHIVE_EXPORT_ENABLED','false').lower() == 'true'
 
@@ -261,6 +266,89 @@ async def export_source(job, clip, start, end):
     raise RuntimeError('Ivideon не завершил экспорт за 10 минут. Попробуй меньший участок.')
 
 
+async def disk_link(client, action, key):
+    response = await client.get(DISK_API + '/' + action,
+        headers={'Authorization': 'OAuth ' + DISK_TOKEN}, params={'path': key})
+    if response.status_code != 200:
+        raise RuntimeError('Яндекс Диск не выдал ссылку. Проверь подключение хранилища.')
+    href = response.json().get('href', '')
+    target = urlparse(href)
+    if (target.scheme != 'https' or target.username or target.password or target.port
+            or not (target.hostname or '').endswith('.yandex.net')):
+        raise RuntimeError('Яндекс Диск вернул неподдерживаемый адрес.')
+    return href
+
+
+async def disk_usage(client):
+    headers = {'Authorization': 'OAuth ' + DISK_TOKEN}
+    offset = used = 0
+    expired = []
+    while True:
+        response = await client.get(DISK_API, headers=headers,
+                                    params={'path': 'app:/', 'limit': 100, 'offset': offset})
+        if response.status_code != 200:
+            raise RuntimeError('Не удалось прочитать папку приложения на Яндекс Диске.')
+        embedded = response.json().get('_embedded', {})
+        batch = embedded.get('items', [])
+        for item in batch:
+            size = int(item.get('size', 0))
+            used += size
+            name = item.get('name', '')
+            match = re.fullmatch(r'edpvz-([0-9]{10})-[A-Za-z0-9_-]{24}-[0-9]+\.mp4', name)
+            if match and int(match[1]) < time.time() - DISK_TTL and item.get('type') == 'file':
+                expired.append(('app:/' + name, size))
+        offset += len(batch)
+        if not batch or offset >= embedded.get('total', offset):
+            break
+    for key, size in expired:
+        response = await client.delete(DISK_API, headers=headers,
+                                       params={'path': key, 'permanently': 'true'})
+        if response.status_code in (204, 404):
+            used -= size
+    return used
+
+
+async def daily_disk_cleanup():
+    while True:
+        try:
+            async with LOCK, httpx.AsyncClient(timeout=30) as client:
+                await disk_usage(client)
+        except Exception:
+            print('archive storage cleanup unavailable', flush=True)
+        await asyncio.sleep(3600)
+
+
+@router.on_event('startup')
+async def start_disk_cleanup():
+    if DISK_TOKEN:
+        task = asyncio.create_task(daily_disk_cleanup())
+        TASKS.add(task)
+        task.add_done_callback(TASKS.discard)
+
+
+async def store_archive(path, job_id, index):
+    key = DISK_PREFIX + str(int(time.time())) + '-' + job_id + '-' + str(index) + '.mp4'
+    size = path.stat().st_size
+    headers = {'Authorization': 'OAuth ' + DISK_TOKEN}
+    async with httpx.AsyncClient(timeout=120) as client:
+        used = await disk_usage(client)
+        if used + size > DISK_QUOTA:
+            raise RuntimeError('Временное хранилище архива заполнено.')
+        url = await disk_link(client, 'upload', key)
+        async def blocks():
+            with path.open('rb') as source:
+                while block := await asyncio.to_thread(source.read, 1024 * 1024):
+                    yield block
+        response = await client.put(url, headers={'Content-Length': str(size), 'Content-Type': 'video/mp4'},
+                                    content=blocks())
+        if response.status_code not in (200, 201, 202):
+            raise RuntimeError('Яндекс Диск не подтвердил сохранение MP4.')
+        metadata = await client.get(DISK_API, headers=headers, params={'path': key})
+        if metadata.status_code != 200 or metadata.json().get('size') != size:
+            raise RuntimeError('Не удалось подтвердить целостность файла на Яндекс Диске.')
+    return key
+
+
 async def run(job):
     async with LOCK:
         if job.get('cancelled'):
@@ -331,6 +419,12 @@ async def run(job):
                 if abs(duration-(clip['end']-clip['start'])) > max(.05,2/fps):
                     raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
                 job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':clip['end']-clip['start'],'measuredDuration':duration,'fps':fps,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'cameraName':clip.get('cameraName','Камера'),'sourceStart':clip['start']})
+                if DISK_TOKEN:
+                    job['message'] = 'Сохраняем готовый MP4 на Яндекс Диск'
+                    item = job['files'][-1]
+                    item['diskKey'] = await store_archive(output, job['id'], index)
+                    item.pop('path')
+                    output.unlink()
                 for part in pieces:
                     part.unlink(missing_ok=True)
             job.update(state='ready',progress=100,message='Файлы готовы')
@@ -342,7 +436,7 @@ async def run(job):
 
 
 def public_job(job):
-    return {k:job[k] for k in ('id','state','progress','message','created')} | {'files':[{k:v for k,v in f.items() if k != 'path'} for f in job['files']]}
+    return {k:job[k] for k in ('id','state','progress','message','created')} | {'files':[{k:v for k,v in f.items() if k not in ('path','diskKey')} for f in job['files']]}
 
 
 def owned(job_id, user):
@@ -362,7 +456,7 @@ def expire():
 
 @router.get('/health')
 async def health():
-    return {'ok':bool(shutil.which('ffmpeg') and SIGNING_KEY), 'version':2, 'exportReady':EXPORT_ENABLED, 'googleClientId':os.getenv('ARCHIVE_GOOGLE_CLIENT_ID',''), 'yandexClientId':os.getenv('ARCHIVE_YANDEX_CLIENT_ID','')}
+    return {'ok':bool(shutil.which('ffmpeg') and SIGNING_KEY), 'version':2, 'exportReady':EXPORT_ENABLED, 'temporaryDiskConfigured':bool(DISK_TOKEN), 'googleClientId':os.getenv('ARCHIVE_GOOGLE_CLIENT_ID',''), 'yandexClientId':os.getenv('ARCHIVE_YANDEX_CLIENT_ID','')}
 
 
 @router.post('/jobs')
@@ -463,7 +557,7 @@ async def file_action(job_id:str,file_id:str,request:Request):
     user,_ = await auth(request)
     job = owned(job_id,user)
     item = next((f for f in job['files'] if f['id']==file_id),None)
-    if not item or not Path(item['path']).is_file():
+    if not item or (not item.get('diskKey') and not Path(item['path']).is_file()):
         raise HTTPException(404,'Файл недоступен.')
     data = await request.json()
     if data.get('name') is not None:
@@ -485,15 +579,23 @@ async def download(job_id:str,file_id:str,expires:int,signature:str):
         raise HTTPException(403,'Ссылка устарела. Нажми «Скачать» заново.')
     job = JOBS.get(job_id)
     item = next((f for f in job['files'] if f['id']==file_id),None) if job else None
-    if not item or not Path(item['path']).is_file():
+    if not item or (not item.get('diskKey') and not Path(item['path']).is_file()):
         raise HTTPException(404,'Файл недоступен.')
+    if item.get('diskKey'):
+        if time.time() - job.get('updated', job['created']) > DISK_TTL:
+            raise HTTPException(404,'Срок хранения MP4 истёк.')
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                url = await disk_link(client, 'download', item['diskKey'])
+        except (RuntimeError, httpx.HTTPError):
+            raise HTTPException(502,'Яндекс Диск не выдал файл.') from None
+        return RedirectResponse(url, headers={'Cache-Control':'private,no-store','Referrer-Policy':'no-referrer'})
     return FileResponse(item['path'],media_type=item.get('mime','video/mp4'),filename=item['name'],headers={'Cache-Control':'private,no-store'})
 
 # Cloud OAuth credentials belong to EdPVZ's registered applications.
 # Connection tokens are encrypted before being written under the user's RLS scope.
 from base64 import urlsafe_b64encode
 from cryptography.fernet import Fernet
-from fastapi.responses import RedirectResponse
 from urllib.parse import urlencode
 
 OAUTH_STATES = {}
@@ -658,7 +760,7 @@ async def save_cloud(job_id:str,file_id:str,provider:str,request:Request):
     user,headers = await auth(request)
     job = owned(job_id,user)
     item = next((f for f in job['files'] if f['id']==file_id),None)
-    if not item or not Path(item['path']).is_file():
+    if not item or not item.get('path') or not Path(item['path']).is_file():
         raise HTTPException(404,'Файл недоступен.')
     lock = CLOUD_LOCKS.setdefault((user,provider),asyncio.Lock())
     async with lock:
@@ -673,7 +775,7 @@ async def frame(job_id:str,file_id:str,request:Request):
     item = next((f for f in job['files'] if f['id']==file_id),None)
     data = await request.json()
     second = data.get('second')
-    if not item or not isinstance(second,(int,float)) or not math.isfinite(second) or not 0 <= second < item.get('duration',0):
+    if not item or not item.get('path') or not isinstance(second,(int,float)) or not math.isfinite(second) or not 0 <= second < item.get('duration',0):
         raise HTTPException(400,'Выбери кадр внутри готовой записи.')
     output = ROOT/job_id/(file_id+'-frame-'+secrets.token_hex(4)+'.jpg')
     await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-ss',str(second),'-i',item['path'],'-frames:v','1','-q:v','2',str(output)],job,60)
