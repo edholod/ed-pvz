@@ -22,6 +22,7 @@ from fastapi.responses import FileResponse
 
 router = APIRouter(prefix='/archive')
 BASE = os.environ.get('SUPABASE_URL', 'https://duerixyhzapotoeclggz.supabase.co').rstrip('/')
+PUBLIC_URL = os.environ.get('ARCHIVE_PUBLIC_URL','https://edpvz-telegram-collector.onrender.com').rstrip('/')
 ANON = os.environ.get('SUPABASE_ANON_KEY') or 'sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV'
 ROOT = Path(os.environ.get('ARCHIVE_WORK_DIR', '/tmp/edpvz-archive-files'))
 ROOT.mkdir(parents=True, exist_ok=True)
@@ -162,8 +163,30 @@ async def download_source(url,path,job):
             raise RuntimeError('Ivideon отклонил скачивание файла (HTTP '+str(error.code)+').') from None
         except (urllib.error.URLError,TimeoutError):
             raise RuntimeError('Не удалось получить исходный файл Ivideon. Повтори подготовку.') from None
+    async def validate_request(request):
+        media_url(str(request.url))
     try:
-        return await asyncio.to_thread(transfer)
+        try:
+            async with httpx.AsyncClient(http2=True,follow_redirects=True,max_redirects=5,timeout=httpx.Timeout(90,read=20),event_hooks={'request':[validate_request]}) as client:
+                async with client.stream('GET',url,headers={'Range':'bytes=0-','Accept-Encoding':'identity'}) as response:
+                    if response.status_code not in (200,206):
+                        raise RuntimeError('Ivideon отклонил скачивание файла (HTTP '+str(response.status_code)+').')
+                    if response.status_code==206 and not response.headers.get('content-range','').startswith('bytes 0-'):
+                        raise RuntimeError('Ivideon вернул неправильную часть файла.')
+                    size=response.headers.get('content-length','');expected=int(size) if size.isdigit() else None
+                    received=0
+                    with path.open('wb') as output:
+                        async for block in response.aiter_bytes(64*1024):
+                            if job.get('cancelled'):raise RuntimeError('Подготовка отменена.')
+                            if shutil.disk_usage(ROOT).free<128*1024*1024:raise RuntimeError('На сервере недостаточно места.')
+                            output.write(block);received+=len(block)
+                            job['message']='Получаем запись: '+str(round(received/1024))+' КБ'+(' из '+str(round(expected/1024))+' КБ' if expected else '')
+                    if received<1000 or (expected is not None and received!=expected):raise RuntimeError('Исходный файл передан не полностью.')
+                    print('archive-source protocol='+response.http_version+' received='+str(received),flush=True)
+                    return str(path)
+        except (ImportError,httpx.TransportError):
+            path.unlink(missing_ok=True)
+            return await asyncio.to_thread(transfer)
     except Exception:
         path.unlink(missing_ok=True)
         raise
@@ -219,7 +242,7 @@ async def run(job):
                         job['message']='Получаем архивный файл Ivideon'
                         source_url=await export_source(job,clip,start,end)
                         await download_source(source_url,source,job)
-                        args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-i',str(source),'-map','0:v:0','-map','0:a:0?','-t',str(end-start),'-threads','1']
+                        args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-xerror','-err_detect','explode','-i',str(source),'-map','0:v:0','-map','0:a:0?','-t',str(end-start),'-threads','1']
                         target=PROFILES[job['quality']]
                         if width:
                             args+=['-vf',f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
@@ -487,7 +510,7 @@ async def cloud_connect(provider:str,request:Request):
     for key,value in list(OAUTH_STATES.items()):
         if time.time()-value['created'] > 600:
             del OAUTH_STATES[key]
-    callback = 'https://edpvz-telegram-collector.onrender.com/archive/cloud/' + provider + '/callback'
+    callback = PUBLIC_URL + '/archive/cloud/' + provider + '/callback'
     OAUTH_STATES[state] = {'user':user,'headers':headers,'provider':provider,'callback':callback,'created':time.time()}
     params = {'client_id':client_id,'redirect_uri':callback,'response_type':'code','state':state}
     if provider == 'google':
