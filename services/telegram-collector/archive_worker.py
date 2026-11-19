@@ -410,6 +410,36 @@ async def restore_piece(path, record, job):
         return False
 
 
+async def cleanup_checkpoints(job):
+    """Remove only this job's verified intermediate objects, never final MP4s."""
+    records = list(job.get('checkpoints') or [])
+    if not records:
+        return
+    try:
+        token = DISK_TOKEN or await cloud_token('yandex',job['user'],job['headers'])
+    except Exception:
+        print('archive checkpoint cleanup: Yandex token unavailable',flush=True)
+        return
+    remaining=[]
+    async with httpx.AsyncClient(timeout=30) as client:
+        for record in records:
+            key=record.get('diskKey','')
+            expected='app:/edpvz-checkpoint-' + job['id'] + '-'
+            if not key.startswith(expected) or not re.fullmatch(r'app:/edpvz-checkpoint-[A-Za-z0-9_-]+-[0-9]+-[0-9]+\\.mp4',key):
+                remaining.append(record)
+                continue
+            try:
+                response=await client.delete(DISK_API,headers={'Authorization':'OAuth '+token},params={'path':key,'permanently':'true'})
+                if response.status_code not in (202,204,404):
+                    remaining.append(record)
+            except Exception:
+                remaining.append(record)
+    job['checkpoints']=remaining
+    await persist_job(job)
+    if remaining:
+        print('archive checkpoint cleanup incomplete count='+str(len(remaining)),flush=True)
+
+
 async def run(job):
     async with LOCK:
         if job.get('cancelled'):
@@ -527,6 +557,8 @@ async def run(job):
         finally:
             job['updated'] = time.time()
             await persist_job(job)
+            if job['state'] == 'ready':
+                await cleanup_checkpoints(job)
 
 
 def public_job(job):
