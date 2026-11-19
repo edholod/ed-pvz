@@ -468,15 +468,14 @@ export function createArchiveStudio(options) {
     const box=records.querySelector('.as-jobs');box.replaceChildren();
     records.querySelector('.as-empty').hidden = Boolean(jobs.length || originalFiles.children.length);
     const current = get('current');
-    const tracked = jobs.find(job=>job.destination === 'yandex' && ['queued','processing','uploading'].includes(job.state))
-      || jobs.find(job=>['queued','processing','uploading'].includes(job.state))
-      || jobs.find(job=>job.destination === 'yandex');
+    const tracked = jobs.find(job=>['queued','processing','uploading'].includes(job.state));
     current.replaceChildren();
     current.hidden = !tracked;
     if (tracked) renderJobStatus(current,tracked);
     for(const job of jobs) {
       const card=document.createElement('article');card.className='as-card';
       renderJobStatus(card,job);
+      if(job.state==='expired')card.append(document.createTextNode('Временная подготовка утрачена после перезапуска сервера. Исходная запись в Ivideon не удалена. Выбери тот же интервал и создай запрос заново.'));
       if(job.destination==='google' && job.googleUpload==='pending')card.append(document.createTextNode('После подготовки MP4 начнётся загрузка на Google Диск.'));
       if(job.destination==='google' && job.googleUpload==='uploading')card.append(document.createTextNode('Загружаем видео на Google Диск…'));
       if(job.destination==='google' && job.googleUpload==='failed')card.append(document.createTextNode('Загрузка не удалась. Повтори через кнопку Google Диска у готового файла.'));
@@ -546,7 +545,10 @@ export function createArchiveStudio(options) {
           } else if(complete.includes(job.state)) finishPreview(job);
           else status.textContent=job.message || 'Подготавливаем видео для просмотра…';
         } catch(error) {
-          if(error.status===404) Object.assign(job,{state:'expired',message:error.message});
+          if(error.status===404) {
+            Object.assign(job,{state:'expired',message:'Временный файл недоступен после перезапуска сервера.'});
+            persist();
+          }
           if(complete.includes(job.state)) finishPreview(job);
           feedback(error.message);
         }
