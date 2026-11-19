@@ -23,6 +23,7 @@
   <nav aria-label="Навигация">
     <a href="../../">← Главная</a>
     <a href="../cameras/">Настройка камер</a>
+    <a href="#cloud-settings">Облачные диски</a>
   </nav>
   <header>
     <div><h1>Видеонаблюдение</h1><p>Выбери сервис, к которому подключены камеры твоих ПВЗ.</p></div>
@@ -39,6 +40,90 @@
       <span aria-hidden="true">→</span>
     </a>
   </div>
+  <section class="panel" id="cloud-settings" aria-labelledby="cloud-title">
+    <h2 id="cloud-title">Облачные диски</h2>
+    <p>Подключи личный диск, чтобы сохранять записи камер без скачивания на устройство.</p>
+    <div id="cloud-providers"></div>
+    <p id="cloud-feedback" role="status">Проверяем подключение…</p>
+  </section>
 </main>
+<script type="module">
+  const panel = document.getElementById('cloud-settings');
+  const main = panel.closest('main');
+  const providers = document.getElementById('cloud-providers');
+  const feedback = document.getElementById('cloud-feedback');
+  const account = window.EdPVZAccount;
+  const callbackMessages = new Map([
+    ['#cloud=connected', 'Диск подключён.'],
+    ['#cloud=cancelled', 'Подключение отменено.'],
+    ['#cloud=failed', 'Не удалось подключить диск. Попробуй ещё раз.'],
+  ]);
+  let notice = callbackMessages.get(location.hash);
+  if (notice) history.replaceState(null, '', '#cloud-settings');
+  let revision = 0;
+  let busy = false;
+
+  async function refresh() {
+    const current = ++revision;
+    const user = account?.user?.id;
+    providers.replaceChildren();
+    if (main.hidden || !user) return;
+    feedback.textContent = 'Проверяем подключение…';
+    try {
+      const config = await account.archiveRequest('/cloud');
+      if (current !== revision || account.user?.id !== user || main.hidden) return;
+      for (const [id, title] of [['yandex', 'Яндекс Диск'], ['google', 'Google Диск']]) {
+        const disk = config[id];
+        const row = document.createElement('div');
+        row.className = 'actions';
+        const label = document.createElement('strong');
+        label.textContent = title;
+        const status = document.createElement('span');
+        status.textContent = !disk?.configured ? 'Пока недоступен' : disk.connected ? 'Подключён' : 'Не подключён';
+        row.append(label, status);
+        if (disk?.configured) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = disk.connected ? 'secondary' : 'primary';
+          button.textContent = (disk.connected ? 'Отключить ' : 'Подключить ') + title;
+          button.addEventListener('click', async () => {
+            if (busy) return;
+            busy = true;
+            button.disabled = true;
+            feedback.textContent = disk.connected ? 'Отключаем диск…' : 'Открываем страницу подключения…';
+            try {
+              const action = disk.connected ? 'disconnect' : 'connect';
+              const result = await account.archiveRequest('/cloud/' + id + '/' + action, {});
+              if (account.user?.id !== user) return;
+              if (!disk.connected) {
+                location.assign(result.url);
+                return;
+              }
+              notice = title + ' отключён.';
+              await refresh();
+            } catch (error) {
+              feedback.textContent = error.message || 'Не удалось изменить подключение диска.';
+            } finally {
+              busy = false;
+              button.disabled = false;
+            }
+          });
+          row.append(button);
+        }
+        providers.append(row);
+      }
+      feedback.textContent = notice || '';
+      if (notice) panel.scrollIntoView();
+      notice = '';
+    } catch (error) {
+      if (current === revision) feedback.textContent = error.message || 'Не удалось проверить подключение дисков.';
+    }
+  }
+
+  new MutationObserver(refresh).observe(main, {attributes: true, attributeFilter: ['hidden']});
+  window.addEventListener('edpvz-auth-changed', refresh);
+  window.addEventListener('pageshow', refresh);
+  void refresh();
+</script>
 </body>
 </html>
