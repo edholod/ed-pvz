@@ -31,6 +31,7 @@ export function createArchiveStudio(options) {
     <div class="as-actions">
       <button type="button" class="primary as-original">Подготовить MP4</button>
       <button type="button" class="secondary as-save-yandex" hidden>Сохранить на Яндекс Диск</button>
+      <button type="button" class="secondary as-save-google" hidden>Сохранить на Google Диск</button>
       <button type="button" class="secondary as-preview">Посмотреть</button>
     </div>
     <div class="as-current as-card" hidden></div>
@@ -476,6 +477,9 @@ export function createArchiveStudio(options) {
     for(const job of jobs) {
       const card=document.createElement('article');card.className='as-card';
       renderJobStatus(card,job);
+      if(job.destination==='google' && job.googleUpload==='pending')card.append(document.createTextNode('После подготовки MP4 начнётся загрузка на Google Диск.'));
+      if(job.destination==='google' && job.googleUpload==='uploading')card.append(document.createTextNode('Загружаем видео на Google Диск…'));
+      if(job.destination==='google' && job.googleUpload==='failed')card.append(document.createTextNode('Загрузка не удалась. Повтори через кнопку Google Диска у готового файла.'));
       if(['processing','queued'].includes(job.state))card.append(button('Отменить',async()=>{Object.assign(job,await request('/jobs/'+job.id+'/cancel',{}));finishPreview(job);drawJobs();}));
       if(job.state==='failed'||job.state==='cancelled'||job.state==='expired')card.append(button('Убрать из списка',()=>{jobs=jobs.filter(x=>x!==job);persist();drawJobs();}));
       for(const file of job.files||[]) {
@@ -523,6 +527,17 @@ export function createArchiveStudio(options) {
           if(owner!==user)return;
           Object.assign(job,result);
           if (job.state === 'ready' && job.destination === 'yandex') persist();
+          if(job.state==='ready' && job.destination==='google' && job.googleUpload==='pending' && job.files?.[0]) {
+            job.googleUpload='uploading';persist();drawJobs();
+            try {
+              await cloudSave(job,job.files[0],'google');
+              job.googleUpload='saved';job.message='Видео сохранено на Google Диске';
+            } catch(error) {
+              job.googleUpload='failed';job.message='Google Диск: '+error.message;
+              feedback(error.message);
+            }
+            persist();
+          }
           if(job.previewGeneration !== generation) continue;
           if(job.state==='ready'&&job.files?.[0]) {
             const active=job.previewGeneration;
@@ -539,6 +554,23 @@ export function createArchiveStudio(options) {
       drawJobs();schedule();
     },4000);
   }
+  get('save-google').addEventListener('click', async()=>{
+    const control=get('save-google');
+    setLoading(control,true);
+    try {
+      if (!camera || !loaded) throw Error('Выбери камеру и дождись загрузки архива.');
+      const range=interval(), owner=user, cameraName=camera.displayName||camera.name;
+      const job=await request('/jobs',{
+        clips:[{cameraId:camera.id,connectionId:camera.connectionId,cameraName,...range,name:get('name').value.trim()||cameraName+' '+stamp(range.start)}],
+        quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID()
+      });
+      if(owner!==user)return;
+      job.destination='google';job.googleUpload='pending';
+      job.title=job.title||cameraName;
+      jobs.unshift(job);persist();drawJobs();schedule();feedback('Готовим MP4 для Google Диска…');
+    }catch(error){feedback(error.message);}
+    finally{setLoading(control,false);}
+  });
   get('save-yandex').addEventListener('click', async()=>{
     const control=get('save-yandex');
     setLoading(control,true);
@@ -564,6 +596,7 @@ export function createArchiveStudio(options) {
     if (account()?.user?.id !== user) return;
     config = status;
     get('save-yandex').hidden = !(config?.yandex?.configured && config.yandex.connected);
+    get('save-google').hidden = !(config?.google?.configured && config.google.connected);
     drawJobs();
   }
   async function capture() {
