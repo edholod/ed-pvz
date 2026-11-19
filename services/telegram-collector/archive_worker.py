@@ -207,7 +207,7 @@ async def run(job):
                         except RuntimeError:
                             pass
                     path = folder / ('part-' + str(index) + '-' + str(start) + '.mp4')
-                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-filter_threads', '1', '-i', url or '', '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
+                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-live_start_index', '0', '-prefer_x_start', '1', '-filter_threads', '1', '-threads', '1', '-i', url or '', '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
                     target = PROFILES[job['quality']]
                     if width:
                         args += ['-vf', f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
@@ -233,8 +233,8 @@ async def run(job):
                             job['use_export']=True
                             fallback=args[:]
                             fallback[fallback.index('-i')+1]=exported
-                            at=fallback.index('-allowed_extensions')
-                            del fallback[at:at+2]
+                            for option in ('-allowed_extensions','-live_start_index','-prefer_x_start'):
+                                at=fallback.index(option);del fallback[at:at+2]
                             if local_source:
                                 at=fallback.index('-protocol_whitelist');del fallback[at:at+2]
                             job['message']='Обрабатываем совместимую запись'
@@ -243,9 +243,10 @@ async def run(job):
                             finally:
                                 if local_source:Path(exported).unlink(missing_ok=True)
                         duration, fps, w, h = await probe(path, job)
+                        print('archive-piece duration='+str(duration)+' expected='+str(end-start)+' fps='+str(fps),flush=True)
                         await verify_frames(path,job,fps)
                         if abs(duration - (end-start)) > max(.25, 2/fps):
-                            raise RuntimeError('Длительность полученной записи не совпадает с выбранным интервалом. Возможно, в архиве есть пропуск.')
+                            raise RuntimeError('Получено '+str(round(duration,3))+' с вместо '+str(end-start)+' с. В этом интервале нет непрерывной записи либо поток обрывается.')
                     except RuntimeError:
                         path.unlink(missing_ok=True)
                         if end-start > 60 and not job.get('cancelled'):

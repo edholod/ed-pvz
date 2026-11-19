@@ -18,8 +18,9 @@ async def main():
     original_process=w.process
     async def local_process(args,job,timeout=None):
       args=[v.replace('https,http,tls,tcp,crypto','file,https,http,tls,tcp,crypto') for v in args]
-      if '-allowed_extensions' in args:
-        at=args.index('-allowed_extensions');del args[at:at+2]
+      for option in ('-allowed_extensions','-live_start_index','-prefer_x_start'):
+        if option in args:
+          at=args.index(option);del args[at:at+2]
       return await original_process(args,job,timeout)
     job={'id':'test-concat','user':'a','headers':{},'state':'queued','quality':'source','profile':'auto','clips':[{'cameraId':'100-test:0','start':100,'end':104,'name':'Доказательство'}],'files':[],'created':time.time()}
     with patch.object(w,'process',local_process),patch.object(w,'edge',edge),patch.object(w,'media_url',lambda x:x),patch.object(w,'chunks',lambda a,b:original_chunks(a,b,2)):
