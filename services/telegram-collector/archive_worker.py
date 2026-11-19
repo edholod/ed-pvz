@@ -362,6 +362,56 @@ async def store_archive(path, job_id, index):
     return key
 
 
+async def checkpoint_piece(path, job, clip_index, start, end, duration, width):
+    """Durable, private Yandex app-folder checkpoint for a verified encoded segment."""
+    if not DISK_TOKEN:
+        return
+    key = 'app:/edpvz-checkpoint-' + job['id'] + '-' + str(clip_index) + '-' + str(start) + '.mp4'
+    size = path.stat().st_size
+    async with httpx.AsyncClient(timeout=240) as client:
+        target = await disk_link(client, 'upload', key)
+        async def blocks():
+            with path.open('rb') as source:
+                while block := await asyncio.to_thread(source.read, 1024*1024):
+                    yield block
+        response = await client.put(target, headers={'Content-Length':str(size),'Content-Type':'video/mp4'},content=blocks())
+        if response.status_code not in (200,201,202):
+            raise RuntimeError('Яндекс Диск не подтвердил сохранение промежуточного фрагмента.')
+        check = await client.get(DISK_API,headers={'Authorization':'OAuth '+DISK_TOKEN},params={'path':key})
+        if check.status_code != 200 or check.json().get('size') != size:
+            raise RuntimeError('Контрольная проверка промежуточного фрагмента не пройдена.')
+    record={'clipIndex':clip_index,'start':start,'end':end,'duration':duration,'width':list(width),'size':size,'diskKey':key}
+    job.setdefault('checkpoints',[])
+    job['checkpoints']=[p for p in job['checkpoints'] if not (p['clipIndex']==clip_index and p['start']==start)]
+    job['checkpoints'].append(record)
+    await persist_job(job)
+
+
+async def restore_piece(path, record, job):
+    if not DISK_TOKEN:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=240) as client:
+            url=await disk_link(client,'download',record['diskKey'])
+            async with client.stream('GET',url) as response:
+                if response.status_code != 200:
+                    return False
+                with path.open('wb') as output:
+                    async for block in response.aiter_bytes(1024*1024):
+                        output.write(block)
+        if path.stat().st_size != record['size']:
+            path.unlink(missing_ok=True)
+            return False
+        duration,fps,w,h=await probe(path,job)
+        if abs(duration-record['duration']) > max(.1,2/fps) or [w,h] != record['width']:
+            path.unlink(missing_ok=True)
+            return False
+        return True
+    except Exception:
+        path.unlink(missing_ok=True)
+        return False
+
+
 async def run(job):
     async with LOCK:
         if job.get('cancelled'):
@@ -387,6 +437,17 @@ async def run(job):
                         raise RuntimeError('На сервере недостаточно места. Скачай готовые файлы и повтори позже.')
                     path=folder/('part-'+str(index)+'-'+str(start)+'.mp4')
                     source=folder/('source-'+str(index)+'-'+str(start)+'.mp4')
+                    checkpoint=next((p for p in job.get('checkpoints',[]) if p['clipIndex']==index and p['start']==start and p['end']==end),None)
+                    if checkpoint and await restore_piece(path,checkpoint,job):
+                        w,h=checkpoint['width']
+                        width=width or (w,h)
+                        pieces.append(path)
+                        piece_durations.append(checkpoint['duration'])
+                        completed += end-start
+                        job['progress']=min(98,round(completed/total*98))
+                        job['message']='Восстановлен сохранённый фрагмент с Яндекс Диска'
+                        await persist_job(job)
+                        continue
                     try:
                         job['message']='Запрашиваем запись у Ivideon'
                         source_url=await export_source(job,clip,start,end)
@@ -423,6 +484,9 @@ async def run(job):
                             continue
                         raise
                     width = width or (w,h)
+                    if DISK_TOKEN:
+                        job['message']='Сохраняем контрольную точку на Яндекс Диске'
+                        await checkpoint_piece(path,job,index,start,end,duration,(w,h))
                     pieces.append(path)
                     piece_durations.append(duration)
                     completed += end-start
@@ -488,7 +552,7 @@ async def persist_job(job):
     headers = job.get('headers')
     if not headers:
         return
-    keys = ('id','clips','quality','profile','requestId','saveToYandex','state','message','progress','created','updated','files','cloudFiles','importSizes','importNext','importName')
+    keys = ('id','clips','quality','profile','requestId','saveToYandex','state','message','progress','created','updated','files','cloudFiles','importSizes','importNext','importName','checkpoints')
     payload = {k:job[k] for k in keys if k in job}
     payload['files'] = [{k:v for k,v in item.items() if k not in ('path',)} for item in job.get('files',[])]
     async with httpx.AsyncClient(timeout=12) as client:
@@ -513,7 +577,7 @@ async def restore_job(job_id,user,headers):
     # Render's ephemeral filesystem cannot recover partially encoded files.
     if job.get('state') in ('queued','processing'):
         if job.get('clips') and job.get('quality') in PROFILES:
-            job.update(state='queued',message='Сервер перезапущен. Возобновляем подготовку с начала.',progress=0,files=[])
+            job.update(state='queued',message='Сервер перезапущен. Восстанавливаем сохранённые части с Яндекс Диска.',progress=0,files=[])
             JOBS[job_id]=job
             await persist_job(job)
             task=asyncio.create_task(run(job))
