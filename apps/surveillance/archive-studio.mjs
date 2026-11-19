@@ -88,8 +88,8 @@ export function createArchiveStudio(options) {
   importPanel.append(importTitle,'Порядок склейки определяется именами файлов. ',importInput,importInfo,merge,importStatus);
   get('original').parentElement.after(originalStatus,originalFiles,importPanel);
   get('original').addEventListener('click', async () => {
-    const button = get('original');
-    button.disabled = true;
+    const originalButton = get('original');
+    originalButton.disabled = true;
     originalFiles.replaceChildren();
     try {
       const {start,end} = interval();
@@ -176,7 +176,7 @@ export function createArchiveStudio(options) {
     } catch (error) {
       originalStatus.textContent = error.message || 'Не удалось подготовить исходный MP4.';
     } finally {
-      button.disabled = false;
+      originalButton.disabled = false;
     }
   });
   get('zone').textContent = 'Время устройства · ' + Intl.DateTimeFormat().resolvedOptions().timeZone;
