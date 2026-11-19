@@ -247,14 +247,14 @@ async def verify_frames(path,job,rate):
 
 
 async def export_source(job, clip, start, end):
-    result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export','start':start,'end':end}})
+    result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{**({'connectionId':clip['connectionId']} if clip.get('connectionId') else {}),'mode':'export','start':start,'end':end}})
     export_id=result['exportId']
     print('archive-export created id='+str(export_id),flush=True)
     deadline=time.time()+600
     while time.time()<deadline:
         if job.get('cancelled'):
             raise RuntimeError('Подготовка отменена.')
-        result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export-status','exportId':export_id,'ingest':True}})
+        result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{**({'connectionId':clip['connectionId']} if clip.get('connectionId') else {}),'mode':'export-status','exportId':export_id,'ingest':True}})
         if result['state']=='ready':
             job['message']='Скачиваем готовый файл Ivideon'
             print('archive-export ready id='+str(export_id),flush=True)
@@ -420,7 +420,7 @@ async def run(job):
                 await verify_frames(output,job,fps)
                 if duration < sum(piece_durations) - max(.05,2/fps):
                     raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
-                job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':clip['end']-clip['start'],'measuredDuration':duration,'fps':fps,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'cameraName':clip.get('cameraName','Камера'),'sourceStart':clip['start']})
+                job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':clip['end']-clip['start'],'measuredDuration':duration,'fps':fps,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'connectionId':clip.get('connectionId'),'cameraName':clip.get('cameraName','Камера'),'sourceStart':clip['start']})
                 if job.get('saveToYandex'):
                     job['message'] = 'Сохраняем запись на твой Яндекс Диск'
                     token = await cloud_token('yandex',job['user'],job['headers'])
@@ -487,7 +487,10 @@ async def create(request: Request):
         start,end = clip.get('start'),clip.get('end')
         if type(start) is not int or type(end) is not int or not 0 < start < end <= now:
             raise HTTPException(400,'Укажи существующий интервал архива.')
-        normalized.append({'cameraId':clip['cameraId'],'start':start,'end':end,'name':clean_name(clip.get('name','Запись')),'cameraName':str(clip.get('cameraName','Камера')).strip()[:200]})
+        connection_id = clip.get('connectionId')
+        if connection_id is not None and (not isinstance(connection_id,str) or not re.fullmatch(r'[a-fA-F0-9-]{36}',connection_id)):
+            raise HTTPException(400,'Некорректное подключение Ivideon.')
+        normalized.append({'cameraId':clip['cameraId'],'connectionId':connection_id,'start':start,'end':end,'name':clean_name(clip.get('name','Запись')),'cameraName':str(clip.get('cameraName','Камера')).strip()[:200]})
     expire()
     request_id = data.get('requestId')
     if not isinstance(request_id,str) or not re.fullmatch(r'[a-zA-Z0-9-]{10,80}',request_id):
