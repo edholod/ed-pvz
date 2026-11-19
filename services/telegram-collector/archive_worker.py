@@ -158,12 +158,14 @@ async def download_hls_source(job,clip,start,end,path):
     path.unlink(missing_ok=True)
     # ffmpeg demuxes HLS segments and remuxes without re-encoding; normal
     # downstream frame/duration validation is retained.
+    # HLS can arrive at playback speed. Write fragmented MP4 so progress is
+    # observable before the final moov atom is written.
     args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y',
           '-rw_timeout','30000000','-protocol_whitelist','file,http,https,tcp,tls,crypto',
           '-i',stream,'-t',str(end-start),'-map','0:v:0','-map','0:a:0?',
-          '-c','copy','-movflags','+faststart',str(path)]
+          '-c','copy','-movflags','+frag_keyframe+empty_moov',str(path)]
     try:
-        task=asyncio.create_task(process(args,job,timeout=min(900,max(120,(end-start)*3))))
+        task=asyncio.create_task(process(args,job,timeout=min(1200,max(180,(end-start)*4))))
         last_size=0
         stalled=0
         while not task.done():
@@ -175,15 +177,15 @@ async def download_hls_source(job,clip,start,end,path):
                 job['message']='Получаем архивный поток Ivideon: '+str(round(size/1048576,1))+' МБ'
             else:
                 stalled+=10
-            if stalled>=50:
+            if stalled>=90:
                 task.cancel()
                 try:
                     await task
                 except (asyncio.CancelledError,Exception):
                     pass
-                raise RuntimeError('Архивный HLS-поток Ivideon не передаёт данные.')
+                raise RuntimeError('Архивный HLS-поток Ivideon перестал передавать данные.')
         await task
-    except Exception:
+    except BaseException:
         path.unlink(missing_ok=True)
         raise
     if not path.is_file() or path.stat().st_size<1000:
