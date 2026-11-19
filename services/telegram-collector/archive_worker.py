@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse
 
 router = APIRouter(prefix='/archive')
 BASE = os.environ.get('SUPABASE_URL', 'https://duerixyhzapotoeclggz.supabase.co').rstrip('/')
-PUBLIC_URL = os.environ.get('ARCHIVE_PUBLIC_URL','https://edpvz-telegram-collector.onrender.com').rstrip('/')
+PUBLIC_URL = os.environ.get('ARCHIVE_PUBLIC_URL','https://edpvz-archive.onrender.com').rstrip('/')
 ANON = os.environ.get('SUPABASE_ANON_KEY') or 'sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV'
 ROOT = Path(os.environ.get('ARCHIVE_WORK_DIR', '/tmp/edpvz-archive-files'))
 ROOT.mkdir(parents=True, exist_ok=True)
@@ -202,15 +202,19 @@ async def verify_frames(path,job,rate):
 async def export_source(job, clip, start, end):
     result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export','start':start,'end':end}})
     export_id=result['exportId']
+    print('archive-export created id='+str(export_id),flush=True)
     deadline=time.time()+600
     while time.time()<deadline:
         if job.get('cancelled'):
             raise RuntimeError('Подготовка отменена.')
         result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{'mode':'export-status','exportId':export_id,'ingest':True}})
         if result['state']=='ready':
+            job['message']='Скачиваем готовый файл Ivideon'
+            print('archive-export ready id='+str(export_id),flush=True)
             return media_url(result.get('sourceUrl') or result['downloadUrl'])
         if result['state']=='failed':
             raise RuntimeError('Ivideon не подготовил экспорт этого участка.')
+        job['message']='Ivideon готовит экспорт'+(' · '+str(result['progress'])+'%' if result.get('progress') is not None else '')
         await asyncio.sleep(3)
     raise RuntimeError('Ivideon не завершил экспорт за 10 минут. Попробуй меньший участок.')
 
@@ -242,6 +246,9 @@ async def run(job):
                         job['message']='Получаем архивный файл Ivideon'
                         source_url=await export_source(job,clip,start,end)
                         await download_source(source_url,source,job)
+                        original_duration,original_fps,_,_=await probe(source,job)
+                        if abs(original_duration-(end-start))>max(.15,2/original_fps):
+                            raise RuntimeError('Ivideon вернул запись с другими границами времени. Точная склейка этого участка пока недоступна; файл не выдан.')
                         args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-xerror','-err_detect','explode','-i',str(source),'-map','0:v:0','-map','0:a:0?','-t',str(end-start),'-threads','1']
                         target=PROFILES[job['quality']]
                         if width:
