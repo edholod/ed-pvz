@@ -58,10 +58,26 @@ export function createArchiveStudio(options) {
       const {start,end} = interval();
       if (!camera) throw Error('Выбери камеру.');
       const cameraId = camera.id;
-      if (end-start > 18000) throw Error('Для одного исходного MP4 выбери интервал до 5 часов.');
+      if (end-start > 18000) {
+        const health = await request('/health');
+        if (!health.ok || !health.exportReady || !health.temporaryDiskConfigured) {
+          throw Error('Сборка одного файла через Яндекс Диск временно недоступна.');
+        }
+        const owner = user;
+        const cameraName = camera.displayName || camera.name;
+        originalStatus.textContent = 'Отправляем длинную запись на сборку…';
+        const job = await request('/jobs',{
+          clips:[{cameraId,cameraName,start,end,name:get('name').value.trim() || cameraName+' '+stamp(start)}],
+          quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID()
+        });
+        if (owner !== user) return;
+        jobs.unshift(job); persist(); drawJobs(); schedule();
+        originalStatus.textContent = 'Задание принято. Один MP4 появится в готовых файлах.';
+        return;
+      }
       const parts = [[start,end]];
       const requestExport = archive => window.EdPVZAccount.checkIvideon(undefined,cameraId,undefined,'load',archive);
-      const getStatus = exportId => requestExport({mode:'export-status',exportId,browserDownload:true});
+      const getStatus = (exportId,share=false) => requestExport({mode:'export-status',exportId,browserDownload:true,share});
       for (const [index,[from,to]] of parts.entries()) {
         originalStatus.textContent = 'Ivideon готовит один MP4 за выбранный период…';
         const {exportId} = await requestExport({mode:'export',start:from,end:to});
@@ -106,7 +122,12 @@ export function createArchiveStudio(options) {
             refresh.disabled = false;
           }
         });
-        row.append(link,' ',refresh);
+        const share = button('Скопировать ссылку',async()=>{
+          const shared = await getStatus(exportId,true);
+          if (shared.state !== 'ready') throw Error('Файл больше недоступен.');
+          await copyShare(shared.downloadUrl,originalStatus);
+        });
+        row.append(link,' ',refresh,' ',share);
         originalFiles.append(row);
       }
       originalStatus.textContent = parts.length === 1 ? 'MP4 готов.' : 'Готово файлов: ' + parts.length + '. Скачай их по очереди.';
@@ -223,8 +244,21 @@ export function createArchiveStudio(options) {
     if (owner!==user) return;
     jobs.unshift(job);persist();drawJobs();schedule();feedback('Задание принято. Файлы появятся ниже по мере готовности.');
   }
-  async function fileLink(job,file,name) {
-    const result = await request('/jobs/'+encodeURIComponent(job.id)+'/file/'+encodeURIComponent(file.id),name===undefined?{}:{name});
+  async function copyShare(url,statusElement=get('feedback')) {
+    const href = new URL(url);
+    const player = new URL('./archive-share.html',location.href);
+    player.hash = encodeURIComponent(href.href);
+    try {
+      await navigator.clipboard.writeText(player.href);
+      statusElement.textContent = 'Ссылка скопирована. Любой, у кого она есть, может открыть видео до истечения срока.';
+    } catch {
+      const field=document.createElement('input');
+      field.readOnly=true; field.value=player.href; field.setAttribute('aria-label','Ссылка на видео');
+      statusElement.replaceChildren(field); field.select();
+    }
+  }
+  async function fileLink(job,file,name,share=false) {
+    const result = await request('/jobs/'+encodeURIComponent(job.id)+'/file/'+encodeURIComponent(file.id),name===undefined?{share}:{name});
     return {name:result.name,url:WORKER+result.url};
   }
   async function saveFile(job,file,pick) {
@@ -291,7 +325,7 @@ export function createArchiveStudio(options) {
         const info=document.createElement('p');info.textContent=(file.size/1024/1024).toFixed(1)+' МБ · '+file.width+'×'+file.height+(file.duration?' · '+duration(file.duration):'');
         const actions=document.createElement('div');actions.className='as-actions';
         actions.append(button('Переименовать',()=>rename(job,file)),button('Скачать в загрузки',()=>saveFile(job,file,false)),button('Выбрать место сохранения',()=>saveFile(job,file,true)));
-        if(!file.mime) actions.append(button('Посмотреть',()=>showFile(job,file)),button('Кадр из файла',async()=>{
+        if(!file.mime) actions.append(button('Скопировать ссылку',async()=>copyShare((await fileLink(job,file,undefined,true)).url)),button('Посмотреть',()=>showFile(job,file)),button('Кадр из файла',async()=>{
           if(!video.videoWidth||liveName.textContent!==file.name)throw Error('Сначала нажми «Посмотреть» и выбери кадр.');
           await request('/jobs/'+job.id+'/file/'+file.id+'/frame',{second:Math.min(video.currentTime,Math.max(0,file.duration-1/(file.fps||25)))});
           Object.assign(job,await request('/jobs/'+job.id));drawJobs();

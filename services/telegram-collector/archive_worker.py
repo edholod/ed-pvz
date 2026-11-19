@@ -565,7 +565,8 @@ async def file_action(job_id:str,file_id:str,request:Request):
         item['name'] = clean_name(data['name']).removesuffix(suffix) + suffix
     if not SIGNING_KEY:
         raise HTTPException(503,'Скачивание временно недоступно.')
-    expires = str(int(time.time())+900)
+    expires = str(int(min(time.time() + (86400 if data.get('share') is True else 900),
+                          job.get('updated', job['created']) + 86400)))
     content = job_id + ':' + file_id + ':' + expires
     signature = hmac.new(SIGNING_KEY.encode(),content.encode(),hashlib.sha256).hexdigest()
     return {'name':item['name'],'url':'/archive/download/' + job_id + '/' + file_id + '?expires=' + expires + '&signature=' + signature}

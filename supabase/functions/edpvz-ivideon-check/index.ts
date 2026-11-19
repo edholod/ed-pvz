@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
             return reply({state:'ready',sealedSource});
           }
           const link = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
-          link.searchParams.set('download',await issueTicket(download,Date.now()+5*60*1000,archive.browserDownload === true ? 'browser-download' : 'download'));
+          link.searchParams.set('download',await issueTicket(download,Date.now()+(archive.share === true ? 24*60*60*1000 : 5*60*1000),archive.browserDownload === true ? 'browser-download' : 'download'));
           return reply({state:'ready',downloadUrl:link.href});
         }
         if (['failed','error','cancelled','expired','deleted'].includes(record.status)) return reply({state:'failed'});

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><title>Запись камеры · Эд ПВЗ</title>
+<body style="font:16px system-ui;max-width:960px;margin:24px auto;padding:0 16px">
+<h1>Запись камеры</h1>
+<video controls playsinline preload="metadata" style="width:100%" hidden></video>
+<p role="status"></p><a hidden target="_blank" rel="noopener noreferrer">Скачать MP4</a>
+<script type="module">
+const status=document.querySelector('[role=status]');
+try {
+  const src=new URL(decodeURIComponent(location.hash.slice(1)));
+  const valid=(src.origin==='https://edpvz-archive.onrender.com' &&
+    /^\/archive\/download\/[\w-]+\/[\w-]+$/.test(src.pathname) && src.searchParams.has('signature')) ||
+    (src.origin==='https://duerixyhzapotoeclggz.supabase.co' &&
+    src.pathname==='/functions/v1/edpvz-ivideon-check' && src.searchParams.has('download'));
+  if(!valid || src.username || src.password) throw Error();
+  const video=document.querySelector('video'), link=document.querySelector('a');
+  video.src=link.href=src.href; video.hidden=link.hidden=false;
+  video.addEventListener('error',()=>{status.textContent='Видео не открылось. Попробуй скачать файл. Если срок ссылки истёк, попроси новую.';});
+} catch { status.textContent='Не удалось открыть ссылку на запись.'; }
+</script></body></html>
