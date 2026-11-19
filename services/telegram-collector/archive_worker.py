@@ -807,7 +807,7 @@ async def cloud_callback(provider:str,state:str='',code:str='',error:str=''):
     saved = OAUTH_STATES.pop(state,None)
     if not saved or saved['provider'] != provider or time.time()-saved['created'] > 600:
         raise HTTPException(403,'Вход устарел. Повтори подключение диска из «Эд ПВЗ».')
-    destination = 'https://edpvz.ru/apps/surveillance/ivideon.html'
+    destination = 'https://edpvz.ru/apps/surveillance/'
     if error or not code:
         return RedirectResponse(destination+'#cloud=cancelled',303)
     client_id,secret = cloud_config(provider)
