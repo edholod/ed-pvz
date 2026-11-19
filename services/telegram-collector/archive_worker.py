@@ -364,12 +364,11 @@ async def store_archive(path, job_id, index):
 
 async def checkpoint_piece(path, job, clip_index, start, end, duration, width):
     """Durable, private Yandex app-folder checkpoint for a verified encoded segment."""
-    if not DISK_TOKEN:
-        return
+    token = DISK_TOKEN or await cloud_token('yandex',job['user'],job['headers'])
     key = 'app:/edpvz-checkpoint-' + job['id'] + '-' + str(clip_index) + '-' + str(start) + '.mp4'
     size = path.stat().st_size
     async with httpx.AsyncClient(timeout=240) as client:
-        target = await disk_link(client, 'upload', key)
+        target = await disk_link(client, 'upload', key, token)
         async def blocks():
             with path.open('rb') as source:
                 while block := await asyncio.to_thread(source.read, 1024*1024):
@@ -377,7 +376,7 @@ async def checkpoint_piece(path, job, clip_index, start, end, duration, width):
         response = await client.put(target, headers={'Content-Length':str(size),'Content-Type':'video/mp4'},content=blocks())
         if response.status_code not in (200,201,202):
             raise RuntimeError('Яндекс Диск не подтвердил сохранение промежуточного фрагмента.')
-        check = await client.get(DISK_API,headers={'Authorization':'OAuth '+DISK_TOKEN},params={'path':key})
+        check = await client.get(DISK_API,headers={'Authorization':'OAuth '+token},params={'path':key})
         if check.status_code != 200 or check.json().get('size') != size:
             raise RuntimeError('Контрольная проверка промежуточного фрагмента не пройдена.')
     record={'clipIndex':clip_index,'start':start,'end':end,'duration':duration,'width':list(width),'size':size,'diskKey':key}
@@ -388,11 +387,10 @@ async def checkpoint_piece(path, job, clip_index, start, end, duration, width):
 
 
 async def restore_piece(path, record, job):
-    if not DISK_TOKEN:
-        return False
     try:
+        token = DISK_TOKEN or await cloud_token('yandex',job['user'],job['headers'])
         async with httpx.AsyncClient(timeout=240) as client:
-            url=await disk_link(client,'download',record['diskKey'])
+            url=await disk_link(client,'download',record['diskKey'],token)
             async with client.stream('GET',url) as response:
                 if response.status_code != 200:
                     return False
@@ -484,9 +482,8 @@ async def run(job):
                             continue
                         raise
                     width = width or (w,h)
-                    if DISK_TOKEN:
-                        job['message']='Сохраняем контрольную точку на Яндекс Диске'
-                        await checkpoint_piece(path,job,index,start,end,duration,(w,h))
+                    job['message']='Сохраняем контрольную точку на Яндекс Диске'
+                    await checkpoint_piece(path,job,index,start,end,duration,(w,h))
                     pieces.append(path)
                     piece_durations.append(duration)
                     completed += end-start
