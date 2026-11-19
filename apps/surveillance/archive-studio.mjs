@@ -1,3 +1,4 @@
+import {revealPlayer,setLoading} from './player-interface.mjs?v=1';
 const WORKER = 'https://edpvz-archive.onrender.com';
 const $ = (node, query) => node.querySelector(query);
 const stamp = seconds => new Date(seconds * 1000).toLocaleString('ru-RU');
@@ -89,7 +90,7 @@ export function createArchiveStudio(options) {
   get('original').parentElement.after(originalStatus,originalFiles,importPanel);
   get('original').addEventListener('click', async () => {
     const originalButton = get('original');
-    originalButton.disabled = true;
+    setLoading(originalButton,true);
     originalFiles.replaceChildren();
     try {
       const {start,end} = interval();
@@ -176,7 +177,7 @@ export function createArchiveStudio(options) {
     } catch (error) {
       originalStatus.textContent = error.message || 'Не удалось подготовить исходный MP4.';
     } finally {
-      originalButton.disabled = false;
+      setLoading(originalButton,false);
     }
   });
   get('zone').textContent = 'Время устройства · ' + Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -190,9 +191,9 @@ export function createArchiveStudio(options) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'secondary'; b.textContent = text;
     b.addEventListener('click', async () => {
-      b.disabled = true;
+      setLoading(b,true);
       try { await fn(); } catch (error) { feedback(error.message || 'Операция не выполнена.'); }
-      finally { b.disabled = false; }
+      finally { setLoading(b,false); }
     });
     return b;
   }
@@ -232,6 +233,14 @@ export function createArchiveStudio(options) {
   }
   for (const field of ['from','to','date']) get(field).addEventListener('input',applyTimeline);
   for (const field of ['start','end']) get(field).addEventListener('change',syncTimeline);
+  let previewPending = false, previewTimer;
+  function previewLoading(loading) {
+    previewPending = loading;
+    clearTimeout(previewTimer);
+    setLoading(get('preview'),loading);
+    if (loading) status.setAttribute('aria-busy','true');
+    else status.removeAttribute('aria-busy');
+  }
   function stop() {
     playback?.(); playback = undefined;
   }
@@ -240,13 +249,28 @@ export function createArchiveStudio(options) {
     if(!loaded)throw Error('Подожди загрузки сохранённых фрагментов.');
     const {start,end}=interval();
     const active=++generation,chosen={...camera},owner=user;
-    stop();stopPlayback();await ensureWorker();
+    stop();stopPlayback();
+    previewStart=undefined;
+    previewLoading(true);
     status.textContent='Подготавливаем видео для просмотра…';
+    revealPlayer(live);
+    await ensureWorker();
+    if (active!==generation || owner!==user) return;
     const job=await request('/jobs',{clips:[{cameraId:chosen.id,connectionId:chosen.connectionId,cameraName:chosen.displayName||chosen.name,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('profile').value==='low'?'480':get('profile').value==='high'?'source':'720',profile:get('profile').value,requestId:crypto.randomUUID()});
     if(owner!==user)return;
     if(active===generation)job.previewGeneration=active;
     jobs.unshift(job);persist();drawJobs();schedule();
   }
+  video.addEventListener('loadeddata',()=>{
+    if (!previewPending || previewStart===undefined) return;
+    previewLoading(false);
+    status.textContent='Запись готова к просмотру.';
+  });
+  video.addEventListener('error',()=>{
+    if (!previewPending || previewStart===undefined) return;
+    previewLoading(false);
+    status.textContent='Не удалось загрузить видео в плеере.';
+  });
   video.addEventListener('loadedmetadata',() => {
     if (previewStart !== undefined) previewBase = video.seekable.length ? video.seekable.start(0) : 0;
   });
@@ -353,13 +377,21 @@ export function createArchiveStudio(options) {
     await request('/jobs/'+job.id+'/file/'+file.id+'/cloud/'+provider,{});
     feedback('Файл сохранён на '+(provider==='yandex'?'Яндекс Диске.':'Google Диске.'));
   }
-  async function showFile(job,file) {
+  async function showFile(job,file,active=++generation) {
+    const owner=user;
     const result=await fileLink(job,file);
+    if(active!==generation || owner!==user || !camera) return;
     stop();stopPlayback();previewStart=file.sourceStart;previewBase=0;
     if(file.cameraId){camera={id:file.cameraId,connectionId:file.connectionId,name:file.cameraName||file.name};get('start').value=dateValue(file.sourceStart);get('end').value=dateValue(file.sourceStart+Math.floor(file.duration));syncTimeline();}
-    video.crossOrigin='anonymous';video.src=result.url;video.load();video.play().catch(()=>{});
     liveName.textContent=file.name;
-    status.textContent='Готовый файл. Можно отметить начало и конец следующего фрагмента.';
+    previewLoading(true);
+    status.textContent='Загружаем запись в плеер…';
+    revealPlayer(live);
+    previewTimer = setTimeout(()=>{
+      previewLoading(false);
+      status.textContent='Видео загружается дольше обычного.';
+    },25000);
+    video.crossOrigin='anonymous';video.src=result.url;video.load();video.play().catch(()=>{});
   }
   function drawJobs() {
     const box=get('jobs');box.replaceChildren();
@@ -368,7 +400,7 @@ export function createArchiveStudio(options) {
       const title=document.createElement('strong');title.textContent=job.message||'Проверяем задание…';
       const progress=document.createElement('progress');progress.max=100;progress.value=job.progress||0;
       card.append(title,progress);
-      if(['processing','queued'].includes(job.state))card.append(button('Отменить',async()=>{Object.assign(job,await request('/jobs/'+job.id+'/cancel',{}));drawJobs();}));
+      if(['processing','queued'].includes(job.state))card.append(button('Отменить',async()=>{Object.assign(job,await request('/jobs/'+job.id+'/cancel',{}));finishPreview(job);drawJobs();}));
       if(job.state==='failed'||job.state==='cancelled'||job.state==='expired')card.append(button('Убрать из списка',()=>{jobs=jobs.filter(x=>x!==job);persist();drawJobs();}));
       for(const file of job.files||[]) {
         const row=document.createElement('section');row.className='as-file';row.dataset.file=job.id+'-'+file.id;
@@ -389,21 +421,42 @@ export function createArchiveStudio(options) {
     }
     if(!jobs.length)box.textContent='Здесь появятся подготовленные файлы.';
   }
+  function finishPreview(job) {
+    if (job.previewGeneration !== generation) return;
+    delete job.previewGeneration;
+    previewLoading(false);
+    status.textContent=job.message || 'Не удалось открыть запись.';
+  }
   function schedule() {
     clearTimeout(poll);
-    if(!user||!jobs.some(j=>!['ready','failed','cancelled','expired'].includes(j.state)))return;
+    const complete = ['ready','failed','cancelled','expired'];
+    if(!user||!jobs.some(j=>!complete.includes(j.state)))return;
     poll=setTimeout(async()=>{
       const owner=user;
-      for(const job of jobs.filter(j=>!['ready','failed','cancelled','expired'].includes(j.state))) {
-        try { const result=await request('/jobs/'+job.id);if(owner!==user)return;Object.assign(job,result);if(job.state==='ready'&&job.previewGeneration===generation&&job.files?.[0]){delete job.previewGeneration;await showFile(job,job.files[0]);}else if(job.state==='failed'&&job.previewGeneration===generation){status.textContent=job.message;} }
-        catch(error){if(error.status===404)Object.assign(job,{state:'expired',message:error.message});else feedback(error.message);}
+      for(const job of jobs.filter(j=>!complete.includes(j.state))) {
+        try {
+          const result=await request('/jobs/'+job.id);
+          if(owner!==user)return;
+          Object.assign(job,result);
+          if(job.previewGeneration !== generation) continue;
+          if(job.state==='ready'&&job.files?.[0]) {
+            const active=job.previewGeneration;
+            await showFile(job,job.files[0],active);
+            delete job.previewGeneration;
+          } else if(complete.includes(job.state)) finishPreview(job);
+          else status.textContent=job.message || 'Подготавливаем видео для просмотра…';
+        } catch(error) {
+          if(error.status===404) Object.assign(job,{state:'expired',message:error.message});
+          if(complete.includes(job.state)) finishPreview(job);
+          feedback(error.message);
+        }
       }
       drawJobs();schedule();
     },4000);
   }
   get('save-yandex').addEventListener('click', async()=>{
     const control=get('save-yandex');
-    control.disabled=true;
+    setLoading(control,true);
     try {
       if (!camera || !loaded) throw Error('Выбери камеру и дождись загрузки архива.');
       const range=interval(), owner=user, cameraName=camera.displayName||camera.name;
@@ -415,7 +468,7 @@ export function createArchiveStudio(options) {
       jobs.unshift(job);persist();drawJobs();schedule();
       feedback('Задание принято. Сервер сохранит видео прямо на Яндекс Диск.');
     } catch(error){feedback(error.message);}
-    finally{control.disabled=false;}
+    finally{setLoading(control,false);}
   });
   async function clouds() {
     const user = account()?.user?.id;
@@ -442,16 +495,23 @@ export function createArchiveStudio(options) {
   }
   async function sync() {
     const id=account()?.user?.id;if(id===user)return;
-    generation++;stop();clearTimeout(poll);clearTimeout(saving);user=id;clips=[];jobs=[];config=undefined;loaded=false;camera=undefined;root.hidden=true;drawJobs();drawClips();
+    generation++;stop();previewLoading(false);clearTimeout(poll);clearTimeout(saving);user=id;clips=[];jobs=[];config=undefined;loaded=false;camera=undefined;root.hidden=true;drawJobs();drawClips();
     if(!id)return;
     try{const saved=await account().load('ivideon-archive-project');if(user!==id)return;clips=Array.isArray(saved?.payload?.clips)?saved.payload.clips.slice(0,50):[];jobs=Array.isArray(saved?.payload?.jobs)?saved.payload.jobs.slice(0,50):[];loaded=true;drawClips();drawJobs();schedule();void clouds();}catch(error){feedback(error.message);}
   }
   window.addEventListener('pageshow', clouds);
-  get('preview').addEventListener('click',()=>preview().catch(e=>feedback(e.message)));
+  get('preview').addEventListener('click',()=>{
+    const operation=preview(), active=generation;
+    operation.catch(error=>{
+      if (active!==generation) return;
+      previewLoading(false);
+      status.textContent=error.message;
+    });
+  });
   get('mark-start').addEventListener('click',()=>{try{mark('start');}catch(e){feedback(e.message);}});
   get('mark-end').addEventListener('click',()=>{try{mark('end');}catch(e){feedback(e.message);}});
   get('add').addEventListener('click',()=>addClip().catch(e=>feedback(e.message)));
-  get('build').addEventListener('click',async()=>{get('build').disabled=true;try{await prepare();}catch(e){feedback(e.message);}finally{get('build').disabled=false;}});
+  get('build').addEventListener('click',async()=>{setLoading(get('build'),true);try{await prepare();}catch(e){feedback(e.message);}finally{setLoading(get('build'),false);}});
   get('frame').addEventListener('click',()=>capture().catch(e=>feedback(e.message)));
   window.addEventListener('edpvz-auth-changed',sync);
   window.addEventListener('pagehide',()=>{clearTimeout(poll);stop();for(const url of urls)URL.revokeObjectURL(url);});
@@ -465,9 +525,9 @@ export function createArchiveStudio(options) {
         get('service-state').textContent='Подготовка видео в Эд ПВЗ временно недоступна. Можно сохранить интервалы в очереди или скачать готовый экспорт в Ivideon.';
         for (const action of ['build','preview']) get(action).disabled=!available;
       };
-      void request('/health').then(health=>setAvailability(health.ok && health.version>=2 && health.exportReady===true)).catch(()=>setAvailability(false));
-      root.hidden=false;live.hidden=false;previewStart=undefined;liveName.textContent=camera.displayName||camera.name;const now=Math.floor(Date.now()/1000);get('start').value=dateValue(now-600);get('end').value=dateValue(now-300);get('name').value='';syncTimeline();drawClips();drawJobs();},
-    reset(){generation++;stop();live.appendChild(video);camera=undefined;previewStart=undefined;root.hidden=true;},
+      const availability = request('/health').then(health=>setAvailability(health.ok && health.version>=2 && health.exportReady===true)).catch(()=>setAvailability(false));
+      root.hidden=false;live.hidden=false;previewStart=undefined;liveName.textContent=camera.displayName||camera.name;const now=Math.floor(Date.now()/1000);get('start').value=dateValue(now-600);get('end').value=dateValue(now-300);get('name').value='';syncTimeline();drawClips();drawJobs();return availability;},
+    reset(){generation++;stop();previewLoading(false);video.pause();video.removeAttribute('src');video.load();live.appendChild(video);camera=undefined;previewStart=undefined;root.hidden=true;},
   };
 }
 
