@@ -33,6 +33,7 @@ export function createArchiveStudio(options) {
       <label>Конец на шкале <output class="as-to-text"></output><input class="as-to" aria-label="Конец на шкале" type="range" min="1" max="86400" step="1" value="32700"></label>
     </details>
     <p class="as-note">Шкала задаёт время запроса. Наличие записи зависит от архива камеры. Большой интервал можно добавить в очередь целиком.</p>
+    <p><a href="https://my.ivideon.com/exported_records" target="_blank" rel="noopener noreferrer">Скачать готовые записи в Ivideon ↗</a></p>
     <div class="as-actions"><button class="primary as-preview">Просмотреть</button><button class="secondary as-mark-start">Начало по текущему кадру</button><button class="secondary as-mark-end">Конец по текущему кадру</button><button class="secondary as-frame">Сохранить кадр</button></div>
     <div class="as-inputs"><label>Название фрагмента<input class="as-name" maxlength="100" placeholder="Например, Отказ клиента"></label><label>Качество файла<select class="as-output"><option value="source">Исходное разрешение</option><option value="1080">До 1080p</option><option value="720">До 720p</option><option value="480">До 480p</option></select></label></div>
     <div class="as-actions"><button class="primary as-add">Добавить фрагмент</button></div>
@@ -291,7 +292,16 @@ export function createArchiveStudio(options) {
   window.addEventListener('pagehide',()=>{clearTimeout(poll);stop();for(const url of urls)URL.revokeObjectURL(url);});
   void sync();
   return {
-    open(nextCamera){root.insertBefore(video,get('head').nextSibling);camera=nextCamera;get('build').disabled=false;void request('/health').then(health=>{get('service-state').hidden=health.exportReady!==false;get('service-state').textContent='Подготовка видео временно недоступна. Можно сохранить выбранные фрагменты в очереди.';get('build').disabled=health.exportReady===false;}).catch(()=>{});root.hidden=false;live.hidden=false;previewStart=undefined;liveName.textContent=camera.displayName||camera.name;const now=Math.floor(Date.now()/1000);get('start').value=dateValue(now-600);get('end').value=dateValue(now-300);get('name').value='';syncTimeline();drawClips();drawJobs();},
+    open(nextCamera){root.insertBefore(video,get('head').nextSibling);camera=nextCamera;for (const action of ['build','preview']) get(action).disabled=true;
+      const checkCamera=camera;
+      const setAvailability=(available)=>{
+        if (camera!==checkCamera) return;
+        get('service-state').hidden=available;
+        get('service-state').textContent='Подготовка видео в Эд ПВЗ временно недоступна. Можно сохранить интервалы в очереди или скачать готовый экспорт в Ivideon.';
+        for (const action of ['build','preview']) get(action).disabled=!available;
+      };
+      void request('/health').then(health=>setAvailability(health.ok && health.version>=2 && health.exportReady===true)).catch(()=>setAvailability(false));
+      root.hidden=false;live.hidden=false;previewStart=undefined;liveName.textContent=camera.displayName||camera.name;const now=Math.floor(Date.now()/1000);get('start').value=dateValue(now-600);get('end').value=dateValue(now-300);get('name').value='';syncTimeline();drawClips();drawJobs();},
     reset(){generation++;stop();live.appendChild(video);camera=undefined;previewStart=undefined;root.hidden=true;},
   };
 }
