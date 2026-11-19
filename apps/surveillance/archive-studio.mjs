@@ -376,7 +376,7 @@ export function createArchiveStudio(options) {
       const blob = await response.blob();
       const shared = new File([blob],result.name,{type:file.mime||'video/mp4'});
       if (navigator.canShare({files:[shared]})) {
-        const row=get('jobs').querySelector('[data-file="'+job.id+'-'+file.id+'"]');
+        const row=records.querySelector('.as-jobs').querySelector('[data-file="'+job.id+'-'+file.id+'"]');
         row.querySelector('.as-share-ready')?.remove();
         const ready=button('Сохранить через меню устройства',()=>navigator.share({files:[shared]}));
         ready.classList.add('as-share-ready');row.querySelector('.as-actions').append(ready);
@@ -391,10 +391,10 @@ export function createArchiveStudio(options) {
     const a=document.createElement('a');a.href=url;a.download=name;a.rel='noopener';document.body.append(a);a.click();a.remove();
   }
   async function rename(job,file) {
-    const card=get('jobs').querySelector('[data-file="'+job.id+'-'+file.id+'"]');
+    const card=records.querySelector('.as-jobs').querySelector('[data-file="'+job.id+'-'+file.id+'"]');
     const input=card.querySelector('input');
     const result=await fileLink(job,file,input.value);
-    file.name=result.name;input.value=result.name;feedback('Название файла сохранено.');
+    file.name=result.name;drawJobs();feedback('Название файла сохранено.');
   }
   async function cloudSave(job,file,provider) {
     feedback('Сохраняем на диск…');
@@ -468,6 +468,7 @@ export function createArchiveStudio(options) {
     records.querySelector('.as-empty').hidden = Boolean(jobs.length || originalFiles.children.length);
     const current = get('current');
     const tracked = jobs.find(job=>job.destination === 'yandex' && ['queued','processing','uploading'].includes(job.state))
+      || jobs.find(job=>['queued','processing','uploading'].includes(job.state))
       || jobs.find(job=>job.destination === 'yandex');
     current.replaceChildren();
     current.hidden = !tracked;
