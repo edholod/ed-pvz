@@ -273,8 +273,9 @@ async def disk_link(client, action, key):
         raise RuntimeError('Яндекс Диск не выдал ссылку. Проверь подключение хранилища.')
     href = response.json().get('href', '')
     target = urlparse(href)
-    if (target.scheme != 'https' or target.username or target.password or target.port
+    if (target.scheme != 'https' or target.username or target.password or target.port not in (None, 443)
             or not (target.hostname or '').endswith(('.yandex.net', '.disk.yandex.ru', '.disk.yandex.com'))):
+        print('archive disk transfer rejected host=' + re.sub(r'[^a-zA-Z0-9.:-]', '', target.hostname or '')[:120], flush=True)
         raise RuntimeError('Яндекс Диск вернул неподдерживаемый адрес.')
     return href
 
