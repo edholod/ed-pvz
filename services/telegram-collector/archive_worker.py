@@ -440,6 +440,34 @@ async def cleanup_checkpoints(job):
         print('archive checkpoint cleanup incomplete count='+str(len(remaining)),flush=True)
 
 
+CHECKPOINT_RETENTION = 7 * 86400
+
+async def cleanup_abandoned_checkpoints():
+    """Periodically clean old inactive jobs whose owner's authorization is still available."""
+    while True:
+        try:
+            now=time.time()
+            for job in list(JOBS.values()):
+                if not job.get('checkpoints') or not job.get('headers'):
+                    continue
+                if job.get('state') in ('queued','processing','uploading'):
+                    continue
+                last=float(job.get('updated') or job.get('created') or now)
+                if now-last < CHECKPOINT_RETENTION:
+                    continue
+                await cleanup_checkpoints(job)
+        except Exception as exc:
+            print('archive periodic checkpoint cleanup failed type='+type(exc).__name__,flush=True)
+        await asyncio.sleep(3600)
+
+
+@router.on_event('startup')
+async def start_checkpoint_cleanup():
+    task=asyncio.create_task(cleanup_abandoned_checkpoints())
+    TASKS.add(task)
+    task.add_done_callback(TASKS.discard)
+
+
 async def run(job):
     async with LOCK:
         if job.get('cancelled'):
@@ -620,6 +648,8 @@ async def restore_job(job_id,user,headers):
         job.update(state='failed',message='Временный MP4 удалён при перезапуске. Создай запрос снова.')
     JOBS[job_id]=job
     await persist_job(job)
+    if job.get('state') in ('ready','failed','cancelled') and job.get('checkpoints') and time.time()-float(job.get('updated') or job.get('created') or time.time()) > CHECKPOINT_RETENTION:
+        await cleanup_checkpoints(job)
     return job
 
 
