@@ -31,6 +31,10 @@ async def main():
   broken={**job,'id':'test-short-source','state':'queued','clips':[{'cameraId':'100-test:0','start':100,'end':105,'name':'Gap'}],'files':[]}
   with patch.object(w,'export_source',exported),patch.object(w,'download_source',received):await w.run(broken)
   assert broken['state']=='failed' and not broken['files'],broken
+  async def padded_export(job,clip,start,end):return str(source)
+  shifted={**job,'id':'test-shifted-source','state':'queued','clips':[{'cameraId':'100-test:0','start':100,'end':102,'name':'Shifted'}],'files':[]}
+  with patch.object(w,'export_source',padded_export),patch.object(w,'download_source',received):await w.run(shifted)
+  assert shifted['state']=='failed' and not shifted['files'] and 'границами времени' in shifted['message'],shifted
   from fastapi import FastAPI
   from fastapi.testclient import TestClient
   app=FastAPI();app.include_router(w.router);w.JOBS[job['id']]=job
@@ -39,5 +43,5 @@ async def main():
    response=client.post('/archive/jobs/test-concat/file/0/frame',json={'second':1.5});assert response.status_code==200,response.text
    link=client.post('/archive/jobs/test-concat/file/'+response.json()['id'],json={}).json();jpeg=client.get(link['url'])
    assert jpeg.status_code==200 and jpeg.content.startswith(b'\xff\xd8') and jpeg.content.endswith(b'\xff\xd9')
-  print(json.dumps({'concat':True,'duration':duration,'frames':100,'fps':rate,'downscaleWithoutUpscaling':True,'incompleteVideoRejected':True,'jpegDownload':True}))
+  print(json.dumps({'concat':True,'duration':duration,'frames':100,'fps':rate,'downscaleWithoutUpscaling':True,'incompleteVideoRejected':True,'shiftedSourceRejected':True,'jpegDownload':True}))
 asyncio.run(main())

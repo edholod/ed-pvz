@@ -1,119 +1,91 @@
-# Ivideon archive studio
+# Ivideon archive studio — verification status, 2026-11-19
 
-## Release status — 2026-11-19
+NOT READY FOR OWNER RELEASE. ARCHIVE_EXPORT_ENABLED=false on both services.
+The account connection, camera aliases/PVZ mappings and saved clip queue remain intact.
 
-This development version is NOT ready for a general owner release. Real archive
-ingestion did not pass: HLS yielded a single frame (0.067 s), and MP4 transfer
-stalled. A subsequent timestamp-normalization test returned no usable duration.
-Local FFmpeg processing, concatenation, quality conversion and authenticated file/
-frame download tests passed using an existing MP4 downloaded via Ivideon UI.
-Those local results do not establish successful end-to-end provider ingestion.
+## Implemented
 
-`ARCHIVE_EXPORT_ENABLED` defaults to `false`. Video job submission remains disabled
-until live ingestion, complete file downloads and mobile playback are verified.
-The selected-clip queue and camera settings are preserved. Do not enable it merely
-because unit tests pass. Cloud OAuth applications are also not configured.
-Cloud Browser became unavailable before remaining interactive tests could finish.
+Named multi-camera clip queue in the owner account, timeline/date inputs, playback
+frame selection, MP4/JPEG file cards, rename, signed download, native destination
+picker with mobile download/share fallback, source/1080/720/480 resolution conversion,
+15-minute adaptive chunk processing and FFmpeg concat. OAuth/cloud-upload handlers
+are implemented but neither provider application is configured or live-tested.
 
+Archive previews use prepared H.264/AAC MP4, avoiding the failed HLS ingestion path.
+Quality labels denote output resolution, not an improvement in camera detail.
 
-The archive router is mounted at `/archive` in the existing FastAPI service.
-The browser module is `apps/surveillance/archive-studio.mjs`.
+## Deployment
 
-## Server readiness
+Dedicated free Render service: edpvz-archive, Oregon, srv-dbv9nau7bikc7380ag30.
+URL: https://edpvz-archive.onrender.com
+Docker context: repository root; Dockerfile: services/archive-worker/Dockerfile.
+Auto-deploy off to avoid losing temporary files with unrelated site changes.
+Frontend archive requests now point to this service; the existing collector retains
+its unrelated functions. Its archive submission flag is also disabled.
 
-`GET /archive/health` must return `ok: true, version: 2, exportReady: true` before preparing video files.
-The browser checks this capability before submitting export or frame jobs.
-Existing live-view, stored Ivideon connection, camera aliases and PVZ assignments
-continue to use the existing edge function and account data.
+Required server environment: SUPABASE_URL, publishable SUPABASE_ANON_KEY (or existing
+public fallback), stable private ARCHIVE_SIGNING_KEY, ARCHIVE_PUBLIC_URL.
+Enable ARCHIVE_EXPORT_ENABLED only after end-to-end file transfer and correct
+source time mapping pass. Health exportReady controls browser job submission.
 
-Required environment:
+## Actual checks and unresolved blockers
 
-- `SUPABASE_URL` and `SUPABASE_ANON_KEY` for owner authentication/RLS.
-- `ARCHIVE_SIGNING_KEY`: stable random server secret, also derives the cloud-token
-  encryption key. Do not rotate without planning reconnects for cloud accounts.
-- `ARCHIVE_WORK_DIR`: defaults to `/tmp/edpvz-archive-files`.
+Direct authenticated provider API exports succeeded for all three non-USB cameras.
+Complete MP4 downloads from the local diagnostic environment succeeded:
+warehouse 517646 bytes; camera 6221F 540853 bytes; screen 130080 bytes.
+The provider files are H.264; their video durations for a requested five seconds
+were approximately 6.8, 7.187 and 6.413 seconds. Camera 6221F's first OSD frame
+showed 23:25:09 for a requested start of 23:25:10 Moscow. Export metadata still
+reported the requested start/end, so it does not supply the true frame offset.
 
-Docker installs FFmpeg. No browser or repository contains Ivideon access tokens.
-The edge function authenticates the account and loads its saved Ivideon connection.
+The earlier trim-from-zero implementation produced a locally playable 5.005-second
+720p file, but this is NOT proof of correct wall-clock boundaries. It has been
+replaced with a source-duration guard: shifted/padded sources are rejected rather
+than silently trimmed or concatenated. That guard rejects the real sample.
+An accurate provider frame-to-wall-clock mapping remains necessary for exact cuts.
 
-## Preparation and accuracy
+Production tests on both Render services failed receiving the complete media body.
+Ivideon export creation and ready status succeeded. HTTP/2 received HTTP200 headers,
+then timed out waiting for the body. HTTP/1.1 fallback also timed out. Direct provider
+and encrypted Supabase MP4 relay paths were tested, including full GET without Range.
+Changing services/region did not establish working production ingestion.
+No successful production MP4 file/download or iOS playback test is asserted.
 
-Up to 50 named clips per request. There is no application limit on clip duration.
-The server requests adjacent 15-minute intervals, retries refused intervals in
-smaller parts down to one minute, and concatenates them with explicit durations.
-HLS ingestion falls back to provider MP4 export. MP4 sources are downloaded once
-before decoding, so remote seeking does not repeatedly fetch the signed relay.
+Synthetic FFmpeg checks passed: adjacent concat, four seconds/100 frames, duration
+validation, no upscaling, short-source rejection, padded-source rejection, JPEG
+extraction/download. Security checks passed: authorization, owner isolation,
+expiring signed links, downloaded byte equality, invalid JPEG rejection.
+Run: python tests/test_archive_processing.py; python tests/test_archive_security.py.
+These are executable assertion scripts, not unittest-discover test cases.
 
-Requested output: source resolution, up to 1080p, 720p or 480p, without upscaling.
-Output is H.264/AAC MP4. Video packet continuity and duration are checked; detected
-missing frames or short sources fail instead of silently removing a gap.
-Precision follows source frame times, rather than promising impossible exactness
-when a camera has missing footage. The original camera timestamp is not rewritten.
+## Cloud configuration still required
 
-Native HLS preview falls back to prepared MP4 for incompatible browsers. Large
-preview intervals use MP4 preparation directly. Multiple cameras can contribute
-separate named clips to one saved account queue.
+Yandex developer registration opens an account sign-in page in the cloud browser.
+Google Cloud console currently renders Site Unavailable in that browser.
+No OAuth clients, consent grants or cloud saves were created/verified.
+Do not reuse another product's OAuth client IDs or connector credentials.
 
-## Saving
-
-Prepared MP4/JPEG files have rename, signed download, destination picker and cloud
-save controls. Desktop browsers supporting `showSaveFilePicker` stream to the
-chosen file. Mobile browsers use their normal download/share mechanisms; websites
-cannot choose an arbitrary iOS filesystem path. Sharing requests a second click
-after loading the file to preserve the browser's required user gesture. Large
-mobile files use normal downloads instead of buffering them entirely in memory.
-
-## Cloud app registration
-
-Register applications owned by EdPVZ; do not use another service's client IDs.
-
-Google:
-
-- Configure an external web OAuth application, allowed users/consent and any
-  provider-required publishing verification.
-- Callback: `https://edpvz-telegram-collector.onrender.com/archive/cloud/google/callback`
-- Scope: `https://www.googleapis.com/auth/drive.file`
-- Server variables: `ARCHIVE_GOOGLE_CLIENT_ID`, `ARCHIVE_GOOGLE_CLIENT_SECRET`.
-
-Yandex:
-
-- Register a web OAuth application with Disk write/info permission.
-- Callback: `https://edpvz-telegram-collector.onrender.com/archive/cloud/yandex/callback`
-- Scopes: `cloud_api:disk.write cloud_api:disk.info`
-- Server variables: `ARCHIVE_YANDEX_CLIENT_ID`, `ARCHIVE_YANDEX_CLIENT_SECRET`.
-
-Only after configuring these values can owners connect their own disks. Until
-then the interface explicitly reports that cloud OAuth is not configured.
-Encrypted refresh/access tokens are saved under each owner's RLS scope in
-`edpvz_user_data`. Google uses resumable-upload initialization; Yandex uses the
-signed Disk upload endpoint and an `Эд ПВЗ` folder. Cloud uploads require live
-verification after application registration; this repository does not assert
-that they have been verified against unconfigured accounts.
+Callbacks:
+https://edpvz-archive.onrender.com/archive/cloud/google/callback
+https://edpvz-archive.onrender.com/archive/cloud/yandex/callback
+Google variables: ARCHIVE_GOOGLE_CLIENT_ID, ARCHIVE_GOOGLE_CLIENT_SECRET.
+Google scope: https://www.googleapis.com/auth/drive.file
+Yandex variables: ARCHIVE_YANDEX_CLIENT_ID, ARCHIVE_YANDEX_CLIENT_SECRET.
+Yandex scopes in current implementation: cloud_api:disk.write cloud_api:disk.info.
+Tokens are encrypted with a key derived from ARCHIVE_SIGNING_KEY and stored under
+each owner's RLS scope. Cloud callbacks/uploads need live provider verification.
 
 ## Operational limits
 
-Current jobs and output files are temporary on one server instance. Metadata for
-selected clips/job IDs is saved in the account, but a restart loses working files
-and active jobs. Expired files are cleaned after 24 hours on subsequent requests.
-Disk space, provider availability, CPU, connection speed and valid account auth
-still bound feasible exports. Closed tabs do not refresh an expired account JWT.
-A permanent multi-owner release should use a dedicated worker, durable job state
-and private object storage before promising recoverable multi-hour unattended jobs.
+Job state and files are temporary, single-instance, cleaned after 24 hours on
+subsequent requests; service restarts lose jobs/files. Queue metadata is saved in
+the account. Up to 50 clips/request, two active requests/owner, ten active globally,
+processing serialized. No clip-duration cap in app code, but disk/CPU/provider/auth
+limits remain. Long exports cannot be promised independently of provider footage,
+plan limits, missing recordings or token expiry. There is no automatic recovery
+across restarts or a closed tab's expired session. Production release needs durable
+job state/private storage and scoped long-running authorization.
 
-Processing is serialized, with at most two active requests per owner and ten
-queued/running requests globally. Source gaps cannot be reconstructed or hidden.
-
-## Checks
-
-From this directory:
-
-```bash
-python tests/test_archive_processing.py
-python tests/test_archive_security.py
-```
-
-These tests exercise FFmpeg concatenation/duration validation, missing footage,
-owner isolation, authenticated requests, signed links, exact downloaded bytes and
-invalid JPEG input. Manual release checks must additionally cover real downloads,
-archive preview and frame selection on Chrome and iOS Safari, different camera
-profiles, both registered OAuth apps, long jobs and restart recovery behavior.
+Desktop destination picker requires supporting browsers. iOS uses normal downloads
+or share sheet; a website cannot select an arbitrary filesystem path silently.
+Physical iPhone/Safari and long real multi-piece exports remain unverified.
