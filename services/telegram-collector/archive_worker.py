@@ -483,7 +483,9 @@ async def cleanup_abandoned_checkpoints():
         try:
             service_key=os.getenv('SUPABASE_SERVICE_ROLE_KEY','').strip()
             if service_key:
-                admin_headers={'apikey':service_key,'Authorization':'Bearer '+service_key,'Content-Type':'application/json'}
+                admin_headers={'apikey':service_key,'Content-Type':'application/json'}
+                if not service_key.startswith('sb_secret_'):
+                    admin_headers['Authorization']='Bearer '+service_key
                 cutoff=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(time.time()-CHECKPOINT_RETENTION))
                 async with httpx.AsyncClient(timeout=20) as client:
                     result=await client.get(BASE+'/rest/v1/edpvz_archive_jobs',headers=admin_headers,
