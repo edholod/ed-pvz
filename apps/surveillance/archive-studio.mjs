@@ -94,7 +94,7 @@ export function createArchiveStudio(options) {
     try {
       const {start,end} = interval();
       if (!camera) throw Error('Выбери камеру.');
-      const cameraId = camera.id;
+      const {id:cameraId, connectionId} = camera;
       if (end-start > 18000) {
         const health = await request('/health');
         if (!health.ok || !health.exportReady || !health.temporaryDiskConfigured) {
@@ -104,7 +104,7 @@ export function createArchiveStudio(options) {
         const cameraName = camera.displayName || camera.name;
         originalStatus.textContent = 'Отправляем длинную запись на сборку…';
         const job = await request('/jobs',{
-          clips:[{cameraId,cameraName,start,end,name:get('name').value.trim() || cameraName+' '+stamp(start)}],
+          clips:[{cameraId,connectionId,cameraName,start,end,name:get('name').value.trim() || cameraName+' '+stamp(start)}],
           quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID()
         });
         if (owner !== user) return;
@@ -113,7 +113,7 @@ export function createArchiveStudio(options) {
         return;
       }
       const parts = [[start,end]];
-      const requestExport = archive => window.EdPVZAccount.checkIvideon(undefined,cameraId,undefined,'load',archive);
+      const requestExport = archive => window.EdPVZAccount.checkIvideon(undefined,cameraId,undefined,'load',{...archive,connectionId});
       const getStatus = (exportId,share=false) => requestExport({mode:'export-status',exportId,browserDownload:true,share});
       for (const [index,[from,to]] of parts.entries()) {
         originalStatus.textContent = 'Ivideon готовит один MP4 за выбранный период…';
@@ -164,7 +164,12 @@ export function createArchiveStudio(options) {
           if (shared.state !== 'ready') throw Error('Файл больше недоступен.');
           await copyShare(shared.downloadUrl,originalStatus);
         });
-        row.append(link,' ',refresh,' ',share);
+        const send = button('В Эдсенджер',async()=>{
+          const shared = await getStatus(exportId,true);
+          if (shared.state !== 'ready') throw Error('Файл больше недоступен.');
+          sendToMessenger(shared.downloadUrl);
+        });
+        row.append(link,' ',refresh,' ',share,' ',send);
         originalFiles.append(row);
       }
       originalStatus.textContent = parts.length === 1 ? 'MP4 готов.' : 'Готово файлов: ' + parts.length + '. Скачай их по очереди.';
@@ -237,7 +242,7 @@ export function createArchiveStudio(options) {
     const active=++generation,chosen={...camera},owner=user;
     stop();stopPlayback();await ensureWorker();
     status.textContent='Подготавливаем видео для просмотра…';
-    const job=await request('/jobs',{clips:[{cameraId:chosen.id,cameraName:chosen.displayName||chosen.name,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('profile').value==='low'?'480':get('profile').value==='high'?'source':'720',profile:get('profile').value,requestId:crypto.randomUUID()});
+    const job=await request('/jobs',{clips:[{cameraId:chosen.id,connectionId:chosen.connectionId,cameraName:chosen.displayName||chosen.name,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('profile').value==='low'?'480':get('profile').value==='high'?'source':'720',profile:get('profile').value,requestId:crypto.randomUUID()});
     if(owner!==user)return;
     if(active===generation)job.previewGeneration=active;
     jobs.unshift(job);persist();drawJobs();schedule();
@@ -266,7 +271,7 @@ export function createArchiveStudio(options) {
     if(!loaded)throw Error('Не удалось прочитать сохранённую очередь. Обнови страницу перед добавлением фрагментов.');
     const range = interval();
     if (clips.length>=50) throw Error('В одном запросе можно подготовить до 50 отдельных файлов.');
-    clips.push({cameraId:camera.id,cameraName:camera.displayName||camera.name,...range,name:get('name').value.trim() || (camera.displayName||camera.name)+' '+stamp(range.start)});
+    clips.push({cameraId:camera.id,connectionId:camera.connectionId,cameraName:camera.displayName||camera.name,...range,name:get('name').value.trim() || (camera.displayName||camera.name)+' '+stamp(range.start)});
     persist();drawClips();feedback('Фрагмент добавлен. Можно выбрать следующий участок или другую камеру.');
   }
   async function ensureWorker(mode='video'){const health=await request('/health');if(!health.ok||health.version<2)throw Error('Сервис временно недоступен. Очередь сохранена в аккаунте.');if(mode==='video'&&health.exportReady===false)throw Error('Подготовка видео временно недоступна. Выбранные фрагменты сохранены в аккаунте.');}
@@ -281,16 +286,25 @@ export function createArchiveStudio(options) {
     if (owner!==user) return;
     jobs.unshift(job);persist();drawJobs();schedule();feedback('Задание принято. Файлы появятся ниже по мере готовности.');
   }
-  async function copyShare(url,statusElement=get('feedback')) {
+  function sharePlayer(url) {
     const href = new URL(url);
     const player = new URL('./archive-share.html',location.href);
     player.hash = encodeURIComponent(href.href);
+    return player.href;
+  }
+  function sendToMessenger(url) {
+    const messenger = new URL('../messages/',location.href);
+    messenger.hash = 'archive=' + encodeURIComponent(sharePlayer(url));
+    location.assign(messenger.href);
+  }
+  async function copyShare(url,statusElement=get('feedback')) {
+    const player = sharePlayer(url);
     try {
-      await navigator.clipboard.writeText(player.href);
+      await navigator.clipboard.writeText(player);
       statusElement.textContent = 'Ссылка скопирована. Любой, у кого она есть, может открыть видео до истечения срока.';
     } catch {
       const field=document.createElement('input');
-      field.readOnly=true; field.value=player.href; field.setAttribute('aria-label','Ссылка на видео');
+      field.readOnly=true; field.value=player; field.setAttribute('aria-label','Ссылка на видео');
       statusElement.replaceChildren(field); field.select();
     }
   }
@@ -342,7 +356,7 @@ export function createArchiveStudio(options) {
   async function showFile(job,file) {
     const result=await fileLink(job,file);
     stop();stopPlayback();previewStart=file.sourceStart;previewBase=0;
-    if(file.cameraId){camera={id:file.cameraId,name:file.cameraName||file.name};get('start').value=dateValue(file.sourceStart);get('end').value=dateValue(file.sourceStart+Math.floor(file.duration));syncTimeline();}
+    if(file.cameraId){camera={id:file.cameraId,connectionId:file.connectionId,name:file.cameraName||file.name};get('start').value=dateValue(file.sourceStart);get('end').value=dateValue(file.sourceStart+Math.floor(file.duration));syncTimeline();}
     video.crossOrigin='anonymous';video.src=result.url;video.load();video.play().catch(()=>{});
     liveName.textContent=file.name;
     status.textContent='Готовый файл. Можно отметить начало и конец следующего фрагмента.';
@@ -362,7 +376,7 @@ export function createArchiveStudio(options) {
         const info=document.createElement('p');info.textContent=(file.size/1024/1024).toFixed(1)+' МБ · '+file.width+'×'+file.height+(file.duration?' · '+duration(file.duration):'');
         const actions=document.createElement('div');actions.className='as-actions';
         actions.append(button('Переименовать',()=>rename(job,file)),button('Скачать в загрузки',()=>saveFile(job,file,false)),button('Выбрать место сохранения',()=>saveFile(job,file,true)));
-        if(!file.mime) actions.append(button('Скопировать ссылку',async()=>copyShare((await fileLink(job,file,undefined,true)).url)),button('Посмотреть',()=>showFile(job,file)),button('Кадр из файла',async()=>{
+        if(!file.mime) actions.append(button('Скопировать ссылку',async()=>copyShare((await fileLink(job,file,undefined,true)).url)),button('В Эдсенджер',async()=>sendToMessenger((await fileLink(job,file,undefined,true)).url)),button('Посмотреть',()=>showFile(job,file)),button('Кадр из файла',async()=>{
           if(!video.videoWidth||liveName.textContent!==file.name)throw Error('Сначала нажми «Посмотреть» и выбери кадр.');
           await request('/jobs/'+job.id+'/file/'+file.id+'/frame',{second:Math.min(video.currentTime,Math.max(0,file.duration-1/(file.fps||25)))});
           Object.assign(job,await request('/jobs/'+job.id));drawJobs();
@@ -394,7 +408,7 @@ export function createArchiveStudio(options) {
       if (!camera || !loaded) throw Error('Выбери камеру и дождись загрузки архива.');
       const range=interval(), owner=user, cameraName=camera.displayName||camera.name;
       const job=await request('/jobs',{
-        clips:[{cameraId:camera.id,cameraName,...range,name:get('name').value.trim()||cameraName+' '+stamp(range.start)}],
+        clips:[{cameraId:camera.id,connectionId:camera.connectionId,cameraName,...range,name:get('name').value.trim()||cameraName+' '+stamp(range.start)}],
         quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID(),saveToYandex:true
       });
       if(owner!==user)return;
