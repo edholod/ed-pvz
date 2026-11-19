@@ -46,7 +46,8 @@ async function serveHls(req: Request, ticket: string) {
     const requestHeaders = new Headers();
     const range = req.headers.get('range');
     if (range && /^bytes=\d+-\d*$/.test(range)) requestHeaders.set('range',range);
-    const deadline = AbortSignal.timeout(download ? 120000 : 12000);
+    const bounded = download && range !== null && /^bytes=\d+-\d+$/.test(range);
+    const deadline = AbortSignal.timeout(bounded ? 12000 : download ? 120000 : 12000);
     for (let i = 0; i < 4; i++) {
       response = await fetch(target, {redirect:'manual', headers:requestHeaders, signal:deadline});
       if (response.status < 300 || response.status >= 400) break;
@@ -66,6 +67,23 @@ async function serveHls(req: Request, ticket: string) {
       for (const name of ['Content-Range','Accept-Ranges','Content-Length']) {
         const value = response.headers.get(name);
         if (value) fileHeaders.set(name,value);
+      }
+      if (bounded) {
+        const length = Number(response.headers.get('Content-Length'));
+        if (response.status !== 206 || !Number.isSafeInteger(length) || length < 1 || length > 65536) {
+          await response.body?.cancel();
+          return reply({error:'Ivideon не вернул запрошенную часть файла.'},502);
+        }
+        const bytes = new Uint8Array(length);
+        let offset = 0;
+        if (!response.body) return reply({error:'Ivideon вернул пустой ответ.'},502);
+        for await (const block of response.body) {
+          if (offset + block.length > length) return reply({error:'Ivideon вернул лишние байты.'},502);
+          bytes.set(block,offset);
+          offset += block.length;
+        }
+        if (offset !== length) return reply({error:'Ivideon передал неполную часть файла.'},502);
+        return new Response(bytes,{status:206,headers:fileHeaders});
       }
       return new Response(response.body,{status:response.status,headers:fileHeaders});
     }
