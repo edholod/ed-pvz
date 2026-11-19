@@ -224,10 +224,8 @@ export function createArchiveStudio(options) {
     saving = setTimeout(() => {
       if (owner !== user || account()?.user?.id !== owner) return;
       account().save('ivideon-archive-project', {clips, jobs: jobs.map(job => {
-        const {id,title,destination,state,message,cloudFiles,cameraName,start,end} = job;
-        return destination === 'yandex' && state === 'ready'
-          ? {id,title,destination,state,message,cloudFiles,cameraName,start,end}
-          : {id,title:title || 'Архив',destination};
+        const {id,title,destination,state,message,cloudFiles,cameraName,start,end,googleUpload} = job;
+        return {id,title:title || 'Архив',destination,state,message,cloudFiles,cameraName,start,end,googleUpload};
       })}).catch(() => feedback('Не удалось сохранить очередь в аккаунте.'));
     }, 300);
   }
@@ -517,7 +515,7 @@ export function createArchiveStudio(options) {
   function schedule() {
     clearTimeout(poll);
     const complete = ['ready','failed','cancelled','expired'];
-    if(!user||!jobs.some(j=>!complete.includes(j.state)))return;
+    if(!user||!jobs.some(j=>!complete.includes(j.state) || (j.destination==='google' && j.googleUpload==='pending')))return;
     poll=setTimeout(async()=>{
       const owner=user;
       for(const job of jobs.filter(j=>!complete.includes(j.state))) {
