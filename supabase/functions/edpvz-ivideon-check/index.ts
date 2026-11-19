@@ -330,8 +330,8 @@ Deno.serve(async (req) => {
         const end = archive?.end;
         const now = Math.floor(Date.now()/1000);
         if (action !== 'load' || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) ||
-            start <= 0 || start >= now || end <= start || end > now + 30 || end - start > 3600) {
-          return reply({error:'Укажи прошедшее время и интервал до одного часа.'}, 400);
+            start <= 0 || start >= now || end <= start || end > now + 30 || end - start > (archive.mode === 'export' ? 18000 : 3600)) {
+          return reply({error:archive.mode === 'export' ? 'Укажи прошедшее время и интервал до 5 часов.' : 'Укажи прошедшее время и интервал до одного часа.'}, 400);
         }
         if (archive.mode === 'export') {
           const endpoint = new URL('https://openapi-alpha.ivideon.com/cameras/' + cameraId + '/archive');

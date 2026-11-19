@@ -58,11 +58,12 @@ export function createArchiveStudio(options) {
       const {start,end} = interval();
       if (!camera) throw Error('Выбери камеру.');
       const cameraId = camera.id;
-      const parts = splitIntervals(start,end,3600);
+      if (end-start > 18000) throw Error('Для одного исходного MP4 выбери интервал до 5 часов.');
+      const parts = [[start,end]];
       const requestExport = archive => window.EdPVZAccount.checkIvideon(undefined,cameraId,undefined,'load',archive);
       const getStatus = exportId => requestExport({mode:'export-status',exportId,browserDownload:true});
       for (const [index,[from,to]] of parts.entries()) {
-        originalStatus.textContent = 'Ivideon готовит MP4: часть ' + (index+1) + ' из ' + parts.length + '…';
+        originalStatus.textContent = 'Ivideon готовит один MP4 за выбранный период…';
         const {exportId} = await requestExport({mode:'export',start:from,end:to});
         if (!exportId) throw Error('Ivideon не начал экспорт.');
         const deadline = Date.now() + 600000;
