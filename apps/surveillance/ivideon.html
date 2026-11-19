@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f3f6fb">
   <title>Ivideon — Видеонаблюдение · Эд ПВЗ</title>
-  <link rel="stylesheet" href="surveillance.css?v=private-1">
+  <link rel="stylesheet" href="surveillance.css?v=camera-layout-1">
   <link rel="stylesheet" href="archive-studio.css?v=8">
   <script defer src="../../assets/account.js?v=archive-studio-4"></script>
   <script type="module" src="ivideon.mjs?v=3"></script>
@@ -31,20 +31,13 @@
     <a class="primary" href="../account/" id="surveillance-login" hidden>Войти в «Эд ПВЗ»</a>
   </div>
 </section>
-<main data-surveillance-private="ivideon" hidden>
+<main class="camera-page" data-surveillance-private="ivideon" hidden>
   <nav aria-label="Навигация"><a href="./">← Видеонаблюдение</a><a href="../cameras/">Настройка камер</a><a href="./#cloud-settings">Облачные диски</a><a href="./shared.html">Камеры, доступные мне</a></nav>
   <header><div><h1>Ivideon</h1><p>Видеонаблюдение твоих ПВЗ</p></div></header>
-  <section class="panel" aria-labelledby="ivideon-access">
-    <h2 id="ivideon-access">Камеры и архив</h2>
-    <p>Открой «Архив», выбери интервалы и подготовь отдельные файлы для сохранения.</p>
-    <div class="actions">
-      <a class="primary" href="https://my.ivideon.com/" target="_blank" rel="noopener noreferrer">Открыть кабинет Ivideon ↗</a>
-    </div>
-
-  </section>
-  <section class="panel" aria-labelledby="ivideon-check-heading">
-    <h2 id="ivideon-check-heading">Камеры и прямой эфир</h2>
-    <p>Подключи Ivideon один раз. Камеры будут доступны после входа в этот аккаунт «Эд ПВЗ» на любом устройстве.</p>
+  <div class="camera-layout">
+  <section class="panel camera-panel" aria-labelledby="ivideon-check-heading">
+    <h2 id="ivideon-check-heading">Камеры</h2>
+    <details id="ivideon-connections" class="camera-connections"><summary>Подключения Ivideon</summary>
     <form id="ivideon-check">
       <label for="ivideon-key">Ключ доступа к API</label>
       <input id="ivideon-key" type="password" required maxlength="517" autocomplete="off" spellcheck="false" placeholder="xtok-…">
@@ -53,20 +46,23 @@
       <button type="submit" class="primary">Добавить аккаунт</button>
       <button type="button" class="secondary" id="ivideon-disconnect" hidden>Отключить основной аккаунт</button>
     </form>
-    <p id="ivideon-check-status" role="status"></p>
     <div id="ivideon-accounts" class="actions"></div>
+    <p><a href="https://my.ivideon.com/" target="_blank" rel="noopener noreferrer">Открыть кабинет Ivideon ↗</a></p>
+    </details>
+    <p id="ivideon-check-status" role="status"></p>
     <label for="ivideon-group">Группировка камер</label>
     <select id="ivideon-group"><option value="flat">Общий список</option><option value="point">По ПВЗ</option><option value="account">По аккаунтам</option></select>
-    <ul id="ivideon-check-cameras" class="shortcut-list"></ul>
-    <div id="ivideon-live" hidden>
-      <div class="actions"><strong id="ivideon-live-name"></strong><button id="ivideon-live-stop" type="button" class="secondary">Остановить</button></div>
+    <ul id="ivideon-check-cameras" class="shortcut-list camera-list"></ul>
+  </section>
+    <section id="ivideon-live" class="camera-player" aria-labelledby="ivideon-live-name" hidden>
+      <div class="camera-player-bar"><h2 data-player-title tabindex="-1" id="ivideon-live-name"></h2><button id="ivideon-live-stop" type="button" class="secondary">Остановить</button></div>
       <label id="ivideon-live-quality-label">Качество эфира
         <select id="ivideon-live-quality"><option value="auto">Автоматически</option><option value="high">Основной поток</option><option value="low">Дополнительный поток</option></select>
       </label>
-      <p id="ivideon-live-status" role="status"></p>
+      <p class="camera-progress" id="ivideon-live-status" role="status"></p>
       <video id="ivideon-live-video" controls muted playsinline style="display:block;width:100%;max-height:65vh;background:#142032;border-radius:12px;margin-top:12px"></video>
-    </div>
-  </section>
+    </section>
+  </div>
   <section class="panel" aria-labelledby="saved-heading">
     <h2 id="saved-heading">Быстрый доступ к камерам</h2>
     <p id="status" role="status">Проверяем доступ…</p>
@@ -90,17 +86,26 @@
   </section>
 </main>
 <script type="module">
-  import {createArchiveStudio} from './archive-studio.mjs?v=18';
+  import {createArchiveStudio} from './archive-studio.mjs?v=19';
+  import {revealPlayer,setLoading} from './player-interface.mjs?v=1';
   import {playIvideon, playIvideonHls} from './ivideon-live.mjs?v=9';
   const live = document.getElementById('ivideon-live');
   const video = document.getElementById('ivideon-live-video');
   const liveStatus = document.getElementById('ivideon-live-status');
   const liveName = document.getElementById('ivideon-live-name');
   const liveQuality = document.getElementById('ivideon-live-quality');
-  let connected = false, stopPlayer, activeCameraId, liveCamera, streamRequest = 0;
+  let connected = false, stopPlayer, activeCameraId, liveCamera, launchControl, streamRequest = 0;
   const archiveStudio = createArchiveStudio({video,live,liveName,status:liveStatus,playHls:playIvideonHls,
     stopPlayback:()=>{streamRequest++;stopPlayer?.();stopPlayer=undefined;}});
+  function playerLoading(loading) {
+    setLoading(launchControl,loading);
+    if (loading) liveStatus.setAttribute('aria-busy','true');
+    else liveStatus.removeAttribute('aria-busy');
+  }
   function stopLive() {
+    playerLoading(false);
+    launchControl = undefined;
+    liveStatus.textContent = '';
     streamRequest++;
     stopPlayer?.();
     stopPlayer = undefined;
@@ -110,24 +115,30 @@
     document.getElementById('ivideon-live-quality-label').hidden = false;
     live.hidden = true;
   }
-  document.getElementById('ivideon-live-stop').addEventListener('click', stopLive);
+  document.getElementById('ivideon-live-stop').addEventListener('click', () => { const origin = launchControl; stopLive(); origin?.focus(); });
   window.addEventListener('pagehide', stopLive);
-  async function openLive(camera) {
+  async function openLive(camera, control = launchControl) {
     if (!connected || !window.EdPVZAccount?.user) return;
     stopLive();
     const request = streamRequest;
+    launchControl = control;
+    live.dataset.mode = 'live';
     live.hidden = false;
     activeCameraId = camera.id;
     liveCamera = camera;
     liveName.textContent = camera.displayName || camera.name;
+    playerLoading(true);
+    revealPlayer(live);
     async function connect(quality, previousError) {
       liveStatus.textContent = quality === 2 ? 'Подключаем эфир…' : 'Пробуем другой видеопоток…';
       function fail(message, started = false) {
         if (request !== streamRequest) return;
         if (quality === 2 && !started && liveQuality.value === 'auto') {
+          stopPlayer?.(); stopPlayer = undefined;
           void connect(1, message);
           return;
         }
+        playerLoading(false);
         liveStatus.textContent = previousError ? previousError + ' Повторная попытка: ' + message : message;
       }
       try {
@@ -136,7 +147,7 @@
         const play = result.streamType === 'hls' ? playIvideonHls : playIvideon;
         stopPlayer = play(video, result.streamUrl, (message, state) => {
           if (message) fail(message, state.started);
-          else if (request === streamRequest) liveStatus.textContent = '';
+          else if (request === streamRequest) { playerLoading(false); liveStatus.textContent = ''; }
         });
       } catch (error) {
         fail(error.message || 'Не удалось открыть эфир.');
@@ -145,12 +156,25 @@
     await connect(2);
   }
   liveQuality.addEventListener('change',()=>{if(liveCamera)void openLive(liveCamera);});
-  function openArchive(camera) {
+  async function openArchive(camera, control) {
     if (!connected || !window.EdPVZAccount?.user) return;
     stopLive();
     activeCameraId = camera.id;
     document.getElementById('ivideon-live-quality-label').hidden = true;
-    archiveStudio.open(camera);
+    launchControl = control;
+    live.dataset.mode = 'archive';
+    playerLoading(true);
+    liveStatus.textContent = 'Открываем архив…';
+    try {
+      const opening = archiveStudio.open(camera);
+      revealPlayer(live);
+      await opening;
+      if (launchControl === control) liveStatus.textContent = '';
+    } catch (error) {
+      if (launchControl === control) liveStatus.textContent = error.message || 'Не удалось открыть архив.';
+    } finally {
+      if (launchControl === control) playerLoading(false);
+    }
   }
   const form = document.getElementById('ivideon-check');
   const input = document.getElementById('ivideon-key');
@@ -178,8 +202,7 @@
   ];
   async function manageShares(camera) {
     const dialog = document.createElement('dialog');
-    dialog.className = 'panel';
-    dialog.style.cssText = 'width:min(32rem,92vw);max-height:90vh;overflow:auto';
+    dialog.className = 'panel camera-share-dialog';
     const heading = document.createElement('h2');
     heading.textContent = 'Доступ к камере «' + (camera.displayName || camera.name) + '»';
     const close = makeButton('Закрыть', () => dialog.close());
@@ -305,7 +328,7 @@
     camera.pointId = settings?.point_id ?? null;
     showName();
     if (!camera.id) return row;
-    row.append(makeButton('Смотреть эфир', () => openLive(camera)), makeButton('Архив', () => openArchive(camera)));
+    row.append(makeButton('Смотреть эфир', event => openLive(camera,event.currentTarget)), makeButton('Архив', event => openArchive(camera,event.currentTarget)));
     row.append(makeButton('Поделиться камерой', () => void manageShares(camera)));
     if (!points) return row;
     const edit = makeButton('Настроить', openEditor);
@@ -390,6 +413,7 @@
     for (const {label, rows} of groups.values()) {
       if (label) {
         const heading = document.createElement('li');
+        heading.className = 'camera-group';
         const title = document.createElement('strong');
         title.textContent = label;
         heading.append(title);
@@ -410,6 +434,7 @@
     const check = ++generation;
     if (!accountId) return;
     stopLive();
+    setLoading(button,action === 'add');
     button.disabled = disconnect.disabled = true;
     status.textContent = action === 'disconnect' ? 'Отключаем аккаунт…' : 'Загружаем камеры…';
     try {
@@ -450,6 +475,7 @@
         }
       }
       connected = Boolean(primary.value?.connected || extras.length);
+      if (!connected) document.getElementById('ivideon-connections').open = true;
       status.textContent = cameraRows.length ? 'Камер в общем списке: ' + cameraRows.length
         : connected ? 'В подключённых аккаунтах нет доступных камер.' : 'Добавь аккаунт Ivideon с помощью ключа API.';
       if (directory.status === 'rejected' || connections.some(entry => entry.result.status === 'rejected')) {
@@ -460,7 +486,7 @@
     } catch (error) {
       if (check === generation) status.textContent = error.message || 'Не удалось подключить Ivideon.';
     } finally {
-      if (check === generation) button.disabled = disconnect.disabled = false;
+      if (check === generation) { setLoading(button,false); disconnect.disabled = false; }
     }
   }
   function syncAccount() {
@@ -479,7 +505,8 @@
     connected = false;
     disconnect.hidden = true;
     button.textContent = 'Добавить аккаунт';
-    button.disabled = disconnect.disabled = false;
+    setLoading(button,false);
+    disconnect.disabled = false;
     if (nextId) void updateConnection('load');
   }
   window.addEventListener('edpvz-auth-changed', syncAccount);
