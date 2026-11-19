@@ -36,7 +36,7 @@
   const account = window.EdPVZAccount;
   const list = el('cameras'), status = el('status'), player = el('player'), video = el('video');
   const form = el('interval'), progress = el('progress'), download = el('download');
-  let sessionUser, active, stopPlayback, controller, revision = 0, refreshRevision = 0;
+  let sessionUser, active, stopPlayback, controller, expiryTimer, revision = 0, refreshRevision = 0;
   const request = (action, options, quality) => account.checkIvideon(undefined,undefined,quality,action,options);
   const button = (text, handler) => {
     const control = document.createElement('button');
@@ -160,16 +160,20 @@
   }
   async function refresh() {
     const current = ++refreshRevision;
+    clearTimeout(expiryTimer);
     const user = account?.user?.id;
     if (user !== sessionUser) { sessionUser = user; closePlayer(); list.replaceChildren(); }
     el('login').hidden = Boolean(user);
     if (!user) { status.textContent = 'Войди в свой аккаунт, чтобы увидеть камеры.'; return; }
     try {
-      const {cameras} = await request('shared-list');
+      const result = await request('shared-list');
+      const cameras = result.cameras.filter(camera=>!camera.expiresAt || Date.parse(camera.expiresAt)>Date.now());
       if (current !== refreshRevision || account.user?.id !== user) return;
       if (active && !cameras.some(camera => camera.id===active.camera.id && camera[
         active.mode==='live' ? 'can_live' : active.mode==='preview' ? 'can_archive' : 'can_download'
       ])) closePlayer();
+      const nextExpiry = Math.min(...cameras.filter(camera=>camera.expiresAt).map(camera=>Date.parse(camera.expiresAt)));
+      if (Number.isFinite(nextExpiry)) expiryTimer = setTimeout(refresh,Math.min(2147483647,Math.max(0,nextExpiry-Date.now())+100));
       list.replaceChildren();
       status.textContent = cameras.length ? '' : 'Пока никто не поделился с тобой камерой.';
       for (const camera of cameras) {
@@ -186,7 +190,7 @@
   el('stop').addEventListener('click',closePlayer);
   window.addEventListener('edpvz-auth-changed',refresh);
   window.addEventListener('pageshow',refresh);
-  window.addEventListener('pagehide',closePlayer);
+  window.addEventListener('pagehide',()=>{clearTimeout(expiryTimer);closePlayer();});
   void refresh();
 </script>
 </body>
