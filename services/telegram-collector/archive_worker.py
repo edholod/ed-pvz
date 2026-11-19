@@ -442,6 +442,38 @@ async def cleanup_checkpoints(job):
 
 CHECKPOINT_RETENTION = 7 * 86400
 
+async def cleanup_owner_disk_token(user, admin_headers):
+    """Read only the owner's encrypted Yandex credential with server-only privileges."""
+    async with httpx.AsyncClient(timeout=20) as client:
+        result=await client.get(BASE+'/rest/v1/edpvz_user_data',headers=admin_headers,
+            params={'user_id':'eq.'+user,'namespace':'eq.archive-cloud-yandex','select':'payload','limit':'1'})
+    if result.status_code!=200 or not result.json():
+        return None
+    payload=result.json()[0].get('payload') or {}
+    if payload.get('owner')!=user:
+        return None
+    value=json.loads(cloud_cipher().decrypt(payload['encrypted'].encode()))
+    if value.get('expires_at',0)<time.time()+120:
+        if not value.get('refresh_token'):
+            return None
+        client_id,secret=cloud_config('yandex')
+        async with httpx.AsyncClient(timeout=20) as client:
+            response=await client.post('https://oauth.yandex.ru/token',
+                data={'grant_type':'refresh_token','refresh_token':value['refresh_token'],
+                      'client_id':client_id,'client_secret':secret})
+        if response.status_code!=200:
+            return None
+        refreshed=response.json()
+        value.update(refreshed)
+        value['expires_at']=time.time()+refreshed.get('expires_in',3600)
+        encrypted=cloud_cipher().encrypt(json.dumps(value).encode()).decode()
+        async with httpx.AsyncClient(timeout=20) as client:
+            await client.patch(BASE+'/rest/v1/edpvz_user_data',headers=admin_headers,
+                params={'user_id':'eq.'+user,'namespace':'eq.archive-cloud-yandex'},
+                json={'payload':{'encrypted':encrypted,'owner':user}})
+    return value.get('access_token')
+
+
 async def cleanup_abandoned_checkpoints():
     """Clean stale jobs from Supabase, including jobs absent from process memory.
 
@@ -469,10 +501,8 @@ async def cleanup_abandoned_checkpoints():
                         # Never remove checkpoints for a job currently running in this instance.
                         if job_id in JOBS and JOBS[job_id].get('state') in ('queued','processing','uploading'):
                             continue
-                        token=DISK_TOKEN
+                        token=DISK_TOKEN or await cleanup_owner_disk_token(row['user_id'],admin_headers)
                         if not token:
-                            # User OAuth tokens are encrypted in Supabase. Only the
-                            # owner-scoped token API may decrypt them; no admin bypass.
                             continue
                         remaining=[]
                         async with httpx.AsyncClient(timeout=30) as client:
