@@ -12,3 +12,9 @@
 .archive-wait-track>span{display:block;height:100%;background:linear-gradient(90deg,#7198e6,#a58cf0);border-radius:99px;transition:width .5s ease}
 @keyframes archive-wait-breathe{0%,100%{opacity:.7;transform:scale(.95)}50%{opacity:1;transform:scale(1.06)}}
 @media(prefers-reduced-motion:reduce){.archive-wait-symbol{animation:none}.archive-wait-track>span{transition:none}}
+
+/* Clearly visible, continuously rotating waiting indicator. */
+.archive-wait-symbol{position:relative;width:38px;height:38px;border-radius:50%;background:transparent;color:transparent;font-size:0;animation:none}
+.archive-wait-symbol::before{content:"";display:block;width:30px;height:30px;border:4px solid #dce5fb;border-top-color:#566ad6;border-right-color:#9875df;border-radius:50%;animation:archive-spinner .9s linear infinite}
+@keyframes archive-spinner{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.archive-wait-symbol::before{animation:archive-spinner 2s linear infinite}}
