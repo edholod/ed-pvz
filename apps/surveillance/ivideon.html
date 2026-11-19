@@ -201,6 +201,25 @@
       const label = document.createElement('label');
       label.append(input,' ',title); flags.append(label);
     }
+    const term = document.createElement('select');
+    for (const [value,text] of [
+      ['hour','1 час'],['day','1 сутки'],['week','1 неделя'],['month','1 месяц'],
+      ['quarter','3 месяца'],['half-year','6 месяцев'],['year','1 год'],['custom','Выбрать дату и время'],
+    ]) term.add(new Option(text,value));
+    term.value = 'day';
+    const termLabel = document.createElement('label');
+    termLabel.append('Срок доступа',term);
+    const date = document.createElement('input');
+    date.type = 'datetime-local';
+    const dateLabel = document.createElement('label');
+    dateLabel.append('Доступ до (местное время)',date);
+    function showCustomDate() {
+      dateLabel.hidden = term.value !== 'custom';
+      date.disabled = dateLabel.hidden;
+      date.required = !dateLabel.hidden;
+    }
+    term.addEventListener('change',showCustomDate);
+    showCustomDate();
     const apply = makeButton('Сохранить доступ', () => {});
     apply.type = 'submit'; apply.className = 'primary';
     const status = document.createElement('p');
@@ -216,9 +235,17 @@
         const row = document.createElement('li');
         const text = document.createElement('span');
         const permissions = sharePermissions.filter(([key])=>grant[key]).map(([,title])=>title);
-        text.textContent = '@' + grant.username + ' · ' + permissions.join(', ');
+        const expired = grant.expiresAt && Date.parse(grant.expiresAt) <= Date.now();
+        const deadline = grant.expiresAt ? new Date(grant.expiresAt).toLocaleString('ru-RU',{dateStyle:'medium',timeStyle:'short'}) : '';
+        const termText = expired ? 'Истёк ' + deadline : deadline ? 'До ' + deadline : 'Бессрочно';
+        text.textContent = '@' + grant.username + ' · ' + permissions.join(', ') + ' · ' + termText;
         const edit = makeButton('Изменить', () => {
           user.value = grant.username;
+          term.querySelector('[value="keep"]')?.remove();
+          if (!expired) term.add(new Option('Оставить текущий срок','keep'),0);
+          term.value = expired ? 'day' : 'keep';
+          date.value = '';
+          showCustomDate();
           for (const [key,input] of inputs) input.checked = grant[key];
           user.focus();
         });
@@ -239,13 +266,20 @@
       event.preventDefault();
       apply.disabled = true;
       try {
-        await request('share-save',{username:user.value,...Object.fromEntries([...inputs].map(([key,input])=>[key,input.checked]))});
+        const custom = date.value ? new Date(date.value) : null;
+        if (term.value === 'custom' && !(custom?.getTime() > Date.now())) throw Error('Укажи дату и время в будущем.');
+        await request('share-save',{
+          username:user.value,term:term.value,expiresAt:term.value === 'custom' ? custom.toISOString() : undefined,
+          ...Object.fromEntries([...inputs].map(([key,input])=>[key,input.checked])),
+        });
+        term.querySelector('[value="keep"]')?.remove();
+        term.value = 'day'; date.value = ''; showCustomDate();
         status.textContent = 'Доступ сохранён. Камера появится у пользователя в разделе «Камеры, доступные мне».';
         await refresh();
       } catch (error) { status.textContent = error.message; }
       finally { apply.disabled = false; }
     });
-    editor.append(userLabel,flags,apply);
+    editor.append(userLabel,flags,termLabel,dateLabel,apply);
     dialog.append(heading,editor,status,list,close);
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
     document.body.append(dialog);
