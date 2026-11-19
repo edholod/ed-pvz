@@ -378,10 +378,10 @@ async def run(job):
                         source_url=await export_source(job,clip,start,end)
                         await download_source(source_url,source,job)
                         original_duration,original_fps,_,_=await probe(source,job)
-                        if abs(original_duration-(end-start))>max(.15,2/original_fps):
+                        if original_duration < end-start-max(.15,2/original_fps):
                             print(f'archive-export duration mismatch requested={end-start:.3f} received={original_duration:.3f} fps={original_fps:.3f}', flush=True)
-                            raise RuntimeError(f'Ivideon вернул {original_duration:.2f} с видео на запрос {end-start} с. Файл не сохранён: границы записи не подтверждены.')
-                        args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-xerror','-err_detect','explode','-i',str(source),'-map','0:v:0','-map','0:a:0?','-t',str(end-start),'-threads','1']
+                            raise RuntimeError(f'Ivideon вернул {original_duration:.2f} с видео на запрос {end-start} с. Файл не сохранён: запись короче выбранного интервала.')
+                        args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-xerror','-err_detect','explode','-i',str(source),'-map','0:v:0','-map','0:a:0?','-threads','1']
                         target=PROFILES[job['quality']]
                         if width:
                             args+=['-vf',f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
@@ -395,8 +395,8 @@ async def run(job):
                             source.unlink(missing_ok=True)
                         duration,fps,w,h=await probe(path,job)
                         await verify_frames(path,job,fps)
-                        if abs(duration-(end-start))>max(.05,2/fps):
-                            raise RuntimeError('Длительность записи не совпадает с выбранным интервалом. В архиве может быть пропуск.')
+                        if duration < original_duration-max(.05,2/fps):
+                            raise RuntimeError('При обработке потерялась часть исходной записи.')
                     except RuntimeError:
                         path.unlink(missing_ok=True);source.unlink(missing_ok=True)
                         if end-start > 60 and not job.get('cancelled'):
@@ -406,7 +406,7 @@ async def run(job):
                         raise
                     width = width or (w,h)
                     pieces.append(path)
-                    piece_durations.append(end-start)
+                    piece_durations.append(duration)
                     completed += end-start
                     job['progress'] = min(98, round(completed/total*98))
                 output = folder / (str(index) + '.mp4')
@@ -414,11 +414,11 @@ async def run(job):
                     pieces[0].replace(output)
                 else:
                     manifest = folder / ('concat-' + str(index) + '.txt')
-                    manifest.write_text(''.join("file '" + str(p) + "'\nduration " + str(seconds) + "\n" for p, seconds in zip(pieces,piece_durations)))
+                    manifest.write_text(''.join("file '" + str(p) + "'\n" for p in pieces))
                     await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',str(manifest),'-map','0','-c','copy','-movflags','+faststart',str(output)],job)
                 duration, fps, w, h = await probe(output,job)
                 await verify_frames(output,job,fps)
-                if abs(duration-(clip['end']-clip['start'])) > max(.05,2/fps):
+                if duration < sum(piece_durations) - max(.05,2/fps):
                     raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
                 job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':clip['end']-clip['start'],'measuredDuration':duration,'fps':fps,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'cameraName':clip.get('cameraName','Камера'),'sourceStart':clip['start']})
                 if job.get('saveToYandex'):
