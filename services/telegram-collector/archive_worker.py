@@ -151,8 +151,11 @@ async def download_source(url,path,job):
     offset=path.stat().st_size if path.exists() else 0
     expected=None
     attempts=0
+    async def validate_redirect(request):
+        media_url(str(request.url))
     async with httpx.AsyncClient(http2=False,follow_redirects=True,max_redirects=5,
-                                  timeout=httpx.Timeout(120,connect=25,read=35,write=35,pool=25)) as client:
+                                  timeout=httpx.Timeout(120,connect=25,read=35,write=35,pool=25),
+                                  event_hooks={'request':[validate_redirect]}) as client:
         while time.monotonic()<deadline and attempts<18:
             if job.get('cancelled'):
                 raise RuntimeError('Подготовка отменена.')
