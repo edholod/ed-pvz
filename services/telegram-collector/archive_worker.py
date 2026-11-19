@@ -443,23 +443,70 @@ async def cleanup_checkpoints(job):
 CHECKPOINT_RETENTION = 7 * 86400
 
 async def cleanup_abandoned_checkpoints():
-    """Periodically clean old inactive jobs whose owner's authorization is still available."""
+    """Clean stale jobs from Supabase, including jobs absent from process memory.
+
+    Requires the server-only SUPABASE_SERVICE_ROLE_KEY; never exposes it to clients.
+    """
     while True:
         try:
-            now=time.time()
-            for job in list(JOBS.values()):
-                if not job.get('checkpoints') or not job.get('headers'):
-                    continue
-                if job.get('state') in ('queued','processing','uploading'):
-                    continue
-                last=float(job.get('updated') or job.get('created') or now)
-                if now-last < CHECKPOINT_RETENTION:
-                    continue
-                await cleanup_checkpoints(job)
+            service_key=os.getenv('SUPABASE_SERVICE_ROLE_KEY','').strip()
+            if service_key:
+                admin_headers={'apikey':service_key,'Authorization':'Bearer '+service_key,'Content-Type':'application/json'}
+                cutoff=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(time.time()-CHECKPOINT_RETENTION))
+                async with httpx.AsyncClient(timeout=20) as client:
+                    result=await client.get(BASE+'/rest/v1/edpvz_archive_jobs',headers=admin_headers,
+                        params={'state':'in.(ready,failed,cancelled)','updated_at':'lt.'+cutoff,
+                                'select':'id,user_id,payload','limit':'100','order':'updated_at.asc'})
+                if result.status_code != 200:
+                    print('archive cleanup query failed status='+str(result.status_code),flush=True)
+                else:
+                    for row in result.json():
+                        payload=row.get('payload') or {}
+                        checkpoints=payload.get('checkpoints') or []
+                        if not checkpoints:
+                            continue
+                        job_id=row['id']
+                        # Never remove checkpoints for a job currently running in this instance.
+                        if job_id in JOBS and JOBS[job_id].get('state') in ('queued','processing','uploading'):
+                            continue
+                        token=DISK_TOKEN
+                        if not token:
+                            # User OAuth tokens are encrypted in Supabase. Only the
+                            # owner-scoped token API may decrypt them; no admin bypass.
+                            continue
+                        remaining=[]
+                        async with httpx.AsyncClient(timeout=30) as client:
+                            for record in checkpoints:
+                                key=record.get('diskKey','')
+                                prefix='app:/edpvz-checkpoint-'+job_id+'-'
+                                if not key.startswith(prefix) or not re.fullmatch(r'app:/edpvz-checkpoint-[A-Za-z0-9_-]+-[0-9]+-[0-9]+\\.mp4',key):
+                                    remaining.append(record)
+                                    continue
+                                try:
+                                    response=await client.delete(DISK_API,headers={'Authorization':'OAuth '+token},
+                                        params={'path':key,'permanently':'true'})
+                                    if response.status_code not in (202,204,404):
+                                        remaining.append(record)
+                                except Exception:
+                                    remaining.append(record)
+                        payload['checkpoints']=remaining
+                        async with httpx.AsyncClient(timeout=20) as client:
+                            update=await client.patch(BASE+'/rest/v1/edpvz_archive_jobs',headers=admin_headers,
+                                params={'id':'eq.'+job_id,'user_id':'eq.'+row['user_id'],
+                                        'state':'in.(ready,failed,cancelled)','updated_at':'lt.'+cutoff},
+                                json={'payload':payload})
+                        if update.status_code not in (200,204):
+                            print('archive cleanup checkpoint metadata update failed',flush=True)
+            else:
+                # Without service credentials only jobs held in this instance can be scanned.
+                for job in list(JOBS.values()):
+                    if (job.get('checkpoints') and job.get('headers')
+                        and job.get('state') in ('ready','failed','cancelled')
+                        and time.time()-float(job.get('updated') or job.get('created') or time.time()) >= CHECKPOINT_RETENTION):
+                        await cleanup_checkpoints(job)
         except Exception as exc:
             print('archive periodic checkpoint cleanup failed type='+type(exc).__name__,flush=True)
         await asyncio.sleep(3600)
-
 
 @router.on_event('startup')
 async def start_checkpoint_cleanup():
