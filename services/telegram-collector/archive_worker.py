@@ -163,6 +163,40 @@ async def download_source(url,path,job):
             raise RuntimeError('Ivideon отклонил скачивание файла (HTTP '+str(error.code)+').') from None
         except (urllib.error.URLError,TimeoutError):
             raise RuntimeError('Не удалось получить исходный файл Ivideon. Повтори подготовку.') from None
+    async def download_ranges(client):
+        offset = 0
+        total = None
+        with path.open('wb') as output:
+            while total is None or offset < total:
+                if job.get('cancelled'):
+                    raise RuntimeError('Подготовка отменена.')
+                if shutil.disk_usage(ROOT).free < 128 * 1024 * 1024:
+                    raise RuntimeError('На сервере недостаточно места.')
+                last = offset + 65535
+                async with client.stream('GET', url, headers={
+                    'Range': f'bytes={offset}-{last}', 'Accept-Encoding': 'identity'
+                }) as response:
+                    match = re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)', response.headers.get('content-range', ''))
+                    if response.status_code != 206 or not match:
+                        raise RuntimeError('Ivideon не поддерживает скачивание файла частями.')
+                    first, end, size = map(int, match.groups())
+                    if first != offset or end != min(last, size - 1) or end < first or (total is not None and total != size):
+                        raise RuntimeError('Ivideon вернул несовместимые части файла.')
+                    total = size
+                    received = 0
+                    async for block in response.aiter_bytes():
+                        received += len(block)
+                        if received > end - first + 1:
+                            raise RuntimeError('Ivideon вернул лишние байты.')
+                        output.write(block)
+                    if received != end - first + 1:
+                        raise RuntimeError('Часть файла получена не полностью.')
+                offset = end + 1
+                job['message'] = f'Получаем запись: {offset // 1024} из {total // 1024} КБ'
+        if offset < 1000:
+            raise RuntimeError('Ivideon вернул слишком короткий файл.')
+        return str(path)
+
     async def validate_request(request):
         media_url(str(request.url))
     try:
@@ -188,7 +222,13 @@ async def download_source(url,path,job):
         except (ImportError,httpx.TransportError) as error:
             print('archive-transfer fallback type='+type(error).__name__,flush=True)
             path.unlink(missing_ok=True)
-            return await asyncio.to_thread(transfer)
+            try:
+                async with httpx.AsyncClient(http2=True, follow_redirects=True, max_redirects=5,
+                                             timeout=httpx.Timeout(20), event_hooks={'request':[validate_request]}) as client:
+                    return await download_ranges(client)
+            except (RuntimeError, httpx.TransportError, ImportError):
+                path.unlink(missing_ok=True)
+                return await asyncio.to_thread(transfer)
     except Exception:
         path.unlink(missing_ok=True)
         raise
