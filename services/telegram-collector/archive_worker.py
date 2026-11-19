@@ -179,7 +179,7 @@ async def download_source(url,path,job):
         except urllib.error.HTTPError as error:
             raise RuntimeError('Ivideon отклонил скачивание файла (HTTP '+str(error.code)+').') from None
         except (urllib.error.URLError,TimeoutError):
-            raise RuntimeError('Не удалось получить исходный файл Ivideon. Повтори подготовку.') from None
+            raise RuntimeError('Ivideon прерывает передачу MP4 даже через резервное соединение. Экспорт не дошёл до Google Диска.') from None
     async def download_ranges(client):
         offset = 0
         total = None
@@ -238,14 +238,15 @@ async def download_source(url,path,job):
                     return str(path)
         except (ImportError,httpx.TransportError) as error:
             print('archive-transfer fallback type='+type(error).__name__,flush=True)
-            job['message']='Ivideon прервал передачу. Пробуем скачать файл частями.'
+            job['message']='Ivideon не передаёт исходный MP4 непрерывно. Пробуем скачивание по диапазонам.'
             path.unlink(missing_ok=True)
             try:
                 async with httpx.AsyncClient(http2=True, follow_redirects=True, max_redirects=5,
                                              timeout=httpx.Timeout(120,connect=30,read=90,write=90,pool=30), event_hooks={'request':[validate_request]}) as client:
                     return await download_ranges(client)
-            except (RuntimeError, httpx.TransportError, ImportError):
-                job['message']='Повторяем получение исходного файла через резервное соединение.'
+            except (RuntimeError, httpx.TransportError, ImportError) as range_error:
+                print('archive-range fallback type='+type(range_error).__name__,flush=True)
+                job['message']='Ivideon не поддержал передачу частями. Пробуем последнее резервное соединение.'
                 path.unlink(missing_ok=True)
                 return await asyncio.to_thread(transfer)
     except Exception:
