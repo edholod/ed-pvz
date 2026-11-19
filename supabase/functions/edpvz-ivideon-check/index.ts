@@ -16,9 +16,9 @@ async function ticketKey(context = 'edpvz-ivideon-live:') {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(context + secret));
   return crypto.subtle.importKey('raw', digest, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
-async function issueTicket(url: URL, expires = Date.now() + 30000, purpose = 'ws') {
+async function issueTicket(url: URL, expires = Date.now() + 30000, purpose = 'ws', grant?:MediaGrant) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const plaintext = new TextEncoder().encode(JSON.stringify({url: url.href, expires, purpose}));
+  const plaintext = new TextEncoder().encode(JSON.stringify({url: url.href, expires, purpose, grant}));
   const cipher = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, await ticketKey(), plaintext));
   return btoa(Array.from([...iv,...cipher], (byte) => String.fromCharCode(byte)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
@@ -28,9 +28,9 @@ function hlsTarget(raw: string, base?: string) {
       !/(^|\.)(ivideon\.com|iv-cdn\.com|extcam\.com)$/.test(url.hostname)) throw Error('Invalid HLS origin');
   return url;
 }
-async function hlsLink(url: URL, expires: number) {
+async function hlsLink(url: URL, expires: number, grant?:MediaGrant) {
   const link = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
-  link.searchParams.set('hls', await issueTicket(url, expires, 'hls'));
+  link.searchParams.set('hls', await issueTicket(url, expires, 'hls', grant));
   return link.href;
 }
 async function serveHls(req: Request, ticket: string) {
@@ -38,9 +38,10 @@ async function serveHls(req: Request, ticket: string) {
     if (!/^[a-zA-Z0-9_-]{40,12000}$/.test(ticket)) throw Error();
     const bytes = Uint8Array.from(atob(ticket.replace(/-/g,'+').replace(/_/g,'/')), (char) => char.charCodeAt(0));
     const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, await ticketKey(), bytes.slice(12));
-    const {url, expires, purpose} = JSON.parse(new TextDecoder().decode(plain));
+    const {url, expires, purpose, grant} = JSON.parse(new TextDecoder().decode(plain));
     const download = new URL(req.url).searchParams.has('download');
     if (!(download ? ['download','browser-download'].includes(purpose) : purpose === 'hls') || typeof expires !== 'number' || expires < Date.now()) throw Error();
+    if (grant && !await grantActive(grant)) throw Error();
     let target = hlsTarget(url);
     const providerKey = target.searchParams.get('access_token');
     let response: Response | undefined;
@@ -100,7 +101,7 @@ async function serveHls(req: Request, ticket: string) {
       const links = new Map<string, Promise<string>>();
       const wrap = (value: string) => {
         const next = hlsTarget(value, target.href);
-        if (!links.has(next.href)) links.set(next.href, hlsLink(next, expires));
+        if (!links.has(next.href)) links.set(next.href, hlsLink(next, expires, grant));
         return links.get(next.href)!;
       };
       const lines = await Promise.all(manifest.split(/\r?\n/).map(async (line) => {
@@ -126,12 +127,15 @@ async function serveHls(req: Request, ticket: string) {
 }
 async function relay(req: Request, ticket: string) {
   let upstreamUrl;
+  let connectionGrant: MediaGrant | undefined;
   try {
     if (!/^[a-zA-Z0-9_-]{40,12000}$/.test(ticket)) throw Error();
     const bytes = Uint8Array.from(atob(ticket.replace(/-/g,'+').replace(/_/g,'/')), (char) => char.charCodeAt(0));
     const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, await ticketKey(), bytes.slice(12));
     const {url, expires, purpose} = JSON.parse(new TextDecoder().decode(plain));
     if ((purpose && purpose !== 'ws') || typeof expires !== 'number' || expires < Date.now() || !(upstreamUrl = secureStreamUrl(url))) throw Error();
+    if (grant && !await grantActive(grant)) throw Error();
+    connectionGrant = grant;
   } catch {
     return reply({error:'Ссылка на эфир истекла.'}, 403);
   }
@@ -145,7 +149,11 @@ async function relay(req: Request, ticket: string) {
     reported = true;
     console.info('ivideon-relay frames text=' + textFrames + ' binary=' + binaryFrames + ' ' + JSON.stringify(messages) + ' transport=ws');
   };
+  const recheck = connectionGrant ? setInterval(() => {
+    void grantActive(connectionGrant!).then(active => { if (!active) end(); }).catch(end);
+  }, 15000) : undefined;
   const end = () => {
+    if (recheck !== undefined) clearInterval(recheck);
     report();
     if (upstream && upstream.readyState < UpstreamWebSocket.CLOSING) upstream.terminate();
     if (socket.readyState === WebSocket.OPEN) socket.close();
@@ -245,6 +253,109 @@ async function connectionRequest(userId: string, method: string, encryptedKey?: 
   return method === 'GET' ? (await response.json())[0]?.encrypted_key ?? null : null;
 }
 
+type CameraPermission = 'can_live' | 'can_archive' | 'can_download' | 'can_edit';
+type MediaGrant = {id:string, permission:CameraPermission};
+const validId = (id:unknown): id is string => typeof id === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id);
+const validCamera = (id:unknown): id is string => typeof id === 'string' && /^[a-zA-Z0-9_-]{1,120}:[0-9]{1,8}$/.test(id);
+const permissions = ['can_live','can_archive','can_download','can_edit'] as const;
+
+async function serviceRows(table:string, filters:Record<string,string>, method='GET', data?:object) {
+  const secret = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!secret) throw Error('Service unavailable');
+  const url = new URL(Deno.env.get('SUPABASE_URL') + '/rest/v1/' + table);
+  url.search = new URLSearchParams(filters).toString();
+  const response = await fetch(url,{method,headers:{
+    apikey:secret, authorization:'Bearer ' + secret, 'content-type':'application/json',
+    Prefer:'resolution=merge-duplicates,return=representation',
+  },body:data ? JSON.stringify(data) : undefined,signal:AbortSignal.timeout(5000)});
+  if (!response.ok) throw Error('Share storage unavailable');
+  return response.status === 204 ? [] : await response.json();
+}
+const sharesTable = 'edpvz_ivideon_camera_shares';
+const exportsTable = 'edpvz_ivideon_shared_exports';
+
+async function grantActive(grant:MediaGrant) {
+  if (!validId(grant.id) || !permissions.includes(grant.permission)) return false;
+  const [row] = await serviceRows(sharesTable,{id:'eq.'+grant.id,select:grant.permission});
+  return row?.[grant.permission] === true;
+}
+async function cameraKey(owner:string, connection?:string) {
+  const encrypted = connection ? (await extraConnections(owner,connection))[0]?.encrypted_key
+    : await connectionRequest(owner,'GET');
+  return encrypted ? await connectionCipher(owner,encrypted,false) : null;
+}
+async function findCamera(key:string, id:string) {
+  for (const resource of ['cameras','servers']) {
+    const url = new URL('https://openapi-alpha.ivideon.com/' + resource);
+    url.search = new URLSearchParams({op:'FIND',access_token:key}).toString();
+    const response = await fetch(url,{method:'POST',redirect:'error',signal:AbortSignal.timeout(5000),
+      headers:{'content-type':'application/json'},body:JSON.stringify({limit:100,skip:0})});
+    if (!response.ok) continue;
+    const data = await response.json();
+    const items = Array.isArray(data?.result) ? data.result : data?.result?.items ?? data?.result?.cameras;
+    if (data?.success !== true || !Array.isArray(items)) continue;
+    const cameras = resource === 'cameras' ? items : items.flatMap(server=>server?.cameras || []);
+    const camera = cameras.find(item=>item?.id===id);
+    if (camera) return String(camera.name || 'Камера Ivideon').slice(0,160);
+  }
+  return null;
+}
+async function sharedAction(action:string, user:string, options:Record<string,any>, cameraId:unknown, connectionId?:string) {
+  if (action === 'shared-list') {
+    const rows = await serviceRows(sharesTable,{recipient_id:'eq.'+user,select:'id,owner_id,camera_id,camera_name,can_live,can_archive,can_download,can_edit'});
+    const cameras = await Promise.all(rows.map(async (row:any)=>{
+      const [setting] = await serviceRows('edpvz_ivideon_camera_settings',{user_id:'eq.'+row.owner_id,camera_id:'eq.'+row.camera_id,select:'display_name'});
+      return {id:row.id,name:setting?.display_name || row.camera_name,
+        can_live:row.can_live,can_archive:row.can_archive,can_download:row.can_download,can_edit:row.can_edit};
+    }));
+    return reply({cameras});
+  }
+  if (action === 'share-list') {
+    if (!validCamera(cameraId)) return reply({error:'Некорректная камера.'},400);
+    const rows = await serviceRows(sharesTable,{owner_id:'eq.'+user,camera_id:'eq.'+cameraId,select:'id,recipient_id,can_live,can_archive,can_download,can_edit'});
+    return reply({shares:await Promise.all(rows.map(async (row:any)=>{
+      const [profile] = await serviceRows('edpvz_profiles',{user_id:'eq.'+row.recipient_id,select:'username'});
+      return {id:row.id,username:profile?.username || 'Пользователь',
+        can_live:row.can_live,can_archive:row.can_archive,can_download:row.can_download,can_edit:row.can_edit};
+    }))});
+  }
+  if (action === 'share-revoke') {
+    if (!validId(options.shareId)) return reply({error:'Некорректный доступ.'},400);
+    await serviceRows(sharesTable,{id:'eq.'+options.shareId,owner_id:'eq.'+user},'DELETE');
+    return reply({ok:true});
+  }
+  if (action === 'share-save') {
+    const username = typeof options.username === 'string' ? options.username.trim().replace(/^@/,'').toLowerCase() : '';
+    if (!validCamera(cameraId) || !/^[a-z0-9_]{2,32}$/.test(username) || !permissions.some(p=>options[p]===true))
+      return reply({error:'Укажи пользователя и хотя бы одно разрешение.'},400);
+    const [profile] = await serviceRows('edpvz_profiles',{username:'eq.'+username,select:'user_id'});
+    if (!profile || profile.user_id === user) return reply({error:'Укажи логин другого пользователя «Эд ПВЗ».'},400);
+    const key = await cameraKey(user,connectionId);
+    const name = key && await findCamera(key,cameraId);
+    if (!name) return reply({error:'Камера недоступна в выбранном аккаунте Ivideon.'},404);
+    await serviceRows(sharesTable,{on_conflict:'owner_id,recipient_id,camera_id'},'POST',{
+      owner_id:user,recipient_id:profile.user_id,camera_id:cameraId,connection_id:connectionId ?? null,camera_name:name,
+      ...Object.fromEntries(permissions.map(p=>[p,options[p]===true])),
+    });
+    return reply({ok:true});
+  }
+  if (action !== 'shared-edit') return null;
+  if (!validId(options.shareId)) return reply({error:'Некорректный доступ.'},400);
+  const [row] = await serviceRows(sharesTable,{id:'eq.'+options.shareId,recipient_id:'eq.'+user,can_edit:'eq.true'});
+  if (!row) return reply({error:'Редактирование камеры запрещено.'},403);
+  const points = await serviceRows('edpvz_points',{owner_id:'eq.'+row.owner_id,select:'point_id,name',order:'name.asc'});
+  const [setting] = await serviceRows('edpvz_ivideon_camera_settings',{user_id:'eq.'+row.owner_id,camera_id:'eq.'+row.camera_id,select:'display_name,point_id'});
+  if (options.displayName === undefined) return reply({points, displayName:setting?.display_name || '', pointId:setting?.point_id || ''});
+  const name = typeof options.displayName === 'string' ? options.displayName.trim() : null;
+  const point = options.pointId || null;
+  if (name === null || name.length > 100 || (point && !points.some((p:any)=>p.point_id===point)))
+    return reply({error:'Проверь название и пункт выдачи.'},400);
+  await serviceRows('edpvz_ivideon_camera_settings',{on_conflict:'user_id,camera_id'},'POST',{
+    user_id:row.owner_id,camera_id:row.camera_id,display_name:name,point_id:point,
+  });
+  return reply({ok:true});
+}
+
 Deno.serve(async (req) => {
   const requestOrigin = req.headers.get('origin');
   const nativeMedia = req.method === 'GET' && !requestOrigin &&
@@ -262,24 +373,30 @@ Deno.serve(async (req) => {
   const authorization = req.headers.get('authorization');
   if (!authorization?.startsWith('Bearer ')) return reply({error:'Войдите в Эд ПВЗ'}, 401);
   try {
+    const raw = await req.text();
+    if (raw.length > 2048) return reply({error:'Некорректный запрос'}, 400);
+    let payload;
+    try { payload = JSON.parse(raw); } catch { return reply({error:'Некорректный запрос'}, 400); }
+    let {cameraId} = payload ?? {};
+    const {quality, action} = payload ?? {};
+    const incoming = ['shared-list','shared-use','shared-edit'].includes(action);
+    const managing = ['share-save','share-list','share-revoke'].includes(action);
+    if (!incoming) {
     const session = await fetch(Deno.env.get('SUPABASE_URL') + '/rest/v1/rpc/edpvz_ivideon_allowed', {
       method:'POST', headers:{authorization, apikey: Deno.env.get('SUPABASE_ANON_KEY')!, 'content-type':'application/json'},
       body:'{}', signal:AbortSignal.timeout(5000)
     });
     if (!session.ok || await session.json() !== true) return reply({error:'Доступ запрещён'}, 403);
-    const raw = await req.text();
-    if (raw.length > 2048) return reply({error:'Некорректный запрос'}, 400);
-    let payload;
-    try { payload = JSON.parse(raw); } catch { return reply({error:'Некорректный запрос'}, 400); }
-    const {cameraId, quality, action} = payload ?? {};
-    const {connectionId, accountLabel, ...options} = payload?.archive ?? {};
+    }
+    const {connectionId, accountLabel, shareId, ...options} = payload?.archive ?? {};
     const archive = Object.keys(options).length ? options : undefined;
     if (connectionId !== undefined && (typeof connectionId !== 'string' || !/^[a-f0-9-]{36}$/i.test(connectionId))) return reply({error:'Некорректное подключение Ivideon.'},400);
     let {key} = payload ?? {};
     let userId;
+    let mediaGrant:MediaGrant | undefined;
     if (action !== undefined) {
-      if (!['save','add','accounts','load','disconnect'].includes(action) ||
-          (action !== 'load' && cameraId !== undefined)) {
+      if ((!incoming && !managing && !['save','add','accounts','load','disconnect'].includes(action)) ||
+          (!incoming && !managing && action !== 'load' && cameraId !== undefined)) {
         return reply({error:'Некорректное действие Ivideon'}, 400);
       }
       const identity = await fetch(Deno.env.get('SUPABASE_URL') + '/auth/v1/user', {
@@ -289,6 +406,32 @@ Deno.serve(async (req) => {
       if (!identity.ok) return reply({error:'Войдите в Эд ПВЗ'}, 401);
       userId = (await identity.json())?.id;
       if (typeof userId !== 'string' || !/^[a-f0-9-]{36}$/i.test(userId)) return reply({error:'Войдите в Эд ПВЗ'}, 401);
+      if (managing || action === 'shared-list' || action === 'shared-edit') {
+        return await sharedAction(action,userId,{...options,shareId},cameraId,connectionId);
+      }
+      if (action === 'shared-use') {
+        if (!validId(shareId)) return reply({error:'Некорректный доступ.'},400);
+        const [row] = await serviceRows(sharesTable,{id:'eq.'+shareId,recipient_id:'eq.'+userId});
+        const mode = archive?.mode;
+        const permission = mode === 'export' || mode === 'export-status' ? 'can_download'
+          : mode === 'preview' ? 'can_archive' : !archive ? 'can_live' : null;
+        if (!row || !permission || !row[permission]) return reply({error:'Это действие запрещено владельцем камеры.'},403);
+        if (mode === 'export-status') {
+          if (typeof archive.exportId !== 'string' || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(archive.exportId))
+            return reply({error:'Некорректный экспорт.'},400);
+          const [exportRecord] = await serviceRows(exportsTable,{share_id:'eq.'+shareId,export_id:'eq.'+archive.exportId,select:'export_id'});
+          if (!exportRecord) return reply({error:'Этот экспорт недоступен.'},403);
+        }
+        if (archive) {
+          archive.ingest = false;
+          archive.share = false;
+          archive.browserDownload = false;
+        }
+        cameraId = row.camera_id;
+        key = await cameraKey(row.owner_id,row.connection_id);
+        if (!key) return reply({error:'Владелец отключил аккаунт Ivideon.'},409);
+        mediaGrant = {id:shareId,permission};
+      }
       if (action === 'accounts') {
         return reply({accounts:await extraConnections(userId)});
       }
@@ -313,7 +456,7 @@ Deno.serve(async (req) => {
         return reply({error:'Некорректный ID камеры Ivideon.'}, 400);
       }
       if (archive?.mode === 'export-status') {
-        if (action !== 'load' || typeof archive.exportId !== 'string' || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(archive.exportId)) {
+        if ((!mediaGrant && action !== 'load') || typeof archive.exportId !== 'string' || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(archive.exportId)) {
           return reply({error:'Некорректный запрос экспорта.'},400);
         }
         const endpoint = new URL('https://openapi-alpha.ivideon.com/exported_records');
@@ -344,7 +487,7 @@ Deno.serve(async (req) => {
             return reply({state:'ready',sealedSource});
           }
           const link = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
-          link.searchParams.set('download',await issueTicket(download,Date.now()+(archive.share === true ? 24*60*60*1000 : 5*60*1000),archive.browserDownload === true ? 'browser-download' : 'download'));
+          link.searchParams.set('download',await issueTicket(download,Date.now()+(archive.share === true ? 24*60*60*1000 : 5*60*1000),archive.browserDownload === true ? 'browser-download' : 'download',mediaGrant));
           return reply({state:'ready',downloadUrl:link.href});
         }
         if (['failed','error','cancelled','expired','deleted'].includes(record.status)) return reply({state:'failed'});
@@ -355,7 +498,7 @@ Deno.serve(async (req) => {
         const start = archive?.start;
         const end = archive?.end;
         const now = Math.floor(Date.now()/1000);
-        if (action !== 'load' || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) ||
+        if ((!mediaGrant && action !== 'load') || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) ||
             start <= 0 || start >= now || end <= start || end > now + 30 || end - start > (archive.mode === 'export' ? 18000 : 3600)) {
           return reply({error:archive.mode === 'export' ? 'Укажи прошедшее время и интервал до 5 часов.' : 'Укажи прошедшее время и интервал до одного часа.'}, 400);
         }
@@ -369,6 +512,9 @@ Deno.serve(async (req) => {
           if (!response.ok || data?.success !== true || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(id)) {
             const code = typeof data?.code === 'string' && /^[A-Z0-9_]{1,60}$/.test(data.code) ? ' · ' + data.code : '';
             return reply({error:'Ivideon не начал экспорт (HTTP ' + response.status + code + '). Попробуй другой интервал или проверь доступ к экспорту.'},422);
+          }
+          if (mediaGrant) {
+            await serviceRows(exportsTable,{on_conflict:'share_id,export_id'},'POST',{share_id:mediaGrant.id,export_id:id});
           }
           return reply({exportId:id});
         }
@@ -387,7 +533,7 @@ Deno.serve(async (req) => {
           const target = location ?? (data?.success === true ? data?.result?.url : null);
           if (typeof target !== 'string') continue;
           const url = hlsTarget(target,endpoint.href);
-          const streamUrl = decodeURIComponent(url.href).includes(key) ? await hlsLink(url,Date.now()+15*60*1000) : url.href;
+          const streamUrl = (mediaGrant || decodeURIComponent(url.href).includes(key)) ? await hlsLink(url, Date.now() + 15 * 60 * 1000, mediaGrant) : url.href;
           return reply({streamType:'hls',streamUrl});
         }
         return reply({error:'Ivideon не выдал запись за этот период (HTTP ' + status + '). Проверь другой интервал.'},422);
@@ -410,7 +556,7 @@ Deno.serve(async (req) => {
           const target = location ?? (data?.success === true ? data?.result?.url : null);
           if (typeof target === 'string') {
             const url = hlsTarget(target, hls.href);
-            const streamUrl = decodeURIComponent(url.href).includes(key) ? await hlsLink(url, Date.now() + 15 * 60 * 1000) : url.href;
+            const streamUrl = (mediaGrant || decodeURIComponent(url.href).includes(key)) ? await hlsLink(url, Date.now() + 15 * 60 * 1000, mediaGrant) : url.href;
             return reply({streamUrl, streamType:'hls'});
           }
         } catch { /* Fall through to the WebSocket stream. */ }
@@ -425,10 +571,10 @@ Deno.serve(async (req) => {
         return reply({error:'Ivideon вернул адрес с неподдерживаемым протоколом или доменом видеосервера.'}, 422);
       }
       const decoded = decodeURIComponent(url.href);
-      if (decoded.includes(key) || /xtok-/i.test(decoded)) {
+      if (mediaGrant || decoded.includes(key) || /xtok-/i.test(decoded)) {
         const relayUrl = new URL(Deno.env.get('SUPABASE_URL') + '/functions/v1/edpvz-ivideon-check');
         relayUrl.protocol = 'wss:';
-        relayUrl.searchParams.set('ticket', await issueTicket(url));
+        relayUrl.searchParams.set('ticket', await issueTicket(url,Date.now()+30000,'ws',mediaGrant));
         return reply({streamUrl:relayUrl.href});
       }
       return reply({streamUrl:url.href});
