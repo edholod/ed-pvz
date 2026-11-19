@@ -5,38 +5,41 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <title>Камеры, доступные мне — Эд ПВЗ</title>
-  <link rel="stylesheet" href="surveillance.css?v=private-1">
+  <link rel="stylesheet" href="surveillance.css?v=camera-layout-1">
   <script defer src="../../assets/account.js?v=ivideon-owners-1"></script>
 </head>
 <body>
-<main>
+<main class="camera-page">
   <nav aria-label="Навигация"><a href="./">← Видеонаблюдение</a></nav>
   <header><div><h1>Камеры, доступные мне</h1><p>Здесь находятся камеры, которыми с тобой поделились в «Эд ПВЗ».</p></div></header>
-  <section class="panel">
+  <div class="camera-layout">
+  <section class="panel camera-panel">
     <p id="status" role="status">Загружаем камеры…</p>
     <a class="primary" id="login" href="../account/" hidden>Войти в «Эд ПВЗ»</a>
-    <ul id="cameras" class="shortcut-list"></ul>
+    <ul id="cameras" class="shortcut-list camera-list"></ul>
   </section>
-  <section id="player" class="panel" aria-labelledby="camera-name" hidden>
-    <h2 id="camera-name"></h2>
-    <button id="stop" class="secondary" type="button">Закрыть камеру</button>
+  <section id="player" class="camera-player" aria-labelledby="camera-name" hidden>
+    <div class="camera-player-bar"><h2 id="camera-name" data-player-title tabindex="-1"></h2>
+    <button id="stop" class="secondary" type="button">Закрыть камеру</button></div>
     <form id="interval" hidden>
       <label>Начало <input type="datetime-local" id="start" required></label>
       <label>Конец <input type="datetime-local" id="end" required></label>
       <button id="archive-action" class="primary" type="submit"></button>
     </form>
-    <p id="progress" role="status"></p>
+    <p id="progress" class="camera-progress" role="status"></p>
     <video id="video" controls playsinline muted controlslist="nodownload" style="width:100%;max-height:65vh;background:#142032;border-radius:12px" hidden></video>
     <a id="download" class="primary" target="_blank" rel="noopener noreferrer" hidden>Скачать MP4</a>
   </section>
+  </div>
 </main>
 <script type="module">
+  import {revealPlayer,setLoading} from './player-interface.mjs?v=1';
   import {playIvideon,playIvideonHls} from './ivideon-live.mjs?v=9';
   const el = id => document.getElementById(id);
   const account = window.EdPVZAccount;
   const list = el('cameras'), status = el('status'), player = el('player'), video = el('video');
   const form = el('interval'), progress = el('progress'), download = el('download');
-  let sessionUser, active, stopPlayback, controller, expiryTimer, revision = 0, refreshRevision = 0;
+  let sessionUser, active, stopPlayback, controller, launchControl, expiryTimer, revision = 0, refreshRevision = 0;
   const request = (action, options, quality) => account.checkIvideon(undefined,undefined,quality,action,options);
   const button = (text, handler) => {
     const control = document.createElement('button');
@@ -44,7 +47,14 @@
     control.addEventListener('click',handler);
     return control;
   };
+  function loading(control, state) {
+    setLoading(control,state);
+    if (state) progress.setAttribute('aria-busy','true');
+    else progress.removeAttribute('aria-busy');
+  }
   function resetPlayer() {
+    loading(launchControl,false);
+    loading(el('archive-action'),false);
     revision++;
     controller?.abort(); controller = undefined;
     stopPlayback?.(); stopPlayback = undefined;
@@ -53,33 +63,35 @@
     progress.textContent = ''; el('archive-action').disabled = false;
   }
   function closePlayer() {
-    resetPlayer(); active = undefined; player.hidden = true; form.hidden = true;
+    resetPlayer(); active = undefined; launchControl = undefined; player.hidden = true; form.hidden = true;
   }
-  function activate(camera, mode) {
+  function activate(camera, mode, control) {
     resetPlayer();
-    active = {camera,mode};
+    active = {camera,mode}; launchControl = control;
+    player.dataset.mode = mode === 'live' ? 'live' : 'archive';
     player.hidden = false;
     el('camera-name').textContent = camera.name;
     form.hidden = mode === 'live';
-    player.scrollIntoView({block:'start'});
+    revealPlayer(player);
   }
-  function play(result, current) {
+  function play(result, current, control) {
     if (revision !== current) return;
     video.hidden = false;
     const start = result.streamType === 'hls' ? playIvideonHls : playIvideon;
     stopPlayback = start(video,result.streamUrl,message=>{
-      if (revision === current) progress.textContent = message || '';
+      if (revision === current) { loading(control,false); progress.textContent = message || ''; }
     });
   }
-  async function live(camera) {
-    activate(camera,'live');
+  async function live(camera, control) {
+    activate(camera,'live',control);
+    loading(control,true);
     const current = revision;
     progress.textContent = 'Подключаем эфир…';
-    try { play(await request('shared-use',{shareId:camera.id},'hls'),current); }
-    catch (error) { if (revision === current) progress.textContent = error.message; }
+    try { play(await request('shared-use',{shareId:camera.id},'hls'),current,control); }
+    catch (error) { if (revision === current) { loading(control,false); progress.textContent = error.message; } }
   }
-  function setupInterval(camera,mode) {
-    activate(camera,mode);
+  function setupInterval(camera,mode,control) {
+    activate(camera,mode,control);
     el('archive-action').textContent = mode === 'preview' ? 'Смотреть архив' : 'Подготовить MP4';
     const date = new Date();
     const local = value => new Date(value-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
@@ -99,13 +111,15 @@
     resetPlayer();
     controller = new AbortController();
     const signal = controller.signal, current = revision;
-    el('archive-action').disabled = true;
+    const action = el('archive-action');
+    loading(action,true);
+    let playing = false;
     try {
       const options = {shareId:camera.id,mode:mode === 'preview' ? 'preview' : 'export',start,end};
       progress.textContent = mode === 'preview' ? 'Открываем архив…' : 'Готовим MP4…';
       const result = await request('shared-use',options);
       if (signal.aborted) return;
-      if (mode === 'preview') { play(result,current); return; }
+      if (mode === 'preview') { play(result,current,action); playing = true; return; }
       const deadline = Date.now()+600000;
       while (!signal.aborted && Date.now()<deadline) {
         const info = await request('shared-use',{shareId:camera.id,mode:'export-status',exportId:result.exportId});
@@ -122,7 +136,7 @@
       }
       if (!signal.aborted) throw Error('Ivideon ещё готовит запись. Попробуй более короткий интервал.');
     } catch (error) { if (!signal.aborted) progress.textContent = error.message; }
-    finally { if (revision === current) el('archive-action').disabled = false; }
+    finally { if (revision === current && !playing) loading(action,false); }
   });
   async function edit(camera, row) {
     if (row.querySelector('form')) return;
@@ -179,15 +193,15 @@
       for (const camera of cameras) {
         const row = document.createElement('li'), name = document.createElement('strong');
         name.textContent = camera.name; row.append(name);
-        if (camera.can_live) row.append(button('Смотреть эфир',()=>void live(camera)));
-        if (camera.can_archive) row.append(button('Архив',()=>setupInterval(camera,'preview')));
-        if (camera.can_download) row.append(button('Скачать запись',()=>setupInterval(camera,'download')));
+        if (camera.can_live) row.append(button('Смотреть эфир',event=>void live(camera,event.currentTarget)));
+        if (camera.can_archive) row.append(button('Архив',event=>setupInterval(camera,'preview',event.currentTarget)));
+        if (camera.can_download) row.append(button('Скачать запись',event=>setupInterval(camera,'download',event.currentTarget)));
         if (camera.can_edit) row.append(button('Настроить',()=>void edit(camera,row)));
         list.append(row);
       }
     } catch (error) { if (current === refreshRevision) status.textContent = error.message; }
   }
-  el('stop').addEventListener('click',closePlayer);
+  el('stop').addEventListener('click',()=>{const origin=launchControl;closePlayer();origin?.focus();});
   window.addEventListener('edpvz-auth-changed',refresh);
   window.addEventListener('pageshow',refresh);
   window.addEventListener('pagehide',()=>{clearTimeout(expiryTimer);closePlayer();});
