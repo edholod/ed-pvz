@@ -48,10 +48,15 @@
     <form id="ivideon-check">
       <label for="ivideon-key">Ключ доступа к API</label>
       <input id="ivideon-key" type="password" required maxlength="517" autocomplete="off" spellcheck="false" placeholder="xtok-…">
-      <button type="submit" class="primary">Подключить Ivideon</button>
-      <button type="button" class="secondary" id="ivideon-disconnect" hidden>Отключить Ivideon</button>
+      <label for="ivideon-account-label">Название аккаунта Ivideon</label>
+      <input id="ivideon-account-label" maxlength="80" placeholder="Например, камеры склада">
+      <button type="submit" class="primary">Добавить аккаунт</button>
+      <button type="button" class="secondary" id="ivideon-disconnect" hidden>Отключить основной аккаунт</button>
     </form>
     <p id="ivideon-check-status" role="status"></p>
+    <div id="ivideon-accounts" class="actions"></div>
+    <label for="ivideon-group">Группировка камер</label>
+    <select id="ivideon-group"><option value="flat">Общий список</option><option value="point">По ПВЗ</option><option value="account">По аккаунтам</option></select>
     <ul id="ivideon-check-cameras" class="shortcut-list"></ul>
     <div id="ivideon-live" hidden>
       <div class="actions"><strong id="ivideon-live-name"></strong><button id="ivideon-live-stop" type="button" class="secondary">Остановить</button></div>
@@ -85,7 +90,7 @@
   </section>
 </main>
 <script type="module">
-  import {createArchiveStudio} from './archive-studio.mjs?v=16';
+  import {createArchiveStudio} from './archive-studio.mjs?v=17';
   import {playIvideon, playIvideonHls} from './ivideon-live.mjs?v=9';
   const live = document.getElementById('ivideon-live');
   const video = document.getElementById('ivideon-live-video');
@@ -126,7 +131,7 @@
         liveStatus.textContent = previousError ? previousError + ' Повторная попытка: ' + message : message;
       }
       try {
-        const result = await window.EdPVZAccount.checkIvideon(undefined, camera.id, liveQuality.value === 'auto' ? (quality === 2 ? 'hls' : quality) : liveQuality.value, 'load');
+        const result = await window.EdPVZAccount.checkIvideon(undefined, camera.id, liveQuality.value === 'auto' ? (quality === 2 ? 'hls' : quality) : liveQuality.value, 'load', camera.connectionId ? {connectionId:camera.connectionId} : undefined);
         if (request !== streamRequest) return;
         const play = result.streamType === 'hls' ? playIvideonHls : playIvideon;
         stopPlayer = play(video, result.streamUrl, (message, state) => {
@@ -153,6 +158,10 @@
   const cameras = document.getElementById('ivideon-check-cameras');
   const button = form.querySelector('button[type="submit"]');
   const disconnect = document.getElementById('ivideon-disconnect');
+  const accountLabel = document.getElementById('ivideon-account-label');
+  const accountsBox = document.getElementById('ivideon-accounts');
+  const grouping = document.getElementById('ivideon-group');
+  let cameraRows = [];
   let generation = 0;
   let accountId;
   function makeButton(text, action) {
@@ -237,6 +246,7 @@
           showName();
           edit.setAttribute('aria-label','Настроить камеру ' + title.textContent);
           if (editor === currentEditor) closeEditor();
+          drawCameras();
         } catch (error) {
           if (editor === currentEditor) feedback.textContent = error.message || 'Не удалось сохранить настройки.';
         } finally {
@@ -249,40 +259,89 @@
     }
     return row;
   }
-  function render(result, preferences, points) {
-    connected = result.connected === true;
-    disconnect.hidden = !connected;
-    button.textContent = connected ? 'Заменить ключ' : 'Подключить Ivideon';
-    const items = result.cameras || [];
-    status.textContent = !connected ? 'Подключи Ivideon своим ключом API.' :
-      items.length ? 'Ivideon подключён к аккаунту.' : 'Ivideon подключён. Камер в аккаунте нет.';
-    if (connected && items.length && !points) status.textContent += ' Настройки камер временно недоступны.';
-    const byCamera = new Map(preferences.map(item => [item.camera_id,item]));
-    for (const camera of items) cameras.append(renderCamera(camera,byCamera.get(camera.id),points));
+  function drawCameras() {
+    const groups = new Map();
+    for (const item of cameraRows) {
+      const pointId = item.camera.pointId;
+      const byPoint = grouping.value === 'point';
+      const byAccount = grouping.value === 'account';
+      const key = byPoint ? pointId || '' : byAccount ? item.camera.connectionId || '' : '';
+      const label = byPoint ? item.points?.find(point => point.point_id === pointId)?.name || pointId || 'Без ПВЗ'
+        : byAccount ? item.camera.accountName : '';
+      if (!groups.has(key)) groups.set(key, {label, rows:[]});
+      groups.get(key).rows.push(item.row);
+    }
+    cameras.replaceChildren();
+    for (const {label, rows} of groups.values()) {
+      if (label) {
+        const heading = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = label;
+        heading.append(title);
+        cameras.append(heading);
+      }
+      cameras.append(...rows);
+    }
   }
-  async function updateConnection(action, key) {
+  grouping.addEventListener('change', () => {
+    drawCameras();
+    try { localStorage.setItem('edpvz-ivideon-group:' + accountId, grouping.value); } catch {}
+  });
+
+  const checkIvideon = (action, key, options) =>
+    window.EdPVZAccount.checkIvideon(key, undefined, undefined, action, options);
+
+  async function updateConnection(action, key, options) {
     const check = ++generation;
     if (!accountId) return;
     stopLive();
     button.disabled = disconnect.disabled = true;
-    status.textContent = action === 'disconnect' ? 'Отключаем Ivideon…' : 'Загружаем камеры…';
+    status.textContent = action === 'disconnect' ? 'Отключаем аккаунт…' : 'Загружаем камеры…';
     try {
-      const result = await window.EdPVZAccount.checkIvideon(key, undefined, undefined, action);
+      if (action !== 'load') await checkIvideon(action, key, options);
       if (check !== generation) return;
-      let preferences = [], points;
-      if (result.connected && result.cameras?.length) {
-        try {
-          const account = window.EdPVZAccount;
-          const id = encodeURIComponent(accountId);
-          [preferences,points] = await Promise.all([
-            account.readTable('edpvz_ivideon_camera_settings?select=camera_id,display_name,point_id&user_id=eq.' + id),
-            account.readTable('edpvz_points?select=point_id,name&order=name.asc&owner_id=eq.' + id),
-          ]);
-        } catch { /* Live streams stay available when settings cannot be read. */ }
+      const account = window.EdPVZAccount;
+      const id = encodeURIComponent(accountId);
+      const [directory, primary, settings, locations] = await Promise.allSettled([
+        checkIvideon('accounts'), checkIvideon('load'),
+        account.readTable('edpvz_ivideon_camera_settings?select=camera_id,display_name,point_id&user_id=eq.' + id),
+        account.readTable('edpvz_points?select=point_id,name&order=name.asc&owner_id=eq.' + id),
+      ]);
+      const extras = directory.value?.accounts || [];
+      const loaded = await Promise.allSettled(extras.map(entry => checkIvideon('load', undefined, {connectionId:entry.id})));
+      if (check !== generation) return;
+      const points = locations.value;
+      const byCamera = new Map((settings.value || []).map(item => [item.camera_id,item]));
+      const connections = [{label:'Основной аккаунт', result:primary}, ...extras.map((entry,index) => ({...entry,result:loaded[index]}))];
+      const seen = new Set();
+      cameraRows = [];
+      accountsBox.replaceChildren();
+      disconnect.hidden = !primary.value?.connected;
+      for (const entry of connections) {
+        if (entry.id) {
+          const control = makeButton('Отключить «' + entry.label + '»', () => {
+            if (confirm('Отключить аккаунт Ivideon «' + entry.label + '»?')) {
+              control.disabled = true;
+              void updateConnection('disconnect', undefined, {connectionId:entry.id}).finally(() => { control.disabled = false; });
+            }
+          });
+          accountsBox.append(control);
+        }
+        for (const item of entry.result.value?.cameras || []) {
+          if (!item.id || seen.has(item.id)) continue;
+          seen.add(item.id);
+          const camera = {...item, connectionId:entry.id, accountName:entry.label};
+          cameraRows.push({camera,points,row:renderCamera(camera,byCamera.get(camera.id),points)});
+        }
       }
-      if (check !== generation) return;
-      cameras.replaceChildren();
-      render(result, preferences, points);
+      connected = Boolean(primary.value?.connected || extras.length);
+      status.textContent = cameraRows.length ? 'Камер в общем списке: ' + cameraRows.length
+        : connected ? 'В подключённых аккаунтах нет доступных камер.' : 'Добавь аккаунт Ivideon с помощью ключа API.';
+      if (directory.status === 'rejected' || connections.some(entry => entry.result.status === 'rejected')) {
+        status.textContent += ' Часть подключений не удалось загрузить.';
+      }
+      drawCameras();
+      if (action === 'add') accountLabel.value = '';
     } catch (error) {
       if (check === generation) status.textContent = error.message || 'Не удалось подключить Ivideon.';
     } finally {
@@ -294,13 +353,17 @@
     if (nextId === accountId) return;
     accountId = nextId;
     generation++;
+    cameraRows = [];
+    accountsBox.replaceChildren();
+    grouping.value = 'flat';
+    try { grouping.value = localStorage.getItem('edpvz-ivideon-group:' + nextId) || 'flat'; } catch {}
     stopLive();
     form.reset();
     status.textContent = '';
     cameras.replaceChildren();
     connected = false;
     disconnect.hidden = true;
-    button.textContent = 'Подключить Ivideon';
+    button.textContent = 'Добавить аккаунт';
     button.disabled = disconnect.disabled = false;
     if (nextId) void updateConnection('load');
   }
@@ -313,7 +376,8 @@
       return;
     }
     input.value = '';
-    void updateConnection('save', key);
+    const label = accountLabel.value.trim() || 'Аккаунт Ivideon';
+    void updateConnection('add', key, {accountLabel:label});
   });
   disconnect.addEventListener('click', () => void updateConnection('disconnect'));
   syncAccount();
