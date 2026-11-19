@@ -32,7 +32,7 @@
   </div>
 </section>
 <main data-surveillance-private="ivideon" hidden>
-  <nav aria-label="Навигация"><a href="./">← Видеонаблюдение</a><a href="../cameras/">Настройка камер</a></nav>
+  <nav aria-label="Навигация"><a href="./">← Видеонаблюдение</a><a href="../cameras/">Настройка камер</a><a href="./#cloud-settings">Облачные диски</a></nav>
   <header><div><h1>Ivideon</h1><p>Видеонаблюдение твоих ПВЗ</p></div></header>
   <section class="panel" aria-labelledby="ivideon-access">
     <h2 id="ivideon-access">Камеры и архив</h2>
@@ -85,7 +85,7 @@
   </section>
 </main>
 <script type="module">
-  import {createArchiveStudio} from './archive-studio.mjs?v=15';
+  import {createArchiveStudio} from './archive-studio.mjs?v=16';
   import {playIvideon, playIvideonHls} from './ivideon-live.mjs?v=9';
   const live = document.getElementById('ivideon-live');
   const video = document.getElementById('ivideon-live-video');
