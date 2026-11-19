@@ -1,4 +1,4 @@
-const WORKER = 'https://edpvz-telegram-collector.onrender.com';
+const WORKER = 'https://edpvz-archive.onrender.com';
 const $ = (node, query) => node.querySelector(query);
 const stamp = seconds => new Date(seconds * 1000).toLocaleString('ru-RU');
 const duration = seconds => {
