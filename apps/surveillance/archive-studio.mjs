@@ -25,7 +25,7 @@ export function createArchiveStudio(options) {
     <div class="as-inputs">
       <label>Начало<input class="as-start" type="datetime-local" step="1"></label>
       <label>Конец<input class="as-end" type="datetime-local" step="1"></label>
-      <label>Качество просмотра<select class="as-profile"><option value="auto">Автоматически</option><option value="high">Основной поток</option><option value="low">Дополнительный поток</option></select></label>
+      <label>Качество просмотра<select class="as-profile"><option value="auto">До 720p</option><option value="high">Исходное разрешение</option><option value="low">Экономное · до 480p</option></select></label>
     </div>
     <details class="as-day"><summary>Выбрать на шкале дня</summary>
       <label>День<input class="as-date" type="date"></label>
@@ -34,7 +34,7 @@ export function createArchiveStudio(options) {
     </details>
     <p class="as-note">Шкала задаёт время запроса. Наличие записи зависит от архива камеры. Большой интервал можно добавить в очередь целиком.</p>
     <div class="as-actions"><button class="primary as-preview">Просмотреть</button><button class="secondary as-mark-start">Начало по текущему кадру</button><button class="secondary as-mark-end">Конец по текущему кадру</button><button class="secondary as-frame">Сохранить кадр</button></div>
-    <div class="as-inputs"><label>Название фрагмента<input class="as-name" maxlength="100" placeholder="Например, Отказ клиента"></label><label>Качество файла<select class="as-output"><option value="source">Разрешение выбранного потока</option><option value="1080">До 1080p</option><option value="720">До 720p</option><option value="480">До 480p</option></select></label></div>
+    <div class="as-inputs"><label>Название фрагмента<input class="as-name" maxlength="100" placeholder="Например, Отказ клиента"></label><label>Качество файла<select class="as-output"><option value="source">Исходное разрешение</option><option value="1080">До 1080p</option><option value="720">До 720p</option><option value="480">До 480p</option></select></label></div>
     <div class="as-actions"><button class="primary as-add">Добавить фрагмент</button></div>
     <p class="as-feedback" role="status"></p>
     <h3>Фрагменты к подготовке</h3><div class="as-clips"></div>
@@ -102,36 +102,16 @@ export function createArchiveStudio(options) {
     playback?.(); playback = undefined;
   }
   async function preview() {
-    if (!camera) return;
-    const {start,end} = interval();
-    const active = ++generation;
-    stop(); stopPlayback();
-    status.textContent = 'Загружаем запись…';
-    const chosen={...camera};
-    let fallbackStarted=false;
-    async function compatiblePreview() {
-      if(fallbackStarted||active!==generation)return;
-      fallbackStarted=true;stop();
-      await ensureWorker();
-      status.textContent='Готовим совместимый MP4 для просмотра…';
-      const job=await request('/jobs',{clips:[{cameraId:chosen.id,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('profile').value==='low'?'480':get('profile').value==='high'?'source':'720',profile:get('profile').value,requestId:crypto.randomUUID()});
-      if(active!==generation)return;
-      job.previewGeneration=active;jobs.unshift(job);persist();drawJobs();schedule();
-    }
-    if(end-start>3600){await compatiblePreview();return;}
-    try {
-      const result = await account().checkIvideon(undefined,chosen.id,undefined,'load',{start,end,profile:get('profile').value});
-      if (active !== generation) return;
-      previewStart = start; previewBase = 0;
-      liveName.textContent = chosen.displayName || chosen.name;
-      playback = playHls(video,result.streamUrl,(message,meta={}) => {
-        if (active !== generation)return;
-        status.textContent = message || ('Архив · '+stamp(start));
-        if(message&&!meta.started)void compatiblePreview().catch(error=>{if(active===generation)status.textContent=error.message;});
-      });
-    } catch(error) {
-      if(active===generation)await compatiblePreview();
-    }
+    if(!camera)return;
+    if(!loaded)throw Error('Подожди загрузки сохранённых фрагментов.');
+    const {start,end}=interval();
+    const active=++generation,chosen={...camera},owner=user;
+    stop();stopPlayback();await ensureWorker();
+    status.textContent='Подготавливаем видео для просмотра…';
+    const job=await request('/jobs',{clips:[{cameraId:chosen.id,cameraName:chosen.displayName||chosen.name,start,end,name:'Просмотр '+(chosen.displayName||chosen.name)}],quality:get('profile').value==='low'?'480':get('profile').value==='high'?'source':'720',profile:get('profile').value,requestId:crypto.randomUUID()});
+    if(owner!==user)return;
+    if(active===generation)job.previewGeneration=active;
+    jobs.unshift(job);persist();drawJobs();schedule();
   }
   video.addEventListener('loadedmetadata',() => {
     if (previewStart !== undefined) previewBase = video.seekable.length ? video.seekable.start(0) : 0;
@@ -220,7 +200,7 @@ export function createArchiveStudio(options) {
   async function showFile(job,file) {
     const result=await fileLink(job,file);
     stop();stopPlayback();previewStart=file.sourceStart;previewBase=0;
-    if(file.cameraId){camera={id:file.cameraId,name:file.name};get('start').value=dateValue(file.sourceStart);get('end').value=dateValue(file.sourceStart+Math.floor(file.duration));syncTimeline();}
+    if(file.cameraId){camera={id:file.cameraId,name:file.cameraName||file.name};get('start').value=dateValue(file.sourceStart);get('end').value=dateValue(file.sourceStart+Math.floor(file.duration));syncTimeline();}
     video.crossOrigin='anonymous';video.src=result.url;video.load();video.play().catch(()=>{});
     liveName.textContent=file.name;
     status.textContent='Готовый файл. Можно отметить начало и конец следующего фрагмента.';
@@ -242,7 +222,7 @@ export function createArchiveStudio(options) {
         actions.append(button('Переименовать',()=>rename(job,file)),button('Скачать в загрузки',()=>saveFile(job,file,false)),button('Выбрать место сохранения',()=>saveFile(job,file,true)));
         if(!file.mime) actions.append(button('Посмотреть',()=>showFile(job,file)),button('Кадр из файла',async()=>{
           if(!video.videoWidth||liveName.textContent!==file.name)throw Error('Сначала нажми «Посмотреть» и выбери кадр.');
-          await request('/jobs/'+job.id+'/file/'+file.id+'/frame',{second:video.currentTime});
+          await request('/jobs/'+job.id+'/file/'+file.id+'/frame',{second:Math.min(video.currentTime,Math.max(0,file.duration-1/(file.fps||25)))});
           Object.assign(job,await request('/jobs/'+job.id));drawJobs();
         }));
         if(config?.yandex?.connected)actions.append(button('На Яндекс Диск',()=>cloudSave(job,file,'yandex')));
@@ -315,3 +295,4 @@ export function createArchiveStudio(options) {
     reset(){generation++;stop();live.appendChild(video);camera=undefined;previewStart=undefined;root.hidden=true;},
   };
 }
+

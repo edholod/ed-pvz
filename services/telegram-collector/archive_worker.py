@@ -10,6 +10,8 @@ import re
 import secrets
 import shutil
 import time
+import urllib.request
+import urllib.error
 from pathlib import Path
 from urllib.parse import urlparse, urljoin
 
@@ -125,33 +127,44 @@ async def probe(path, job):
 
 
 async def download_source(url,path,job):
+    class SafeRedirect(urllib.request.HTTPRedirectHandler):
+        max_redirections=5
+        def redirect_request(self, request, fp, code, message, headers, newurl):
+            return super().redirect_request(request,fp,code,message,headers,media_url(newurl))
+    def transfer():
+        request=urllib.request.Request(media_url(url),headers={'Range':'bytes=0-','Accept-Encoding':'identity'})
+        opener=urllib.request.build_opener(SafeRedirect())
+        try:
+            with opener.open(request,timeout=45) as response:
+                media_url(response.geturl())
+                if response.status not in (200,206):
+                    raise RuntimeError('Ivideon не передал исходный файл.')
+                if response.status==206 and not response.headers.get('Content-Range','').startswith('bytes 0-'):
+                    raise RuntimeError('Ivideon вернул неправильную часть файла.')
+                raw_size=response.headers.get('Content-Length','')
+                expected=int(raw_size) if raw_size.isdigit() else None
+                received=0
+                with path.open('wb') as output:
+                    while True:
+                        if job.get('cancelled'):
+                            raise RuntimeError('Подготовка отменена.')
+                        if shutil.disk_usage(ROOT).free<128*1024*1024:
+                            raise RuntimeError('На сервере недостаточно места для записи.')
+                        block=response.read(64*1024)
+                        if not block:break
+                        output.write(block);received+=len(block)
+                        job['message']='Получаем запись: '+str(round(received/1024))+' КБ'+(' из '+str(round(expected/1024))+' КБ' if expected else '')
+                if received<1000 or (expected is not None and received!=expected):
+                    raise RuntimeError('Исходный файл передан не полностью. Повтори подготовку.')
+                print('archive-source received='+str(received),flush=True)
+                return str(path)
+        except urllib.error.HTTPError as error:
+            raise RuntimeError('Ivideon отклонил скачивание файла (HTTP '+str(error.code)+').') from None
+        except (urllib.error.URLError,TimeoutError):
+            raise RuntimeError('Не удалось получить исходный файл Ivideon. Повтори подготовку.') from None
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(180,read=45),follow_redirects=False) as client:
-            for hop in range(5):
-                async with client.stream('GET',url,headers={'Range':'bytes=0-','Accept-Encoding':'identity'}) as response:
-                    if response.status_code in (301,302,303,307,308):
-                        url=media_url(urljoin(url,response.headers.get('location','')))
-                        continue
-                    if response.status_code not in (200,206):
-                        raise RuntimeError('Не удалось скачать исходный MP4 из Ivideon.')
-                    if response.status_code==206 and not response.headers.get('content-range','').startswith('bytes 0-'):
-                        raise RuntimeError('Ivideon вернул неправильную часть файла.')
-                    print('archive-source host='+str(urlparse(url).hostname)+' status='+str(response.status_code)+' expected='+response.headers.get('content-length','unknown')+' range='+response.headers.get('content-range','none'),flush=True)
-                    with path.open('wb') as output:
-                        async for block in response.aiter_bytes(1024):
-                            if job.get('cancelled'):
-                                raise RuntimeError('Подготовка отменена.')
-                            if shutil.disk_usage(ROOT).free < 128*1024*1024:
-                                raise RuntimeError('На сервере недостаточно места для записи.')
-                            output.write(block)
-                            job['message']='Получаем исходную запись: '+str(round(output.tell()/1024))+' КБ'
-                    print('archive-source received='+str(path.stat().st_size),flush=True)
-                    if path.stat().st_size<1000:
-                        raise RuntimeError('Ivideon вернул пустой файл.')
-                    return str(path)
-            raise RuntimeError('Слишком много перенаправлений видеосервера.')
+        return await asyncio.to_thread(transfer)
     except Exception:
-        print('archive-source aborted bytes='+str(path.stat().st_size if path.exists() else 0),flush=True)
         path.unlink(missing_ok=True)
         raise
 
@@ -200,57 +213,30 @@ async def run(job):
                     start, end = pending.pop(0)
                     if shutil.disk_usage(ROOT).free < 256 * 1024 * 1024:
                         raise RuntimeError('На сервере недостаточно места. Скачай готовые файлы и повтори позже.')
-                    url = None
-                    if not job.get('use_export'):
-                        try:
-                            result = await edge(job, {'action':'load', 'cameraId':clip['cameraId'], 'quality': 'hls', 'archive':{'start':start, 'end':end, 'profile':job['profile']}})
-                            url = media_url(result['streamUrl'])
-                        except RuntimeError:
-                            pass
-                    path = folder / ('part-' + str(index) + '-' + str(start) + '.mp4')
-                    args = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y', '-rw_timeout', '30000000', '-protocol_whitelist', 'https,http,tls,tcp,crypto', '-allowed_extensions', 'ALL', '-live_start_index', '0', '-prefer_x_start', '1', '-filter_threads', '1', '-threads', '1', '-i', url or '', '-map', '0:v:0', '-map', '0:a:0?', '-t', str(end-start), '-threads', '1']
-                    target = PROFILES[job['quality']]
-                    if width:
-                        args += ['-vf', f'setpts=PTS-STARTPTS,scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
-                    elif target:
-                        args += ['-vf', f"setpts=PTS-STARTPTS,scale=-2:'min({target},ih)',setsar=1"]
-                    if not width and not target:args += ['-vf','setpts=PTS-STARTPTS,setsar=1']
-                    args += ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '19', '-pix_fmt', 'yuv420p', '-fps_mode', 'passthrough', '-c:a', 'aac', '-ar', '48000', '-af', 'asetpts=PTS-STARTPTS,aresample=async=1:first_pts=0', '-movflags', '+faststart', str(path)]
+                    path=folder/('part-'+str(index)+'-'+str(start)+'.mp4')
+                    source=folder/('source-'+str(index)+'-'+str(start)+'.mp4')
                     try:
+                        job['message']='Получаем архивный файл Ivideon'
+                        source_url=await export_source(job,clip,start,end)
+                        await download_source(source_url,source,job)
+                        args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-i',str(source),'-map','0:v:0','-map','0:a:0?','-t',str(end-start),'-threads','1']
+                        target=PROFILES[job['quality']]
+                        if width:
+                            args+=['-vf',f'scale={width[0]}:{width[1]}:force_original_aspect_ratio=decrease,pad={width[0]}:{width[1]}:(ow-iw)/2:(oh-ih)/2,setsar=1']
+                        elif target:
+                            args+=['-vf',f"scale=-2:'min({target},ih)',setsar=1"]
+                        args+=['-c:v','libx264','-preset','veryfast','-crf','19','-pix_fmt','yuv420p','-fps_mode','passthrough','-video_track_timescale','90000','-c:a','aac','-ar','48000','-af','aresample=async=1:first_pts=0','-movflags','+faststart',str(path)]
+                        job['message']='Обрабатываем архивный файл'
                         try:
-                            if job.get('use_export') or not url:
-                                raise RuntimeError('Используется совместимый экспорт.')
-                            await process(args, job)
-                        except RuntimeError:
-                            if job.get('cancelled'):
-                                raise
-                            job['message']='Получаем совместимую запись от Ivideon'
-                            source_url=await export_source(job,clip,start,end)
-                            local_source=True
-                            try:
-                                exported=await download_source(source_url,folder/('source-'+str(index)+'-'+str(start)+'.mp4'),job)
-                            except (httpx.TimeoutException,httpx.RemoteProtocolError):
-                                exported=source_url;local_source=False
-                                print('archive-source using direct decoder',flush=True)
-                            job['use_export']=True
-                            fallback=args[:]
-                            fallback[fallback.index('-i')+1]=exported
-                            for option in ('-allowed_extensions','-live_start_index','-prefer_x_start'):
-                                at=fallback.index(option);del fallback[at:at+2]
-                            if local_source:
-                                at=fallback.index('-protocol_whitelist');del fallback[at:at+2]
-                            job['message']='Обрабатываем совместимую запись'
-                            try:
-                                await process(fallback,job)
-                            finally:
-                                if local_source:Path(exported).unlink(missing_ok=True)
-                        duration, fps, w, h = await probe(path, job)
-                        print('archive-piece duration='+str(duration)+' expected='+str(end-start)+' fps='+str(fps),flush=True)
+                            await process(args,job)
+                        finally:
+                            source.unlink(missing_ok=True)
+                        duration,fps,w,h=await probe(path,job)
                         await verify_frames(path,job,fps)
-                        if abs(duration - (end-start)) > max(.25, 2/fps):
-                            raise RuntimeError('Получено '+str(round(duration,3))+' с вместо '+str(end-start)+' с. В этом интервале нет непрерывной записи либо поток обрывается.')
+                        if abs(duration-(end-start))>max(.05,2/fps):
+                            raise RuntimeError('Длительность записи не совпадает с выбранным интервалом. В архиве может быть пропуск.')
                     except RuntimeError:
-                        path.unlink(missing_ok=True)
+                        path.unlink(missing_ok=True);source.unlink(missing_ok=True)
                         if end-start > 60 and not job.get('cancelled'):
                             middle = (start+end)//2
                             pending[0:0] = [(start,middle),(middle,end)]
@@ -270,9 +256,9 @@ async def run(job):
                     await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',str(manifest),'-map','0','-c','copy','-movflags','+faststart',str(output)],job)
                 duration, fps, w, h = await probe(output,job)
                 await verify_frames(output,job,fps)
-                if abs(duration-(clip['end']-clip['start'])) > max(.3, 2/fps):
+                if abs(duration-(clip['end']-clip['start'])) > max(.05,2/fps):
                     raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
-                job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':duration,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'sourceStart':clip['start']})
+                job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':clip['end']-clip['start'],'measuredDuration':duration,'fps':fps,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'cameraName':clip.get('cameraName','Камера'),'sourceStart':clip['start']})
                 for part in pieces:
                     part.unlink(missing_ok=True)
             job.update(state='ready',progress=100,message='Файлы готовы')
@@ -326,7 +312,7 @@ async def create(request: Request):
         start,end = clip.get('start'),clip.get('end')
         if type(start) is not int or type(end) is not int or not 0 < start < end <= now:
             raise HTTPException(400,'Укажи существующий интервал архива.')
-        normalized.append({'cameraId':clip['cameraId'],'start':start,'end':end,'name':clean_name(clip.get('name','Запись'))})
+        normalized.append({'cameraId':clip['cameraId'],'start':start,'end':end,'name':clean_name(clip.get('name','Запись')),'cameraName':str(clip.get('cameraName','Камера')).strip()[:200]})
     expire()
     request_id = data.get('requestId')
     if not isinstance(request_id,str) or not re.fullmatch(r'[a-zA-Z0-9-]{10,80}',request_id):
@@ -622,3 +608,4 @@ async def frame(job_id:str,file_id:str,request:Request):
     frame_id = 'frame-' + secrets.token_hex(8)
     job['files'].append({'id':frame_id,'path':str(output),'cameraId':item.get('cameraId'),'sourceStart':item.get('sourceStart',0)+int(second),'name':Path(item['name']).stem+'.jpg','size':output.stat().st_size,'duration':0,'width':item['width'],'height':item['height'],'mime':'image/jpeg'})
     return {'id':frame_id,'name':job['files'][-1]['name']}
+
