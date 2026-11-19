@@ -912,7 +912,52 @@ async def upload_cloud(provider,token,path,name,mime):
             parsed = urlparse(href)
             if response.status_code != 200 or parsed.scheme!='https' or parsed.hostname not in ('www.googleapis.com','content.googleapis.com'):
                 raise HTTPException(502,'Google Диск не создал загрузку.')
-            response = await client.put(href,headers={'Content-Length':str(size),'Content-Type':mime},content=file_bytes())
+            # Google resumable sessions accept aligned chunks and return 308 until complete.
+            # A single streaming PUT times out on long surveillance recordings.
+            chunk_size = 8 * 1024 * 1024
+            offset = 0
+            with open(path,'rb') as source:
+                while offset < size:
+                    source.seek(offset)
+                    chunk = source.read(min(chunk_size,size-offset))
+                    if not chunk:
+                        raise HTTPException(502,'Не удалось прочитать видео для Google Диска.')
+                    end = offset + len(chunk) - 1
+                    chunk_headers = {
+                        'Content-Type':mime,
+                        'Content-Length':str(len(chunk)),
+                        'Content-Range':f'bytes {offset}-{end}/{size}'
+                    }
+                    for attempt in range(4):
+                        try:
+                            response = await client.put(href,headers=chunk_headers,content=chunk)
+                        except httpx.HTTPError:
+                            if attempt == 3:
+                                raise HTTPException(502,'Прервалась загрузка на Google Диск.')
+                            await asyncio.sleep(min(2 ** attempt,8))
+                            continue
+                        if response.status_code in (200,201):
+                            break
+                        if response.status_code == 308:
+                            confirmed = response.headers.get('range','')
+                            if confirmed:
+                                try:
+                                    offset = int(confirmed.rsplit('-',1)[1]) + 1
+                                except (ValueError,IndexError):
+                                    raise HTTPException(502,'Google Диск вернул неверный диапазон.')
+                            else:
+                                offset = end + 1
+                            break
+                        if response.status_code in (429,500,502,503,504) and attempt < 3:
+                            await asyncio.sleep(min(2 ** attempt,8))
+                            continue
+                        raise HTTPException(502,'Google Диск отклонил загрузку видео.')
+                    if response.status_code in (200,201):
+                        break
+                    if offset <= end and response.status_code != 308:
+                        raise HTTPException(502,'Не удалось продолжить загрузку Google Диска.')
+            if size == 0:
+                raise HTTPException(400,'Пустой видеофайл.')
         if response.status_code not in (200,201,202):
             raise HTTPException(502,'Диск не подтвердил сохранение файла. Проверь свободное место.')
     return {'saved':True}
