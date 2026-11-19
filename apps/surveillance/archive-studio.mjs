@@ -43,6 +43,7 @@ export function createArchiveStudio(options) {
     <p class="as-note">Длинная запись обрабатывается частями и склеивается на сервере. При пробеле или несовпадении длительности появится ошибка. Пониженное разрешение не увеличивает детализацию исходной записи.</p>
     <h3>Готовые файлы и задания</h3><div class="as-jobs"></div>
     <p class="as-note">Готовые файлы временно хранятся до 24 часов. Перезапуск сервера может удалить временные файлы — в этом случае подготовь их заново.</p>
+    <div class="as-actions"><button type="button" class="secondary as-save-yandex" hidden>Сохранить выбранный интервал на Яндекс Диск</button></div>
     <details><summary>Яндекс Диск и Google Диск</summary><div class="as-cloud"></div><p class="as-cloud-status" role="status"></p></details>`;
   live.insertBefore(root, video);
   const get = name => $(root, '.as-' + name);
@@ -386,9 +387,26 @@ export function createArchiveStudio(options) {
       drawJobs();schedule();
     },4000);
   }
+  get('save-yandex').addEventListener('click', async()=>{
+    const control=get('save-yandex');
+    control.disabled=true;
+    try {
+      if (!camera || !loaded) throw Error('Выбери камеру и дождись загрузки архива.');
+      const range=interval(), owner=user, cameraName=camera.displayName||camera.name;
+      const job=await request('/jobs',{
+        clips:[{cameraId:camera.id,cameraName,...range,name:get('name').value.trim()||cameraName+' '+stamp(range.start)}],
+        quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID(),saveToYandex:true
+      });
+      if(owner!==user)return;
+      jobs.unshift(job);persist();drawJobs();schedule();
+      feedback('Задание принято. Сервер сохранит видео прямо на Яндекс Диск.');
+    } catch(error){feedback(error.message);}
+    finally{control.disabled=false;}
+  });
   async function clouds() {
     try {
       config=await request('/cloud');get('cloud-status').textContent='';
+      get('save-yandex').hidden=!(config?.yandex?.configured && config.yandex.connected);
       const box=get('cloud');box.replaceChildren();
       for(const provider of ['yandex','google']) {
         const cloud=config[provider];const name=provider==='yandex'?'Яндекс Диск':'Google Диск';

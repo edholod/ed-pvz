@@ -420,7 +420,13 @@ async def run(job):
                 if abs(duration-(clip['end']-clip['start'])) > max(.05,2/fps):
                     raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
                 job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':clip['end']-clip['start'],'measuredDuration':duration,'fps':fps,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'cameraName':clip.get('cameraName','Камера'),'sourceStart':clip['start']})
-                if DISK_TOKEN:
+                if job.get('saveToYandex'):
+                    job['message'] = 'Сохраняем запись на твой Яндекс Диск'
+                    token = await cloud_token('yandex',job['user'],job['headers'])
+                    await save_to_owner_disk(job['files'][-1],token)
+                    job['files'].pop()
+                    output.unlink()
+                elif DISK_TOKEN:
                     job['message'] = 'Сохраняем готовый MP4 на Яндекс Диск'
                     item = job['files'][-1]
                     item['diskKey'] = await store_archive(output, job['id'], index)
@@ -428,7 +434,7 @@ async def run(job):
                     output.unlink()
                 for part in pieces:
                     part.unlink(missing_ok=True)
-            job.update(state='ready',progress=100,message='Файлы готовы')
+            job.update(state='ready',progress=100,message='Видео сохранено на твоём Яндекс Диске' if job.get('saveToYandex') else 'Файлы готовы')
         except Exception as exc:
             print('archive-job failed type='+type(exc).__name__,flush=True)
             job.update(state='cancelled' if job.get('cancelled') else 'failed',message=str(exc) if isinstance(exc,RuntimeError) else 'Подготовка прервана. Повтори запрос.')
@@ -493,7 +499,14 @@ async def create(request: Request):
         raise HTTPException(409,'Уже готовятся два запроса. Дождись завершения или отмени один.')
     if len([j for j in JOBS.values() if j['state'] in ('queued','processing')]) >= 10:
         raise HTTPException(429,'Сервер занят подготовкой записей. Повтори позже.')
-    job = {'id':secrets.token_urlsafe(18),'user':user,'headers':headers,'clips':normalized,'quality':data['quality'],'profile':data['profile'],'requestId':request_id,'state':'queued','message':'Ожидание обработки','progress':0,'files':[],'created':time.time()}
+    save_to_yandex = data.get('saveToYandex') is True
+    if save_to_yandex:
+        if len(normalized) != 1:
+            raise HTTPException(400, 'Выбери один интервал для сохранения на Диск.')
+        if not all(cloud_config('yandex')):
+            raise HTTPException(503, 'Подключение Яндекс Диска ещё не настроено.')
+        await cloud_token('yandex',user,headers)
+    job = {'id':secrets.token_urlsafe(18),'user':user,'headers':headers,'clips':normalized,'saveToYandex':save_to_yandex,'quality':data['quality'],'profile':data['profile'],'requestId':request_id,'state':'queued','message':'Ожидание обработки','progress':0,'files':[],'created':time.time()}
     JOBS[job['id']] = job
     task = asyncio.create_task(run(job))
     TASKS.add(task)
