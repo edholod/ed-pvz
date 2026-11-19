@@ -425,7 +425,7 @@ async def cleanup_checkpoints(job):
         for record in records:
             key=record.get('diskKey','')
             expected='app:/edpvz-checkpoint-' + job['id'] + '-'
-            if not key.startswith(expected) or not re.fullmatch(r'app:/edpvz-checkpoint-[A-Za-z0-9_-]+-[0-9]+-[0-9]+\\.mp4',key):
+            if not key.startswith(expected) or not re.fullmatch(r'app:/edpvz-checkpoint-[A-Za-z0-9_-]+-[0-9]+-[0-9]+\.mp4',key):
                 remaining.append(record)
                 continue
             try:
