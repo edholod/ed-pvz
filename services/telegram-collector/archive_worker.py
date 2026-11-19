@@ -133,7 +133,7 @@ async def download_source(url,path,job):
         def redirect_request(self, request, fp, code, message, headers, newurl):
             return super().redirect_request(request,fp,code,message,headers,media_url(newurl))
     def transfer():
-        request=urllib.request.Request(media_url(url),headers={'Range':'bytes=0-','Accept-Encoding':'identity'})
+        request=urllib.request.Request(media_url(url),headers={'Accept-Encoding':'identity'})
         opener=urllib.request.build_opener(SafeRedirect())
         try:
             with opener.open(request,timeout=45) as response:
@@ -168,11 +168,12 @@ async def download_source(url,path,job):
     try:
         try:
             async with httpx.AsyncClient(http2=True,follow_redirects=True,max_redirects=5,timeout=httpx.Timeout(90,read=20),event_hooks={'request':[validate_request]}) as client:
-                async with client.stream('GET',url,headers={'Range':'bytes=0-','Accept-Encoding':'identity'}) as response:
+                async with client.stream('GET',url,headers={'Accept-Encoding':'identity'}) as response:
                     if response.status_code not in (200,206):
                         raise RuntimeError('Ivideon отклонил скачивание файла (HTTP '+str(response.status_code)+').')
                     if response.status_code==206 and not response.headers.get('content-range','').startswith('bytes 0-'):
                         raise RuntimeError('Ivideon вернул неправильную часть файла.')
+                    print('archive-transfer headers status='+str(response.status_code)+' protocol='+response.http_version,flush=True)
                     size=response.headers.get('content-length','');expected=int(size) if size.isdigit() else None
                     received=0
                     with path.open('wb') as output:
@@ -184,7 +185,8 @@ async def download_source(url,path,job):
                     if received<1000 or (expected is not None and received!=expected):raise RuntimeError('Исходный файл передан не полностью.')
                     print('archive-source protocol='+response.http_version+' received='+str(received),flush=True)
                     return str(path)
-        except (ImportError,httpx.TransportError):
+        except (ImportError,httpx.TransportError) as error:
+            print('archive-transfer fallback type='+type(error).__name__,flush=True)
             path.unlink(missing_ok=True)
             return await asyncio.to_thread(transfer)
     except Exception:
