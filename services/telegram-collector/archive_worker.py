@@ -144,6 +144,34 @@ async def probe(path, job):
     return float(video.get('duration') or info['format']['duration']), max(rate, 1), video['width'], video['height']
 
 
+async def download_hls_source(job,clip,start,end,path):
+    """Use Ivideon's independent archive_stream/HLS API if MP4 export stalls."""
+    job['message']='Экспорт MP4 недоступен. Получаем запись через архивный видеопоток Ivideon'
+    result=await edge(job,{'action':'load','cameraId':clip['cameraId'],
+                           'archive':{'start':start,'end':end,'profile':job.get('profile','high')}})
+    stream=result.get('streamUrl','')
+    if result.get('streamType')!='hls' or not stream:
+        raise RuntimeError('Ivideon не предоставил альтернативный архивный поток.')
+    parsed=urlparse(stream)
+    if parsed.scheme!='https' or (parsed.hostname!=urlparse(BASE).hostname and not any(parsed.hostname==d or parsed.hostname.endswith('.'+d) for d in ('ivideon.com','iv-cdn.com','extcam.com'))):
+        raise RuntimeError('Некорректный адрес архивного потока Ivideon.')
+    path.unlink(missing_ok=True)
+    # ffmpeg demuxes HLS segments and remuxes without re-encoding; normal
+    # downstream frame/duration validation is retained.
+    args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y',
+          '-rw_timeout','30000000','-protocol_whitelist','file,http,https,tcp,tls,crypto',
+          '-i',stream,'-t',str(end-start),'-map','0:v:0','-map','0:a:0?',
+          '-c','copy','-movflags','+faststart',str(path)]
+    try:
+        await process(args,job,timeout=min(900,max(120,(end-start)*3)))
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
+    if not path.is_file() or path.stat().st_size<1000:
+        raise RuntimeError('Архивный поток Ivideon не вернул видео.')
+    return str(path)
+
+
 async def download_source(url,path,job):
     """Resume a stalled export at the last confirmed byte, without discarding progress."""
     url=media_url(url)
@@ -156,7 +184,7 @@ async def download_source(url,path,job):
     async with httpx.AsyncClient(http2=False,follow_redirects=True,max_redirects=5,
                                   timeout=httpx.Timeout(120,connect=25,read=35,write=35,pool=25),
                                   event_hooks={'request':[validate_redirect]}) as client:
-        while time.monotonic()<deadline and attempts<18:
+        while time.monotonic()<deadline and attempts<3:
             if job.get('cancelled'):
                 raise RuntimeError('Подготовка отменена.')
             if shutil.disk_usage(ROOT).free<128*1024*1024:
@@ -171,7 +199,7 @@ async def download_source(url,path,job):
                         raise RuntimeError('Ivideon отказал в передаче видео (HTTP '+str(response.status_code)+').')
                     content_range=response.headers.get('content-range','')
                     if offset:
-                        match=re.fullmatch(r'bytes (\\d+)-(\\d+)/(\\d+)',content_range)
+                        match=re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)',content_range)
                         if response.status_code!=206 or not match or int(match[1])!=offset:
                             raise RuntimeError('Ivideon не поддерживает возобновление скачивания. Уже полученные байты сохранены.')
                         if expected is not None and int(match[3])!=expected:
@@ -546,7 +574,13 @@ async def run(job):
                     try:
                         job['message']='Запрашиваем запись у Ivideon'
                         source_url=await export_source(job,clip,start,end)
-                        await download_source(source_url,source,job)
+                        try:
+                            await download_source(source_url,source,job)
+                        except RuntimeError as mp4_error:
+                            if job.get('cancelled'):
+                                raise
+                            print('archive mp4 unavailable, trying HLS fallback type='+type(mp4_error).__name__,flush=True)
+                            await download_hls_source(job,clip,start,end,source)
                         original_duration,original_fps,_,_=await probe(source,job)
                         if original_duration < end-start-max(.15,2/original_fps):
                             print(f'archive-export duration mismatch requested={end-start:.3f} received={original_duration:.3f} fps={original_fps:.3f}', flush=True)
