@@ -379,7 +379,8 @@ async def run(job):
                         await download_source(source_url,source,job)
                         original_duration,original_fps,_,_=await probe(source,job)
                         if abs(original_duration-(end-start))>max(.15,2/original_fps):
-                            raise RuntimeError('Ivideon вернул запись с другими границами времени. Точная склейка этого участка пока недоступна; файл не выдан.')
+                            print(f'archive-export duration mismatch requested={end-start:.3f} received={original_duration:.3f} fps={original_fps:.3f}', flush=True)
+                            raise RuntimeError(f'Ivideon вернул {original_duration:.2f} с видео на запрос {end-start} с. Файл не сохранён: границы записи не подтверждены.')
                         args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-xerror','-err_detect','explode','-i',str(source),'-map','0:v:0','-map','0:a:0?','-t',str(end-start),'-threads','1']
                         target=PROFILES[job['quality']]
                         if width:
