@@ -153,7 +153,7 @@ async def download_source(url,path,job):
         request=urllib.request.Request(media_url(url),headers={'Accept-Encoding':'identity'})
         opener=urllib.request.build_opener(SafeRedirect())
         try:
-            with opener.open(request,timeout=45) as response:
+            with opener.open(request,timeout=90) as response:
                 media_url(response.geturl())
                 if response.status not in (200,206):
                     raise RuntimeError('Ivideon не передал исходный файл.')
@@ -189,7 +189,7 @@ async def download_source(url,path,job):
                     raise RuntimeError('Подготовка отменена.')
                 if shutil.disk_usage(ROOT).free < 128 * 1024 * 1024:
                     raise RuntimeError('На сервере недостаточно места.')
-                last = offset + 65535
+                last = offset + (4 * 1024 * 1024) - 1
                 async with client.stream('GET', url, headers={
                     'Range': f'bytes={offset}-{last}', 'Accept-Encoding': 'identity'
                 }) as response:
@@ -218,7 +218,7 @@ async def download_source(url,path,job):
         media_url(str(request.url))
     try:
         try:
-            async with httpx.AsyncClient(http2=True,follow_redirects=True,max_redirects=5,timeout=httpx.Timeout(90,read=20),event_hooks={'request':[validate_request]}) as client:
+            async with httpx.AsyncClient(http2=True,follow_redirects=True,max_redirects=5,timeout=httpx.Timeout(180,connect=30,read=90,write=90,pool=30),event_hooks={'request':[validate_request]}) as client:
                 async with client.stream('GET',url,headers={'Accept-Encoding':'identity'}) as response:
                     if response.status_code not in (200,206):
                         raise RuntimeError('Ivideon отклонил скачивание файла (HTTP '+str(response.status_code)+').')
@@ -238,12 +238,14 @@ async def download_source(url,path,job):
                     return str(path)
         except (ImportError,httpx.TransportError) as error:
             print('archive-transfer fallback type='+type(error).__name__,flush=True)
+            job['message']='Ivideon прервал передачу. Пробуем скачать файл частями.'
             path.unlink(missing_ok=True)
             try:
                 async with httpx.AsyncClient(http2=True, follow_redirects=True, max_redirects=5,
-                                             timeout=httpx.Timeout(20), event_hooks={'request':[validate_request]}) as client:
+                                             timeout=httpx.Timeout(120,connect=30,read=90,write=90,pool=30), event_hooks={'request':[validate_request]}) as client:
                     return await download_ranges(client)
             except (RuntimeError, httpx.TransportError, ImportError):
+                job['message']='Повторяем получение исходного файла через резервное соединение.'
                 path.unlink(missing_ok=True)
                 return await asyncio.to_thread(transfer)
     except Exception:
