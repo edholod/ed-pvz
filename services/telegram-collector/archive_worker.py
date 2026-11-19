@@ -33,7 +33,7 @@ SIGNING_KEY = os.environ.get('ARCHIVE_SIGNING_KEY', '')
 DISK_TOKEN = os.environ.get('ARCHIVE_YANDEX_STORAGE_TOKEN', '').strip()
 DISK_API = 'https://cloud-api.yandex.net/v1/disk/resources'
 DISK_PREFIX = 'app:/edpvz-'
-DISK_QUOTA = 8_000_000_000
+DISK_QUOTA = 100_000_000_000
 DISK_TTL = 86400
 PROFILES = {'source': None, '1080': 1080, '720': 720, '480': 480}
 EXPORT_ENABLED = os.environ.get('ARCHIVE_EXPORT_ENABLED','false').lower() == 'true'
