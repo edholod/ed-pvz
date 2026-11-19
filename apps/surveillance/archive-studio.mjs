@@ -22,28 +22,42 @@ export function createArchiveStudio(options) {
   root.className = 'archive-studio';
   root.hidden = true;
   root.innerHTML = `
-    <header class="as-head"><h2>Архив</h2><span class="as-zone"></span></header><p class="as-note as-service-state" role="status" hidden></p>
+    <header class="as-head"><h2>Период записи</h2><span class="as-zone"></span></header>
+    <p class="as-note as-service-state" role="status" hidden></p>
     <div class="as-inputs">
       <label>Начало<input class="as-start" type="datetime-local" step="1"></label>
       <label>Конец<input class="as-end" type="datetime-local" step="1"></label>
-      <label>Качество просмотра<select class="as-profile"><option value="auto">До 720p</option><option value="high">Исходное разрешение</option><option value="low">Экономное · до 480p</option></select></label>
     </div>
-    <details class="as-day"><summary>Выбрать на шкале дня</summary>
-      <label>День<input class="as-date" type="date"></label>
-      <label>Начало на шкале <output class="as-from-text"></output><input class="as-from" aria-label="Начало на шкале" type="range" min="0" max="86399" step="1" value="32400"></label>
-      <label>Конец на шкале <output class="as-to-text"></output><input class="as-to" aria-label="Конец на шкале" type="range" min="1" max="86400" step="1" value="32700"></label>
-    </details>
-    <p class="as-note">Шкала задаёт время запроса. Наличие записи зависит от архива камеры. Большой интервал можно добавить в очередь целиком.</p>
-    <p><a href="https://my.ivideon.com/exported_records" target="_blank" rel="noopener noreferrer">Скачать готовые записи в Ivideon ↗</a></p>
-    <div class="as-actions"><button type="button" class="secondary as-original">Скачать исходный MP4</button><button class="primary as-preview">Просмотреть</button><button class="secondary as-mark-start">Начало по текущему кадру</button><button class="secondary as-mark-end">Конец по текущему кадру</button><button class="secondary as-frame">Сохранить кадр</button></div>
-    <div class="as-inputs"><label>Название фрагмента<input class="as-name" maxlength="100" placeholder="Например, Отказ клиента"></label><label>Качество файла<select class="as-output"><option value="source">Исходное разрешение</option><option value="1080">До 1080p</option><option value="720">До 720p</option><option value="480">До 480p</option></select></label></div>
-    <div class="as-actions"><button class="primary as-add">Добавить фрагмент</button></div>
+    <div class="as-actions">
+      <button type="button" class="primary as-original">Подготовить MP4</button>
+      <button type="button" class="secondary as-save-yandex" hidden>Сохранить на Яндекс Диск</button>
+      <button type="button" class="secondary as-preview">Посмотреть</button>
+    </div>
+    <div class="as-current as-card" hidden></div>
     <p class="as-feedback" role="status"></p>
-    <h3>Фрагменты к подготовке</h3><div class="as-clips"></div>
-    <div class="as-actions"><button class="primary as-build">Подготовить файлы</button></div>
-    <p class="as-note">Длинная запись обрабатывается частями и склеивается на сервере. Лишние секунды из экспорта Ivideon сохраняются. При обнаружении пропуска появится ошибка. Пониженное разрешение не увеличивает детализацию исходной записи.</p>
-    <div class="as-actions"><button type="button" class="secondary as-save-yandex" hidden>Сохранить выбранный интервал на Яндекс Диск</button></div>
-    <p><a href="./#cloud-settings">Настройки облачных дисков</a></p>`;
+    <details class="as-options">
+      <summary>Дополнительные настройки</summary>
+      <div class="as-inputs">
+        <label>Название фрагмента<input class="as-name" maxlength="100" placeholder="Например, Отказ клиента"></label>
+        <label>Качество просмотра<select class="as-profile"><option value="auto">До 720p</option><option value="high">Исходное разрешение</option><option value="low">До 480p</option></select></label>
+        <label>Качество файла<select class="as-output"><option value="source">Исходное разрешение</option><option value="1080">До 1080p</option><option value="720">До 720p</option><option value="480">До 480p</option></select></label>
+      </div>
+      <details class="as-day"><summary>Выбрать на шкале дня</summary>
+        <label>День<input class="as-date" type="date"></label>
+        <label>Начало на шкале <output class="as-from-text"></output><input class="as-from" aria-label="Начало на шкале" type="range" min="0" max="86399" step="1" value="32400"></label>
+        <label>Конец на шкале <output class="as-to-text"></output><input class="as-to" aria-label="Конец на шкале" type="range" min="1" max="86400" step="1" value="32700"></label>
+      </details>
+      <div class="as-actions">
+        <button type="button" class="secondary as-mark-start">Начало по текущему кадру</button>
+        <button type="button" class="secondary as-mark-end">Конец по текущему кадру</button>
+        <button type="button" class="secondary as-frame">Сохранить кадр</button>
+        <button type="button" class="secondary as-add">Добавить фрагмент</button>
+      </div>
+      <h3>Фрагменты к подготовке</h3><div class="as-clips"></div>
+      <div class="as-actions"><button type="button" class="primary as-build">Подготовить файлы</button></div>
+      <p><a href="https://my.ivideon.com/exported_records" target="_blank" rel="noopener noreferrer">Готовые записи в Ivideon ↗</a></p>
+      <p><a href="./#cloud-settings">Настройки облачных дисков</a></p>
+    </details>`;
   live.insertBefore(root, video);
   const get = name => $(root, '.as-' + name);
   const originalStatus = document.createElement('p');
@@ -87,7 +101,8 @@ export function createArchiveStudio(options) {
     } finally { merge.disabled = false; }
   });
   importPanel.append(importTitle,'Порядок склейки определяется именами файлов. ',importInput,importInfo,merge,importStatus);
-  get('original').parentElement.after(originalStatus,importPanel);
+  get('original').parentElement.after(originalStatus);
+  get('options').append(importPanel);
   get('original').addEventListener('click', async () => {
     const originalButton = get('original');
     setLoading(originalButton,true);
@@ -207,7 +222,12 @@ export function createArchiveStudio(options) {
     const owner = user;
     saving = setTimeout(() => {
       if (owner !== user || account()?.user?.id !== owner) return;
-      account().save('ivideon-archive-project', {clips, jobs: jobs.map(j => ({id:j.id, title:j.title || 'Архив'}))}).catch(() => feedback('Не удалось сохранить очередь в аккаунте.'));
+      account().save('ivideon-archive-project', {clips, jobs: jobs.map(job => {
+        const {id,title,destination,state,message,cloudFiles,cameraName,start,end} = job;
+        return destination === 'yandex' && state === 'ready'
+          ? {id,title,destination,state,message,cloudFiles,cameraName,start,end}
+          : {id,title:title || 'Архив',destination};
+      })}).catch(() => feedback('Не удалось сохранить очередь в аккаунте.'));
     }, 300);
   }
   function interval() {
@@ -378,8 +398,13 @@ export function createArchiveStudio(options) {
   }
   async function cloudSave(job,file,provider) {
     feedback('Сохраняем на диск…');
-    await request('/jobs/'+job.id+'/file/'+file.id+'/cloud/'+provider,{});
+    const result = await request('/jobs/'+job.id+'/file/'+file.id+'/cloud/'+provider,{});
     feedback('Файл сохранён на '+(provider==='yandex'?'Яндекс Диске.':'Google Диске.'));
+    if (provider==='yandex') {
+      const notice = root.hidden ? records.querySelector('.as-records-feedback') : get('feedback');
+      if (result.name) notice.append(' ' + result.name + ' ');
+      notice.append(diskFolderLink());
+    }
   }
   async function showFile(job,file,active=++generation) {
     const owner=user;
@@ -398,14 +423,58 @@ export function createArchiveStudio(options) {
     },25000);
     video.crossOrigin='anonymous';video.src=result.url;video.load();video.play().catch(()=>{});
   }
+  function diskFolderLink() {
+    const link = document.createElement('a');
+    link.className = 'secondary';
+    link.textContent = 'Открыть папку на Яндекс Диске ↗';
+    link.href = 'https://disk.yandex.ru/client/disk/' + ['Приложения','Эд ПВЗ — личный архив'].map(encodeURIComponent).join('/');
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    return link;
+  }
+  function renderJobStatus(card,job) {
+    const title = document.createElement('strong');
+    title.textContent = job.title || 'Архив';
+    const description = document.createElement('p');
+    if (job.start && job.end) description.textContent = [job.cameraName, stamp(job.start) + ' — ' + stamp(job.end)].filter(Boolean).join(' · ');
+    const stage = document.createElement('p');
+    stage.textContent = (job.part ? 'Часть ' + job.part.index + ' из ' + job.part.total + ' · ' : '') + (job.message || 'Проверяем задание…');
+    card.append(title);
+    if(description.textContent) card.append(description);
+    card.append(stage);
+    if (job.cloudFiles?.length || (job.state === 'ready' && job.message?.includes('на твоём Яндекс Диске'))) {
+      for (const name of job.cloudFiles || []) {
+        const file = document.createElement('p');
+        file.textContent = name;
+        card.append(file);
+      }
+      card.append(diskFolderLink());
+    }
+    if (['queued','processing','uploading'].includes(job.state)) {
+      const progress = document.createElement('progress');
+      progress.max = 100;
+      if (job.progress > 0) progress.value = job.progress;
+      progress.setAttribute('aria-label','Общий прогресс подготовки');
+      card.append(progress);
+      if (job.progress > 0) {
+        const percentage = document.createElement('small');
+        percentage.textContent = 'Общий прогресс: ' + job.progress + '%';
+        card.append(percentage);
+      }
+    }
+  }
   function drawJobs() {
     const box=records.querySelector('.as-jobs');box.replaceChildren();
     records.querySelector('.as-empty').hidden = Boolean(jobs.length || originalFiles.children.length);
+    const current = get('current');
+    const tracked = jobs.find(job=>job.destination === 'yandex' && ['queued','processing','uploading'].includes(job.state))
+      || jobs.find(job=>job.destination === 'yandex');
+    current.replaceChildren();
+    current.hidden = !tracked;
+    if (tracked) renderJobStatus(current,tracked);
     for(const job of jobs) {
       const card=document.createElement('article');card.className='as-card';
-      const title=document.createElement('strong');title.textContent=job.message||'Проверяем задание…';
-      const progress=document.createElement('progress');progress.max=100;progress.value=job.progress||0;
-      card.append(title,progress);
+      renderJobStatus(card,job);
       if(['processing','queued'].includes(job.state))card.append(button('Отменить',async()=>{Object.assign(job,await request('/jobs/'+job.id+'/cancel',{}));finishPreview(job);drawJobs();}));
       if(job.state==='failed'||job.state==='cancelled'||job.state==='expired')card.append(button('Убрать из списка',()=>{jobs=jobs.filter(x=>x!==job);persist();drawJobs();}));
       for(const file of job.files||[]) {
@@ -413,19 +482,27 @@ export function createArchiveStudio(options) {
         const name=document.createElement('input');name.value=file.name;name.maxLength=110;name.setAttribute('aria-label','Имя готового файла');
         const info=document.createElement('p');info.textContent=(file.size/1024/1024).toFixed(1)+' МБ · '+file.width+'×'+file.height+(file.duration?' · '+duration(file.duration):'');
         const actions=document.createElement('div');actions.className='as-actions';
-        actions.append(button('Переименовать',()=>rename(job,file)),button('Скачать в загрузки',()=>saveFile(job,file,false)),button('Выбрать место сохранения',()=>saveFile(job,file,true)));
-        if(!file.mime) actions.append(button('Скопировать ссылку',async()=>copyShare((await fileLink(job,file,undefined,true)).url)),button('В Эдсенджер',async()=>sendToMessenger((await fileLink(job,file,undefined,true)).url)),button('Посмотреть',()=>showFile(job,file)),button('Кадр из файла',async()=>{
+        const primary = document.createElement('div');primary.className='as-actions';
+        primary.append(button('Скачать',()=>saveFile(job,file,false)));
+        const more = document.createElement('details');
+        const summary = document.createElement('summary');summary.textContent='Другие действия';
+        actions.append(button('Переименовать',()=>rename(job,file)),button('Выбрать место сохранения',()=>saveFile(job,file,true)));
+        if(!file.mime) actions.append(button('Скопировать ссылку',async()=>copyShare((await fileLink(job,file,undefined,true)).url)),button('В Эдсенджер',async()=>sendToMessenger((await fileLink(job,file,undefined,true)).url)),button('Кадр из файла',async()=>{
           if(!video.videoWidth||liveName.textContent!==file.name)throw Error('Сначала нажми «Посмотреть» и выбери кадр.');
           await request('/jobs/'+job.id+'/file/'+file.id+'/frame',{second:Math.min(video.currentTime,Math.max(0,file.duration-1/(file.fps||25)))});
           Object.assign(job,await request('/jobs/'+job.id));drawJobs();
         }));
         if(config?.yandex?.connected)actions.append(button('На Яндекс Диск',()=>cloudSave(job,file,'yandex')));
         if(config?.google?.connected)actions.append(button('На Google Диск',()=>cloudSave(job,file,'google')));
-        row.append(name,info,actions);card.append(row);
+        if (!file.mime) primary.append(button('Посмотреть',()=>showFile(job,file)));
+        const fileTitle = document.createElement('strong');
+        fileTitle.textContent = file.name;
+        more.append(summary,name,actions);
+        row.append(fileTitle,info,primary,more);card.append(row);
       }
       box.append(card);
     }
-    if(!jobs.length)box.textContent='Здесь появятся подготовленные файлы.';
+
   }
   function finishPreview(job) {
     if (job.previewGeneration !== generation) return;
@@ -444,6 +521,7 @@ export function createArchiveStudio(options) {
           const result=await request('/jobs/'+job.id);
           if(owner!==user)return;
           Object.assign(job,result);
+          if (job.state === 'ready' && job.destination === 'yandex') persist();
           if(job.previewGeneration !== generation) continue;
           if(job.state==='ready'&&job.files?.[0]) {
             const active=job.previewGeneration;
@@ -471,8 +549,10 @@ export function createArchiveStudio(options) {
         quality:get('output').value,profile:get('profile').value,requestId:crypto.randomUUID(),saveToYandex:true
       });
       if(owner!==user)return;
+      job.destination='yandex';
+      job.title=job.title || cameraName;
       jobs.unshift(job);persist();drawJobs();schedule();
-      feedback('Задание принято. Сервер сохранит видео прямо на Яндекс Диск.');
+      feedback('');
     } catch(error){feedback(error.message);}
     finally{setLoading(control,false);}
   });
