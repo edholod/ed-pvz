@@ -55,15 +55,15 @@ function card(title,sub,desc,link,label){const e=node('article','');e.className=
   const endpoint='https://duerixyhzapotoeclggz.supabase.co/functions/v1/edpvz-hh-jobs';
   const cities=selectedCities.size?[...selectedCities]:[''];
   const all=[];let found=0;let partial=false;
-  for(const city of cities.slice(0,8)){
-   for(let page=0;page<5;page++){
+  for(const city of cities){
+   for(let page=0;page<(city?2:10);page++){
     const u=new URL(endpoint);u.searchParams.set('text',query());u.searchParams.set('per_page','100');u.searchParams.set('page',String(page));if(city)u.searchParams.set('city',city);
     let data;
     try{const r=await fetch(u.toString(),{cache:'no-store',signal:globalThis.AbortSignal?.timeout?.(15000)});data=await r.json();if(!r.ok||data.error)throw Error('API HTTP '+(data.upstream_status||r.status)+(data.reason?' · '+data.reason:''));}
     catch(e){if(!all.length)throw e;partial=true;break;}
     if(!Array.isArray(data.items))throw Error('Неверный формат ответа');
     found+=Number(data.found)||0;all.push(...data.items);
-    if(!data.items.length||page+1>=Math.min(Number(data.pages)||1,5))break;
+    if(!data.items.length||page+1>=Math.min(Number(data.pages)||1,city?2:10))break;
    }
   }
   const unique=new Map();for(const x of all)if(x?.id)unique.set(String(x.id),x);
