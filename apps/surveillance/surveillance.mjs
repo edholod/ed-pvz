@@ -99,6 +99,8 @@ function start() {
           .map(camera => ({ name: String(camera.name), url: playerURL(camera.url) }));
       } catch { cameras = []; }
       options();
+      const requested=new URLSearchParams(location.search).get('camera');
+      if(requested!==null && /^\\d+$/.test(requested) && cameras[Number(requested)])openCamera(requested);
       $('access-status').textContent = '';
       $('viewer').hidden = false;
     } catch {
