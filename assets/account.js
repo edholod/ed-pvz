@@ -56,7 +56,7 @@ function refresh(){
  };
  refreshing=Promise.resolve().then(()=>{
   const locks=globalThis.navigator?.locks;
-  return locks?locks.request(SESSION_KEY+'-refresh',update):update();
+  return locks?locks.request(SESSION_KEY+'-refresh',{signal:AbortSignal.timeout(6000)},update):update();
  }).finally(()=>{refreshing=null});
  return refreshing;
 }
