@@ -9,7 +9,7 @@
   <script defer src="../../assets/account.js?v=ivideon-owners-1"></script>
   <meta name="robots" content="noindex,nofollow">
   <script type="module" src="../../assets/surveillance-access.mjs?v=2"></script>
-</head>
+<style>.surveillance-camera-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}.surveillance-camera-tile{display:flex;align-items:center;gap:12px;text-decoration:none;color:#203a60;border:1px solid #d9e4f7;border-radius:15px;background:linear-gradient(115deg,#f1f6ff,#f9f7ff);padding:15px;min-width:0}.surveillance-camera-tile:hover{border-color:#90ace3;background:#eaf2ff}.surveillance-camera-tile>span:nth-child(2){display:grid;gap:5px;flex:1;min-width:0}.surveillance-camera-tile strong{overflow-wrap:anywhere}.surveillance-camera-tile small{color:#667b9c}.surveillance-camera-icon{font-size:23px;color:#3d69bc}.surveillance-camera-tile>span:last-child{font-size:25px;color:#6e83ab}</style></head>
 <body>
 <section class="panel" id="surveillance-access" role="status">
   <h1>Видеонаблюдение</h1>
@@ -48,7 +48,86 @@
     <div id="cloud-providers"></div>
     <p id="cloud-feedback" role="status">Проверяем подключение…</p>
   </section>
+  <section class="panel" id="all-surveillance-cameras" aria-labelledby="all-cameras-heading">
+    <h2 id="all-cameras-heading">Все камеры</h2>
+    <p id="all-cameras-status" role="status">Загружаем камеры из подключённых сервисов…</p>
+    <div id="all-cameras-list" class="surveillance-camera-grid"></div>
+  </section>
 </main>
+<script type="module">
+  const account=window.EdPVZAccount;
+  const panel=document.querySelector('main.camera-page');
+  const list=document.getElementById('all-cameras-list');
+  const status=document.getElementById('all-cameras-status');
+  let revision=0;
+  function addCamera(provider,camera,href,subtitle) {
+    const link=document.createElement('a');
+    link.className='surveillance-camera-tile';
+    link.href=href;
+    const icon=document.createElement('span');
+    icon.className='surveillance-camera-icon';
+    icon.textContent='◉';
+    const info=document.createElement('span');
+    const name=document.createElement('strong');
+    name.textContent=camera.displayName||camera.name||'Камера';
+    const detail=document.createElement('small');
+    detail.textContent=provider+(subtitle?' · '+subtitle:'');
+    info.append(name,detail);
+    const arrow=document.createElement('span');
+    arrow.textContent='›';
+    arrow.setAttribute('aria-hidden','true');
+    link.append(icon,info,arrow);
+    list.append(link);
+  }
+  async function refreshCameras() {
+    const current=++revision;
+    const user=account?.user?.id;
+    list.replaceChildren();
+    if(panel.hidden||!user)return;
+    status.textContent='Загружаем камеры из подключённых сервисов…';
+    const [directory,primary,settings]=await Promise.allSettled([
+      account.checkIvideon(undefined,undefined,undefined,'accounts'),
+      account.checkIvideon(undefined,undefined,undefined,'load'),
+      account.readTable('edpvz_ivideon_camera_settings?select=camera_id,display_name,point_id&user_id=eq.'+encodeURIComponent(user))
+    ]);
+    if(current!==revision||account.user?.id!==user||panel.hidden)return;
+    const extras=directory.status==='fulfilled'?(directory.value.accounts||[]):[];
+    const extraResults=await Promise.allSettled(extras.map(entry=>
+      account.checkIvideon(undefined,undefined,undefined,'load',{connectionId:entry.id})));
+    if(current!==revision||account.user?.id!==user||panel.hidden)return;
+    const settingsMap=new Map((settings.status==='fulfilled'?settings.value:[]).map(c=>[c.camera_id,c]));
+    const seen=new Set();
+    let total=0;
+    for(const entry of [{label:'Основной аккаунт',result:primary},...extras.map((entry,i)=>({label:entry.label||'Аккаунт Ivideon',result:extraResults[i]}))]){
+      if(entry.result.status!=='fulfilled')continue;
+      for(const camera of entry.result.value.cameras||[]){
+        if(!camera.id||seen.has(camera.id))continue;
+        seen.add(camera.id);
+        const saved=settingsMap.get(camera.id);
+        const view={...camera,displayName:saved?.display_name||camera.displayName};
+        addCamera('Ivideon',view,'ivideon.html?camera='+encodeURIComponent(camera.id),entry.label);
+        total++;
+      }
+    }
+    // IPEYE player links are intentionally session-scoped and never shared with other users.
+    try {
+      const cameras=JSON.parse(sessionStorage.getItem('edpvz-ipeye:'+user)||'[]');
+      if(Array.isArray(cameras))cameras.forEach((camera,index)=>{
+        if(typeof camera?.name==='string'&&typeof camera?.url==='string'&&/^https:\/\//.test(camera.url)){
+          addCamera('IPEYE',camera,'ipeye.html?camera='+index,'Онлайн и архив');
+          total++;
+        }
+      });
+    }catch{}
+    const partial=directory.status==='rejected'||primary.status==='rejected'||extraResults.some(r=>r.status==='rejected');
+    status.textContent=total?'Доступно камер: '+total+(partial?' · Часть подключений не загрузилась':''):
+      partial?'Не удалось загрузить часть подключений. Попробуй обновить страницу.':'Пока нет подключённых камер.';
+  }
+  new MutationObserver(refreshCameras).observe(panel,{attributes:true,attributeFilter:['hidden']});
+  window.addEventListener('edpvz-auth-changed',refreshCameras);
+  window.addEventListener('pageshow',refreshCameras);
+  void refreshCameras();
+</script>
 <script type="module">
   const panel = document.getElementById('cloud-settings');
   const main = panel.closest('main');
