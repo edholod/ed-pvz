@@ -654,6 +654,15 @@
         status.textContent += ' Часть подключений не удалось загрузить.';
       }
       drawCameras();
+      const requestedCamera=new URLSearchParams(location.search).get('camera');
+      if(requestedCamera && action==='load') {
+        const match=cameraRows.find(({camera})=>camera.id===requestedCamera);
+        if(match) {
+          match.row.scrollIntoView({block:'center',behavior:'smooth'});
+          const liveButton=match.row.querySelector('button');
+          if(liveButton)liveButton.click();
+        }
+      }
       if (action === 'add') accountLabel.value = '';
     } catch (error) {
       if (check === generation) status.textContent = error.message || 'Не удалось подключить Ivideon.';
