@@ -233,7 +233,7 @@ async function extraConnections(userId: string, id?: string, method = 'GET', dat
   }
   if (method === 'GET') endpoint.searchParams.set('select', id ? 'encrypted_key,label' : 'id,label');
   const response = await fetch(endpoint, {method, headers:{
-    apikey:secret, authorization:'Bearer ' + secret, 'content-type':'application/json',
+    apikey:secret, ...(secret.startsWith('sb_secret_') ? {} : {authorization:'Bearer ' + secret}), 'content-type':'application/json',
   }, body:data ? JSON.stringify(data) : undefined, signal:AbortSignal.timeout(3500)});
   if (!response.ok) throw Error('Connection storage unavailable');
   return method === 'GET' ? await response.json() : [];
@@ -247,7 +247,7 @@ async function connectionRequest(userId: string, method: string, encryptedKey?: 
   else endpoint.searchParams.set('user_id','eq.' + userId);
   if (method === 'GET') endpoint.searchParams.set('select','encrypted_key');
   const response = await fetch(endpoint, {method, headers:{
-    apikey:secret, authorization:'Bearer ' + secret, 'content-type':'application/json',
+    apikey:secret, ...(secret.startsWith('sb_secret_') ? {} : {authorization:'Bearer ' + secret}), 'content-type':'application/json',
     ...(method === 'POST' ? {Prefer:'resolution=merge-duplicates,return=minimal'} : {}),
   }, body:method === 'POST' ? JSON.stringify({
     user_id:userId, encrypted_key:encryptedKey, updated_at:new Date().toISOString(),
@@ -268,7 +268,7 @@ async function serviceRows(table:string, filters:Record<string,string>, method='
   const url = new URL(Deno.env.get('SUPABASE_URL') + '/rest/v1/' + table);
   url.search = new URLSearchParams(filters).toString();
   const response = await fetch(url,{method,headers:{
-    apikey:secret, authorization:'Bearer ' + secret, 'content-type':'application/json',
+    apikey:secret, ...(secret.startsWith('sb_secret_') ? {} : {authorization:'Bearer ' + secret}), 'content-type':'application/json',
     Prefer:'resolution=merge-duplicates,return=representation',
   },body:data ? JSON.stringify(data) : undefined,signal:AbortSignal.timeout(5000)});
   if (!response.ok) throw Error('Share storage unavailable');
