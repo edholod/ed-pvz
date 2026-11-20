@@ -56,14 +56,14 @@ function card(title,sub,desc,link,label){const e=node('article','');e.className=
   const cities=selectedCities.size?[...selectedCities]:[''];
   const all=[];let found=0;let partial=false;
   for(const city of cities){
-   for(let page=0;page<(city?2:10);page++){
+   for(let page=0;page<3;page++){
     const u=new URL(endpoint);u.searchParams.set('text',query());u.searchParams.set('per_page','100');u.searchParams.set('page',String(page));if(city)u.searchParams.set('city',city);
     let data;
-    try{const r=await fetch(u.toString(),{cache:'no-store',signal:globalThis.AbortSignal?.timeout?.(15000)});data=await r.json();if(!r.ok||data.error)throw Error('API HTTP '+(data.upstream_status||r.status)+(data.reason?' · '+data.reason:''));}
-    catch(e){if(!all.length)throw e;partial=true;break;}
+    try{const r=await fetch(u.toString(),{cache:'no-store',signal:globalThis.AbortSignal?.timeout?.(25000)});data=await r.json();if(!r.ok||data.error)throw Error('API HTTP '+(data.upstream_status||r.status)+(data.reason?' · '+data.reason:''));}
+    catch(e){partial=true;console.warn('HH page unavailable',city,page,String(e));break;}
     if(!Array.isArray(data.items))throw Error('Неверный формат ответа');
     found+=Number(data.found)||0;all.push(...data.items);
-    if(!data.items.length||page+1>=Math.min(Number(data.pages)||1,city?2:10))break;
+    if(!data.items.length||page+1>=Math.min(Number(data.pages)||1,3))break;
    }
   }
   const unique=new Map();for(const x of all)if(x?.id)unique.set(String(x.id),x);
@@ -397,9 +397,9 @@ const marketChoices = new Map([
 const filterPreferenceKey = 'edpvz:jobs:filters:v1';
 const selectedCities = new Set();
 const selectedMarkets = new Set();
-const cityIndexKey = 'edpvz:jobs:city-index:v4';
+const cityIndexKey = 'edpvz:jobs:city-index:v5';
 const excludedNonRussianCities = new Set(['Астана','Алматы','Бишкек','Минск','Ташкент','Шымкент','Усть-Каменогорск','Сухум']);
-const knownCities = new Set(cityNames.filter(city => !excludedNonRussianCities.has(city)));
+const knownCities = new Set();
 try {
   const saved = JSON.parse(localStorage.getItem(filterPreferenceKey) || 'null');
   const legacyCity = listingCities(localStorage.getItem('edpvz:jobs:city'), '')[0];
@@ -436,19 +436,12 @@ function refreshFilterSummary(type, selected, labelFor, emptyLabel) {
 }
 let cityOptionsKey;
 function updateCityOptions(cities) {
-  for (const city of cities) if (canonicalCities.has(city)) knownCities.add(city);
-  const options = [...knownCities].sort((one, two) => one.localeCompare(two, 'ru'));
-  const key = options.join('\n');
-  if (key === cityOptionsKey) return;
-  cityOptionsKey = key;
-  try { localStorage.setItem(cityIndexKey, JSON.stringify(options)); } catch {}
-  const container = $('city-options');
-  const rows = new Map(Array.from(container.children, row => [row.firstChild.value, row]));
-  for (let index = 0; index < options.length; index++) {
-    const city = options[index];
-    const row = rows.get(city) || option(city, city, selectedCities);
-    if (container.children[index] !== row) container.insertBefore(row, container.children[index] || null);
-  }
+  const options=[...cities].filter(city=>canonicalCities.has(city)&&!excludedNonRussianCities.has(city)).sort((a,b)=>a.localeCompare(b,'ru'));
+  const key=options.join('\\n');if(key===cityOptionsKey)return;cityOptionsKey=key;
+  const container=$('city-options');container.replaceChildren();
+  for(const city of options)container.append(option(city,city,selectedCities));
+  for(const city of [...selectedCities])if(!cities.has(city))selectedCities.delete(city);
+  refreshFilterSummary('city',selectedCities,value=>value,'Все города');
 }
 function bindJobPicker(type, plural, selected, labelFor, emptyLabel) {
   const tile = $(type + '-tile');
