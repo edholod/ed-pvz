@@ -9,7 +9,7 @@
   <script defer src="../../assets/account.js?v=ivideon-owners-1"></script>
   <meta name="robots" content="noindex,nofollow">
   <script type="module" src="../../assets/surveillance-access.mjs?v=2"></script>
-<style>.surveillance-camera-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}.surveillance-camera-tile{display:flex;align-items:center;gap:12px;text-decoration:none;color:#203a60;border:1px solid #d9e4f7;border-radius:15px;background:linear-gradient(115deg,#f1f6ff,#f9f7ff);padding:15px;min-width:0}.surveillance-camera-tile:hover{border-color:#90ace3;background:#eaf2ff}.surveillance-camera-tile>span:nth-child(2){display:grid;gap:5px;flex:1;min-width:0}.surveillance-camera-tile strong{overflow-wrap:anywhere}.surveillance-camera-tile small{color:#667b9c}.surveillance-camera-icon{font-size:23px;color:#3d69bc}.surveillance-camera-tile>span:last-child{font-size:25px;color:#6e83ab}</style></head>
+<style>.surveillance-camera-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}.surveillance-camera-tile{display:flex;align-items:center;flex-wrap:wrap;gap:12px;text-decoration:none;color:#203a60;border:1px solid #d9e4f7;border-radius:15px;background:linear-gradient(115deg,#f1f6ff,#f9f7ff);padding:15px;min-width:0}.surveillance-camera-tile:hover{border-color:#90ace3;background:#eaf2ff}.surveillance-camera-tile>span:nth-child(2){display:grid;gap:5px;flex:1;min-width:0}.surveillance-camera-tile strong{overflow-wrap:anywhere}.surveillance-camera-tile small{color:#667b9c}.surveillance-camera-icon{font-size:23px;color:#3d69bc}.surveillance-camera-actions{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%}.surveillance-camera-actions button{font:inherit;font-size:14px;padding:9px 12px}.surveillance-inline-player{flex-basis:100%;min-width:0}.surveillance-inline-player video,.surveillance-inline-player iframe{width:100%;aspect-ratio:16/9;background:#17233b;border:0;border-radius:12px;display:block;margin-bottom:8px}</style></head>
 <body>
 <section class="panel" id="surveillance-access" role="status">
   <h1>Видеонаблюдение</h1>
@@ -55,15 +55,17 @@
   </section>
 </main>
 <script type="module">
+  import {playIvideon,playIvideonHls} from './ivideon-live.mjs?v=9';
   const account=window.EdPVZAccount;
   const panel=document.querySelector('main.camera-page');
   const list=document.getElementById('all-cameras-list');
   const status=document.getElementById('all-cameras-status');
   let revision=0;
+  let stopStream;
+  function stopCurrent(){stopStream?.();stopStream=undefined;document.querySelectorAll('.surveillance-inline-player').forEach(el=>el.remove());}
   function addCamera(provider,camera,href,subtitle) {
-    const link=document.createElement('a');
-    link.className='surveillance-camera-tile';
-    link.href=href;
+    const tile=document.createElement('article');
+    tile.className='surveillance-camera-tile';
     const icon=document.createElement('span');
     icon.className='surveillance-camera-icon';
     icon.textContent='◉';
@@ -73,15 +75,59 @@
     const detail=document.createElement('small');
     detail.textContent=provider+(subtitle?' · '+subtitle:'');
     info.append(name,detail);
-    const arrow=document.createElement('span');
-    arrow.textContent='›';
-    arrow.setAttribute('aria-hidden','true');
-    link.append(icon,info,arrow);
-    list.append(link);
+    const actions=document.createElement('div');
+    actions.className='surveillance-camera-actions';
+    const liveButton=document.createElement('button');
+    liveButton.type='button';liveButton.className='primary';liveButton.textContent='Смотреть онлайн';
+    const archiveButton=document.createElement('button');
+    archiveButton.type='button';archiveButton.className='secondary';archiveButton.textContent='Архив';
+    actions.append(liveButton,archiveButton);
+    tile.append(icon,info,actions);
+    list.append(tile);
+    if(provider==='Ivideon'){
+      liveButton.addEventListener('click',async()=>{
+        stopCurrent();
+        const viewer=document.createElement('div');
+        viewer.className='surveillance-inline-player';
+        const video=document.createElement('video');
+        video.controls=true;video.muted=true;video.playsInline=true;
+        const message=document.createElement('p');
+        message.textContent='Подключаем эфир…';
+        const close=document.createElement('button');
+        close.type='button';close.className='secondary';close.textContent='Закрыть эфир';
+        close.addEventListener('click',stopCurrent);
+        viewer.append(video,message,close);
+        tile.append(viewer);
+        try{
+          const result=await account.checkIvideon(undefined,camera.id,'hls','load',camera.connectionId?{connectionId:camera.connectionId}:undefined);
+          if(!viewer.isConnected)return;
+          stopStream=(result.streamType==='hls'?playIvideonHls:playIvideon)(video,result.streamUrl,(error)=>{message.textContent=error||'';});
+        }catch(error){if(viewer.isConnected)message.textContent=error.message||'Не удалось открыть эфир.';}
+      });
+    }else{
+      liveButton.addEventListener('click',()=>{
+        stopCurrent();
+        const viewer=document.createElement('div');
+        viewer.className='surveillance-inline-player';
+        const frame=document.createElement('iframe');
+        frame.title='IPEYE · '+(camera.name||'Камера');
+        frame.referrerPolicy='strict-origin';
+        frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-downloads allow-presentation');
+        frame.setAttribute('allow','autoplay; fullscreen');
+        frame.allowFullscreen=true;
+        frame.src=camera.url;
+        const close=document.createElement('button');
+        close.type='button';close.className='secondary';close.textContent='Закрыть эфир';
+        close.addEventListener('click',stopCurrent);
+        viewer.append(frame,close);tile.append(viewer);
+      });
+    }
+    archiveButton.addEventListener('click',()=>{location.assign(href+(href.includes('?')?'&':'?')+'tab=archive');});
   }
   async function refreshCameras() {
     const current=++revision;
     const user=account?.user?.id;
+    stopCurrent();
     list.replaceChildren();
     if(panel.hidden||!user)return;
     status.textContent='Загружаем камеры из подключённых сервисов…';
@@ -104,7 +150,7 @@
         if(!camera.id||seen.has(camera.id))continue;
         seen.add(camera.id);
         const saved=settingsMap.get(camera.id);
-        const view={...camera,displayName:saved?.display_name||camera.displayName};
+        const view={...camera,connectionId:entry.id,displayName:saved?.display_name||camera.displayName};
         addCamera('Ivideon',view,'ivideon.html?camera='+encodeURIComponent(camera.id),entry.label);
         total++;
       }
