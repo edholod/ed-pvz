@@ -660,7 +660,7 @@
         if(match) {
           match.row.scrollIntoView({block:'center',behavior:'smooth'});
           const liveButton=match.row.querySelector('button');
-          if(liveButton)liveButton.click();
+          if(liveButton){const requestedTab=new URLSearchParams(location.search).get('tab');(requestedTab==='archive'?match.row.querySelectorAll('button')[1]:liveButton)?.click();}
         }
       }
       if (action === 'add') accountLabel.value = '';
