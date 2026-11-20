@@ -235,7 +235,7 @@ function getMode(x){
   return null;
 }
 function contactLinks(x){const text=[x.text||'',x.contact||''].join('\n');const links=[];const tg=new Set();const regex=/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/([a-zA-Z][a-zA-Z0-9_]{4,31})(?![\w/])/gi;let m;while((m=regex.exec(text))!==null)tg.add(m[1]);const at=/(^|[^\w@])@([a-zA-Z][a-zA-Z0-9_]{4,31})\b/gm;while((m=at.exec(text))!==null)tg.add(m[2]);if(x.author_url&&/^(https:\/\/t\.me\/[a-zA-Z][a-zA-Z0-9_]{4,31}|tg:\/\/user\?id=\d+)$/.test(x.author_url)){links.push({label:'Открыть автора'+(x.author_name?' · '+x.author_name:''),url:x.author_url});}const sourceName=x.source.replace(/^Telegram · @/,'').toLowerCase();for(const username of tg){if(username.toLowerCase()===sourceName)continue;links.push({label:'Написать в Telegram',url:'https://t.me/'+username});break}const phoneRe=/(?:\+7|8)[\s(\-]*\d{3}[)\s\-]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}\b/g;const phone=phoneRe.exec(text);if(phone){const digits=phone[0].replace(/\D/g,'');if(digits.length===11)links.push({label:'Позвонить: '+phone[0],url:'tel:+7'+digits.slice(1)})}if(x.url)links.push({label:'Оригинал объявления',url:x.url});return links}
-function plainHH(value){const box=document.createElement('div');box.innerHTML=String(value||'').replace(/<highlighttext>/gi,'<mark>').replace(/<\\/highlighttext>/gi,'</mark>');box.querySelectorAll('script,style,iframe,object,embed,form,svg').forEach(n=>n.remove());box.querySelectorAll('*').forEach(n=>{if(!['BR','P','DIV','UL','OL','LI','B','STRONG','I','EM','MARK'].includes(n.tagName)){n.replaceWith(...n.childNodes)}else{for(const attr of [...n.attributes])n.removeAttribute(attr.name)}});return box.textContent?.replace(/\\s+/g,' ').trim()||''}
+function plainHH(value){const box=document.createElement('div');box.innerHTML=String(value||'').replace(/<highlighttext>/gi,'<mark>').replace(/<\/highlighttext>/gi,'</mark>');box.querySelectorAll('script,style,iframe,object,embed,form,svg').forEach(n=>n.remove());box.querySelectorAll('*').forEach(n=>{if(!['BR','P','DIV','UL','OL','LI','B','STRONG','I','EM','MARK'].includes(n.tagName)){n.replaceWith(...n.childNodes)}else{for(const attr of [...n.attributes])n.removeAttribute(attr.name)}});return box.textContent?.replace(/\s+/g,' ').trim()||''}
 function openDetail(x){
  const backdrop=node('div','');backdrop.className='detail-backdrop';backdrop.setAttribute('role','presentation');
  const panel=node('section','');panel.className='detail-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Объявление');
@@ -245,14 +245,14 @@ function openDetail(x){
  if(x.pay)panel.append(node('p','Оплата: '+x.pay));if(x.city)panel.append(node('p','Город: '+x.city));
  if(x.schedule)panel.append(node('p','График: '+x.schedule));if(x.contact)panel.append(node('p','Контакт: '+x.contact));
  const actions=node('div','');actions.className='detail-actions';
- function addLink(label,url){if(!url||!(/^(https:\\/\\/|mailto:|tel:)/i.test(url)))return;const a=node('a',label);a.className='link';a.href=url;if(/^https:/i.test(url)){a.target='_blank';a.rel='noopener noreferrer'}actions.append(a)}
+ function addLink(label,url){if(!url||!(/^(https:\/\/|mailto:|tel:)/i.test(url)))return;const a=node('a',label);a.className='link';a.href=url;if(/^https:/i.test(url)){a.target='_blank';a.rel='noopener noreferrer'}actions.append(a)}
  const isHH=x.source==='hh.ru';
  if(!isHH){for(const l of contactLinks(x))addLink(l.label,l.url);if(x.source.startsWith('Telegram')&&!contactLinks(x).some(l=>l.label.startsWith('Открыть автора')||l.label==='Написать в Telegram'))panel.append(node('small','Telegram не предоставил профиль отправителя этого сообщения. Можно открыть исходную публикацию и посмотреть автора в самом чате.'))}
  panel.append(actions);
  if(isHH){
   const info=node('div','Загружаем полное описание и опубликованные контакты работодателя…');panel.insertBefore(info,actions);
   const id=String(x.id||'').replace(/^hh:/,'');
-  if(/^\\d+$/.test(id)){
+  if(/^\d+$/.test(id)){
    fetch('https://duerixyhzapotoeclggz.supabase.co/functions/v1/edpvz-hh-jobs?vacancy_id='+encodeURIComponent(id),{cache:'no-store',signal:globalThis.AbortSignal?.timeout?.(12000)}).then(async r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(d=>{
     if(!panel.isConnected)return;
     info.replaceChildren();
@@ -265,7 +265,7 @@ function openDetail(x){
     const c=d.contacts;let available=false;
     if(c?.name){info.append(node('p','Контактное лицо: '+c.name));available=true}
     if(c?.email){addLink('Написать на почту', 'mailto:'+c.email);available=true}
-    for(const phone of c?.phones||[]){if(!phone.number)continue;addLink('Позвонить: '+phone.number,'tel:'+phone.number.replace(/[^+\\d]/g,''));available=true}
+    for(const phone of c?.phones||[]){if(!phone.number)continue;addLink('Позвонить: '+phone.number,'tel:'+phone.number.replace(/[^+\d]/g,''));available=true}
     if(!available)info.append(node('p','Работодатель не опубликовал доступные через API контакты. Связаться можно через отклик на hh.ru.'));
     if(d.apply_alternate_url)addLink('Откликнуться на hh.ru',d.apply_alternate_url);
     else if(d.response_url)addLink('Откликнуться на сайте работодателя',d.response_url);
