@@ -634,8 +634,20 @@ async def run(job):
                             continue
                         raise
                     width = width or (w,h)
+                    # A checkpoint is a recovery aid, not a prerequisite for a valid local MP4.
+                    # A transient cloud timeout must not discard a fully verified recording.
                     job['message']='Сохраняем контрольную точку на Яндекс Диске'
-                    await checkpoint_piece(path,job,index,start,end,duration,(w,h))
+                    for checkpoint_attempt in range(2):
+                        try:
+                            await checkpoint_piece(path,job,index,start,end,duration,(w,h))
+                            break
+                        except (httpx.HTTPError, RuntimeError, HTTPException) as checkpoint_error:
+                            print('archive-checkpoint retry attempt=' + str(checkpoint_attempt + 1) +
+                                  ' type=' + type(checkpoint_error).__name__, flush=True)
+                            if checkpoint_attempt == 0:
+                                await asyncio.sleep(2)
+                    else:
+                        print('archive-checkpoint skipped; verified local segment retained',flush=True)
                     pieces.append(path)
                     piece_durations.append(duration)
                     completed += end-start
@@ -674,7 +686,7 @@ async def run(job):
                     part.unlink(missing_ok=True)
             job.update(state='ready',progress=100,message='Видео сохранено на твоём Яндекс Диске' if job.get('saveToYandex') else 'Файлы готовы')
         except Exception as exc:
-            print('archive-job failed type='+type(exc).__name__,flush=True)
+            print('archive-job failed stage='+str(job.get('message','unknown'))[:110]+' type='+type(exc).__name__,flush=True)
             job.update(state='cancelled' if job.get('cancelled') else 'failed',message=str(exc) if isinstance(exc,RuntimeError) else 'Подготовка прервана. Повтори запрос.')
         finally:
             job['updated'] = time.time()
