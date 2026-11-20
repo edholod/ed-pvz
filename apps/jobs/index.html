@@ -409,8 +409,7 @@ try {
     for (const market of saved.markets) if (marketChoices.has(market)) selectedMarkets.add(market);
   }
   for (const key of ['city-index', 'city-index:v2', 'city-index:v3']) localStorage.removeItem('edpvz:jobs:' + key);
-  const cached = JSON.parse(localStorage.getItem(cityIndexKey) || '[]');
-  if (Array.isArray(cached)) for (const city of cached) if (canonicalCities.has(city) && !excludedNonRussianCities.has(city)) knownCities.add(city);
+  localStorage.removeItem(cityIndexKey);
 } catch {}
 for (const city of selectedCities) knownCities.add(city);
 
