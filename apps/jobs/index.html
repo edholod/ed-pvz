@@ -266,7 +266,8 @@ function openDetail(x){
     if(c?.name){info.append(node('p','Контактное лицо: '+c.name));available=true}
     if(c?.email){addLink('Написать на почту', 'mailto:'+c.email);available=true}
     for(const phone of c?.phones||[]){if(!phone.number)continue;addLink('Позвонить: '+phone.number,'tel:'+phone.number.replace(/[^+\d]/g,''));available=true}
-    if(!available)info.append(node('p','Работодатель не опубликовал доступные через API контакты. Связаться можно через отклик на hh.ru.'));
+    if(!available){const extracted=contactLinks({...x,text:body.textContent,contact:''}).filter(l=>l.url.startsWith('tel:')||l.url.startsWith('mailto:'));for(const l of extracted){addLink(l.label,l.url);available=true}}
+    if(!available)info.append(node('p','Прямой телефон или email не опубликованы в доступных данных этой вакансии. Для связи потребуется отклик работодателю.'));
     if(d.apply_alternate_url)addLink('Откликнуться на hh.ru',d.apply_alternate_url);
     else if(d.response_url)addLink('Откликнуться на сайте работодателя',d.response_url);
     addLink('Оригинал на hh.ru',d.alternate_url||x.url);
