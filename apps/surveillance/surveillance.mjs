@@ -100,7 +100,7 @@ function start() {
       } catch { cameras = []; }
       options();
       const requested=new URLSearchParams(location.search).get('camera');
-      if(requested!==null && /^\\d+$/.test(requested) && cameras[Number(requested)])openCamera(requested);
+      if(requested!==null && /^\d+$/.test(requested) && cameras[Number(requested)])openCamera(requested);
       $('access-status').textContent = '';
       $('viewer').hidden = false;
     } catch {
