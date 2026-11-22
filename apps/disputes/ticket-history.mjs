@@ -16,7 +16,7 @@ export function createTicketHistory(load) {
  close.type = 'button';
  close.onclick = () => dialog.close();
  const header = element('div', '', 'ticket-history-head');
- const copyTicket = element('button', '⧉ Копировать №', 'copy-number');
+ const copyTicket = element('button', '⧉ №', 'copy-number');
  copyTicket.type='button';copyTicket.hidden=true;
  header.append(heading, copyTicket, close);
  const state = element('p');
