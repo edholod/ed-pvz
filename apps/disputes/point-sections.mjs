@@ -67,7 +67,7 @@ function paintArchive(panel, rows) {
     const item = element('li', '', 'point-archive-row');
     const date = [formatDate(row.operation_date), row.operation_time?.slice(0, 5)].filter(Boolean).join(' ');
     const shk=element('strong', 'ШК ' + row.shk);
-    const copy=element('button','⧉ Копировать','copy-number');copy.type='button';copy.dataset.copyNumber=String(row.shk||'');
+    const copy=element('button','⧉','copy-number');copy.type='button';copy.dataset.copyNumber=String(row.shk||'');
     item.append(shk,copy,element('strong', money(row.amount, currencyCode(row))), element('small', date));
     const details = [
       row.cell && 'Ячейка ' + row.cell,
