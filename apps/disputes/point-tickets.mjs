@@ -84,7 +84,7 @@ export function updateReplyCountdowns(root = document) {
 }
 
 function tile(ticket, esc, place = '') {
- const urgent = ticket.reply_state === 'needs_reply';
+ const urgent = !isResolved(ticket) && ticket.reply_state === 'needs_reply';
  const due = ticket.reply_due_at || '';
  return `<li${urgent ? ' class="ticket-needs-reply"' : ''}>
   <button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
@@ -99,7 +99,7 @@ function byDeadline(a, b) {
 }
 
 function renderTicketGroups(tickets, esc) {
- const urgent = tickets.filter(ticket => ticket.reply_state === 'needs_reply').sort(byDeadline);
+ const urgent = tickets.filter(ticket => !isResolved(ticket) && ticket.reply_state === 'needs_reply').sort(byDeadline);
  const answered = tickets.filter(ticket => ticket.reply_state === 'answered');
  const others = tickets.filter(ticket => !['needs_reply', 'answered'].includes(ticket.reply_state));
  return [
