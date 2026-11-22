@@ -84,55 +84,61 @@ async function beginGoogleLink(){const current=await ensure();if(!current?.acces
 function consumeGoogleOAuth(){const hash=new URLSearchParams(location.hash.slice(1));const flowText=sessionStorage.getItem(GOOGLE_FLOW_KEY);if(!flowText||!location.hash.includes('access_token=')&&!hash.has('error'))return null;sessionStorage.removeItem(GOOGLE_FLOW_KEY);let flow;try{flow=JSON.parse(flowText)}catch{return null}if(Date.now()-flow.started>10*60*1000)throw Error('Время входа Google истекло');const error=hash.get('error_description')||hash.get('error');history.replaceState(null,'',location.pathname+location.search);if(error)throw Error(error);const access_token=hash.get('access_token'),refresh_token=hash.get('refresh_token');if(!access_token||!refresh_token)throw Error('Google не вернул сессию');const userPayload=access_token.split('.')[1];let userId='';try{const payload=JSON.parse(atob(userPayload.replace(/-/g,'+').replace(/_/g,'/')));userId=payload.sub}catch{}if(!userId)throw Error('Некорректная сессия Google');if(flow.mode==='link'&&flow.userId!==userId)throw Error('Google вернул другой аккаунт. Привязка остановлена');setSession({access_token,refresh_token,expires_in:Number(hash.get('expires_in')||3600),token_type:'bearer',user:{id:userId}});return {...flow,userId}}
 async function googleProfile(action,username,role){const current=await ensure();if(!current?.access_token)throw Error('Войдите через Google');const response=await fetch(URL+'/functions/v1/edpvz-google-profile',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+current.access_token,'Content-Type':'application/json'},body:JSON.stringify({action,username,role}),signal:AbortSignal.timeout(18000)});const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||'Не удалось загрузить профиль Google');return result}
 async function googleIdentity(){const current=await ensure();if(!current?.access_token)throw Error('Войдите в аккаунт');const response=await fetch(URL+'/auth/v1/user',{headers:{apikey:KEY,Authorization:'Bearer '+current.access_token},signal:AbortSignal.timeout(12000)});if(!response.ok)throw Error('Не удалось проверить Google');const user=await response.json();return (user.identities||[]).find(item=>item.provider==='google')||null}
-const APPLE_FLOW_KEY = 'edpvz-apple-oauth-flow';
+const PKCE_PROVIDERS = {
+ apple: 'Apple',
+ 'custom:yandex': 'Яндекс'
+};
+const PKCE_FLOW_KEY = 'edpvz-pkce-oauth-flow';
 
 async function appleOAuthEnabled() {
  return (await request('/auth/v1/settings')).external?.apple === true;
 }
 
-async function beginAppleOAuth(draft) {
+async function beginOAuth(provider, draft) {
+ if (!Object.hasOwn(PKCE_PROVIDERS, provider)) throw Error('Способ входа недоступен.');
  const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)),
   byte => byte.toString(16).padStart(2, '0')).join('');
  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
  const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
  const params = new URLSearchParams({
-  provider: 'apple',
+  provider,
   redirect_to: location.origin + '/apps/account/',
   code_challenge: challenge,
   code_challenge_method: 's256'
  });
- sessionStorage.setItem(APPLE_FLOW_KEY, JSON.stringify({ verifier, draft, started: Date.now() }));
+ sessionStorage.setItem(PKCE_FLOW_KEY, JSON.stringify({ provider, verifier, draft, started: Date.now() }));
  location.assign(URL + '/auth/v1/authorize?' + params);
 }
 
-async function consumeAppleOAuth() {
- const storedFlow = sessionStorage.getItem(APPLE_FLOW_KEY);
+async function consumeOAuth() {
+ const storedFlow = sessionStorage.getItem(PKCE_FLOW_KEY) || sessionStorage.getItem('edpvz-apple-oauth-flow');
  if (!storedFlow) return null;
  const query = new URLSearchParams(location.search);
  const hash = new URLSearchParams(location.hash.slice(1));
  const code = query.get('code');
  const error = query.get('error') || hash.get('error');
  if (!code && !error) return null;
- sessionStorage.removeItem(APPLE_FLOW_KEY);
+ sessionStorage.removeItem(PKCE_FLOW_KEY);
+ sessionStorage.removeItem('edpvz-apple-oauth-flow');
  for (const key of ['code', 'error', 'error_code', 'error_description']) {
   query.delete(key);
   hash.delete(key);
  }
  history.replaceState(null, '', location.pathname +
   (query.size ? '?' + query : '') + (hash.size ? '#' + hash : ''));
- const { verifier, draft, started } = JSON.parse(storedFlow);
- if (Date.now() - started > 10 * 60 * 1000) throw Error('Время входа через Apple истекло. Попробуйте ещё раз.');
- if (error) throw Error('Вход через Apple не завершён. Попробуйте ещё раз.');
+ const { provider = 'apple', verifier, draft, started } = JSON.parse(storedFlow);
+ if (Date.now() - started > 10 * 60 * 1000) throw Error('Время входа истекло. Попробуйте ещё раз.');
+ if (error) throw Error('Вход не завершён. Попробуйте ещё раз.');
  const data = await request('/auth/v1/token?grant_type=pkce', {
   method: 'POST',
   body: JSON.stringify({ auth_code: code, code_verifier: verifier })
  });
  if (!data.access_token || !data.refresh_token || !data.user?.id) {
-  throw Error('Не удалось получить сессию Apple.');
+  throw Error('Не удалось получить сессию.');
  }
  setSession(data);
- return draft;
+ return { provider, draft };
 }
 
 async function signOut(){try{if(session)await request('/auth/v1/logout',{method:'POST'})}finally{setSession(null)}}async function load(namespace){await ensure();if(!session)throw Error('Войдите в аккаунт');const id=encodeURIComponent(session.user.id),ns=encodeURIComponent(namespace);const rows=await request('/rest/v1/edpvz_user_data?user_id=eq.'+id+'&namespace=eq.'+ns+'&select=payload,updated_at');return rows[0]||null}async function save(namespace,payload){await ensure();if(!session)throw Error('Войдите в аккаунт');if(!/^[a-z0-9_-]{1,64}$/.test(namespace))throw Error('Некорректный раздел');const rows=await request('/rest/v1/edpvz_user_data?on_conflict=user_id,namespace',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({user_id:session.user.id,namespace,payload,updated_at:new Date().toISOString()})});return rows[0]}// Storage events also fire in the parent when sign-in happens in a same-origin iframe.
@@ -160,4 +166,4 @@ async function archiveRequest(path,body){
   return data;
  }catch(error){if(error.name==='AbortError')throw Error('Сервер архива не ответил вовремя. Повтори запрос.');throw error;}finally{clearTimeout(timer);}
 }
-window.EdPVZAccount={archiveRequest,checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signInWithTelegram,registerWithTelegram,beginGithubOAuth,beginGithubLink,consumeGithubOAuth,githubProfile,githubIdentity,beginGoogleOAuth,beginGoogleLink,consumeGoogleOAuth,googleProfile,googleIdentity,appleOAuthEnabled,beginAppleOAuth,consumeAppleOAuth,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
+window.EdPVZAccount={archiveRequest,checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signInWithTelegram,registerWithTelegram,beginGithubOAuth,beginGithubLink,consumeGithubOAuth,githubProfile,githubIdentity,beginGoogleOAuth,beginGoogleLink,consumeGoogleOAuth,googleProfile,googleIdentity,appleOAuthEnabled,beginOAuth,consumeOAuth,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
