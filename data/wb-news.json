@@ -1,6 +1,34 @@
 {
-  "updated": "2026-11-22T06:34:27.393Z",
+  "updated": "2026-11-22T14:52:26.628Z",
   "items": [
+    {
+      "id": "wb-pvz-ac373d6fa67f71b447504d1d",
+      "title": "Расписание онлайн-встреч с 23 по 27 ноября",
+      "content": "Подготовили расписание вебинаров на эту неделю, чтобы вам было удобнее спланировать время для стримов.\n\n• Понедельник, 23 ноября\n\n11:00 мск — вебинар «Приёмка и скорость приёмки»\n\n• Вторник, 24 ноября\n\n11:00 мск — вебинар «Выдача заказов»\n\n• Среда, 25 ноября\n\n11:00 мск — вебинар «Тикеты на оспаривание: брак, подмены и зависшие ШК»\n\n• Четверг, 26 ноября\n\n11:00 мск — вебинар «Возврат товара»\n\n• Пятница, 27 ноября\n\n11:00 мск — вебинар  «Брак»\n\nПодключайтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».\n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-22T07:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-ac373d6fa67f71b447504d1d",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "owners",
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/80649534-e4ec-11f1-b484-de16fe8e53c5.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/80649534-e4ec-11f1-b484-de16fe8e53c5.webp"
+      ],
+      "origin": "my-pvz"
+    },
     {
       "id": "wb-pvz-b2fc3b6752d9de9ebfe02f16",
       "title": "Плакат WB Банка: где разместить и как привязать QR-код к ПВЗ",
@@ -900,7 +928,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-22T06:34:27.409Z",
+    "checked": "2026-11-22T14:52:26.642Z",
     "intervalMinutes": 30
   }
 }
