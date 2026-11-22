@@ -90,8 +90,8 @@ function photo(row) {
   return box;
 }
 
-function copyNumberButton(value){const button=node('button','⧉ Копировать','copy-number');button.type='button';button.dataset.copyNumber=String(value);button.setAttribute('aria-label','Скопировать номер '+value);return button;}
-document.addEventListener('click',async event=>{const button=event.target.closest('[data-copy-number]');if(!button)return;event.preventDefault();event.stopPropagation();try{await navigator.clipboard.writeText(button.dataset.copyNumber);button.textContent='✓ Скопировано';setTimeout(()=>{if(button.isConnected)button.textContent='⧉ Копировать'},1500)}catch{button.textContent='Ошибка копирования'}});
+function copyNumberButton(value){const button=node('button','⧉','copy-number');button.type='button';button.dataset.copyNumber=String(value);button.setAttribute('aria-label','Скопировать номер '+value);return button;}
+document.addEventListener('click',async event=>{const button=event.target.closest('[data-copy-number]');if(!button)return;event.preventDefault();event.stopPropagation();try{await navigator.clipboard.writeText(button.dataset.copyNumber);button.textContent='✓';setTimeout(()=>{if(button.isConnected)button.textContent='⧉'},1500)}catch{button.textContent='Ошибка копирования'}});
 function card(row) {
   const note = rowNote(row.id);
   const color = STATUS_CLASSES[STATUSES.indexOf(note.status)] || 'new';
