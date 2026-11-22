@@ -11,7 +11,7 @@ const pointKey = id => JSON.stringify([selected, id]);
 const pointSections = bindPointSections($('view'), api, pointKey);
 const opened=new Set(),openedCards=new Set(),cacheKey='edpvz-dispute-drafts-v1:'+ADMIN;
 function permitted(){return api?.signedIn&&api.user?.id===ADMIN}
-async function rest(path,options={}){const session=await Promise.race([api.ensure(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Истекло время ожидания авторизации')),12000))]);if(!session||!permitted())throw Error('Доступ запрещён');const r=await fetch(BASE+'/rest/v1/'+path,{signal:options.signal||AbortSignal.timeout(20000),...options,headers:{apikey:KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json',...(options.headers||{})}});if(!r.ok){const e=Error('Не удалось сохранить или получить данные ('+r.status+')');e.status=r.status;throw e}return r.status===204?null:r.json()}
+async function rest(path,options={}){const session=await Promise.race([api.ensure(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Истекло время ожидания авторизации')),12000))]);if(!session||!permitted())throw Error('Доступ запрещён');const r=await fetch(BASE+'/rest/v1/'+path,{signal:options.signal||AbortSignal.timeout(30000),...options,headers:{apikey:KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json',...(options.headers||{})}});if(!r.ok){const e=Error('Не удалось сохранить или получить данные ('+r.status+', '+path.split('?')[0]+')');e.status=r.status;throw e}return r.status===204?null:r.json()}
 const ticketHistory = createTicketHistory(async id => {
  const ticket = (await rest('edpvz_dispute_tickets?select=title,ticket_number,history_complete&id=eq.'+encodeURIComponent(id)))[0];
  if (!ticket) throw Error('Тикет недоступен');
@@ -119,7 +119,28 @@ function refresh() {
  return refreshTask;
 }
 
-async function loadCases(){if(busy||!permitted())return;busy=true;const loadingWatchdog=setTimeout(()=>{if(busy){$('sync-state').textContent='Загрузка занимает больше времени';$('sync-info').textContent='Сервер отвечает медленно. Если данные не появятся, нажмите «Обновить из WB».';}},12000);$('sync-state').textContent='Загружаем удержания…';$('sync-info').textContent='Получаем данные ПВЗ и карточки товаров';$('load-error').textContent='';try{const [orgs,pp,rows]=await Promise.all([all('edpvz_dispute_organizations?select=*&order=name_exact.asc'),all('edpvz_dispute_points?select=*&order=wb_point_id.asc'),all('edpvz_dispute_observations?select=*&is_current=eq.true&wb_state=eq.to-hold&order=last_seen_at.desc,id.asc')]);
+async function loadCases(){if(busy||!permitted())return;busy=true;const loadingWatchdog=setTimeout(()=>{if(busy){$('sync-state').textContent='Загрузка занимает больше времени';$('sync-info').textContent='Проверяем подключение к базе удержаний. Кнопка «Обновить из WB» запускает отдельный импорт и не исправляет загрузку страницы.';}},12000);$('sync-state').textContent='Загружаем удержания…';$('sync-info').textContent='Получаем данные ПВЗ и карточки товаров';$('load-error').textContent='';try{const initialRequests=[
+  ['Собственники',all('edpvz_dispute_organizations?select=*&order=name_exact.asc')],
+  ['ПВЗ',all('edpvz_dispute_points?select=*&order=wb_point_id.asc')],
+  ['Удержания',all('edpvz_dispute_observations?select=*&is_current=eq.true&wb_state=eq.to-hold&order=last_seen_at.desc,id.asc')]
+ ];
+ const initialResults=await Promise.allSettled(initialRequests.map(async ([name,request])=>{
+   try{return await request}catch(error){
+     console.warn('Disputes initial request failed',name,error);
+     throw Error(name+': '+error.message);
+   }
+ }));
+ const failures=initialResults.flatMap((result,i)=>result.status==='rejected'?[initialRequests[i][0]+': '+(result.reason?.message||'ошибка')]:[]);
+ const [orgs,pp,rows]=initialResults.map(result=>result.status==='fulfilled'?result.value:[]);
+ if(failures.length){
+   $('load-error').textContent='Не удалось получить: '+failures.join('; ')+'. Повтори загрузку страницы.';
+   $('sync-state').textContent='Данные загружены частично';
+   $('sync-info').textContent='Показаны доступные данные. Автоматическое обновление продолжится.';
+ }
+ if(!orgs.length||!pp.length||!rows.length){
+   // Never present a blank list as proof that the account has no holdings.
+   console.warn('Disputes empty initial data', {organizations:orgs.length,points:pp.length,observations:rows.length});
+ }
  if(!permitted())return;
  organizations=orgs;points=pp;observations=visibleObservations(rows);notes=new Map();
  try{updateMonths();render();$('sync-state').textContent='Карточки загружены';$('sync-info').textContent='Загружено удержаний: '+observations.length+'. Загружаются дополнительные данные…'}catch(err){console.error('Initial disputes render failed',err);$('sync-state').textContent='Ошибка отображения карточек';$('load-error').textContent=String(err?.stack||err)}
