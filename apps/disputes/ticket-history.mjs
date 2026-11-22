@@ -16,7 +16,9 @@ export function createTicketHistory(load) {
  close.type = 'button';
  close.onclick = () => dialog.close();
  const header = element('div', '', 'ticket-history-head');
- header.append(heading, close);
+ const copyTicket = element('button', '⧉ Копировать №', 'copy-number');
+ copyTicket.type='button';copyTicket.hidden=true;
+ header.append(heading, copyTicket, close);
  const state = element('p');
  state.setAttribute('role', 'status');
  const list = element('ol', '', 'ticket-history-messages');
@@ -38,6 +40,7 @@ export function createTicketHistory(load) {
     const data = await load(id);
     if (version !== current || !dialog.open) return;
     heading.textContent = '№ ' + data.ticket_number + ' · ' + (data.title || title);
+    copyTicket.hidden=!data.ticket_number;copyTicket.dataset.copyNumber=data.ticket_number||'';
     list.replaceChildren(...(data.messages || []).map(message => {
      const item = element('li');
      const author = message.raw?.author_label || roles[message.author_role] || roles.unknown;
