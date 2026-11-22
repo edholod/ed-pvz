@@ -94,7 +94,7 @@ async function appleOAuthEnabled() {
  return (await request('/auth/v1/settings')).external?.apple === true;
 }
 
-async function beginOAuth(provider, draft) {
+async function beginOAuth(provider, draft, link = false) {
  if (!Object.hasOwn(PKCE_PROVIDERS, provider)) throw Error('Способ входа недоступен.');
  const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)),
   byte => byte.toString(16).padStart(2, '0')).join('');
@@ -107,9 +107,22 @@ async function beginOAuth(provider, draft) {
   code_challenge: challenge,
   code_challenge_method: 's256'
  });
- sessionStorage.setItem(PKCE_FLOW_KEY, JSON.stringify({ provider, verifier, draft, started: Date.now() }));
+ let userId;
+ let authorizationUrl = URL + '/auth/v1/authorize?' + params;
+ if (link) {
+  const current = await ensure();
+  if (!current?.user?.id) throw Error('Войдите в аккаунт перед привязкой Яндекса.');
+  userId = current.user.id;
+  params.set('skip_http_redirect', 'true');
+  const result = await request('/auth/v1/user/identities/authorize?' + params, {
+   headers: { Authorization: 'Bearer ' + current.access_token }
+  });
+  if (!result.url) throw Error('Не удалось начать привязку Яндекса.');
+  authorizationUrl = result.url;
+ }
+ sessionStorage.setItem(PKCE_FLOW_KEY, JSON.stringify({ provider, verifier, draft, userId, started: Date.now() }));
  // The profile can be embedded in the portal. OAuth must run in the main window.
- window.top.location.assign(URL + '/auth/v1/authorize?' + params);
+ window.top.location.assign(authorizationUrl);
 }
 
 async function consumeOAuth() {
@@ -118,6 +131,7 @@ async function consumeOAuth() {
  const hash = new URLSearchParams(location.hash.slice(1));
  const code = query.get('code');
  const error = query.get('error') || hash.get('error');
+ const callbackErrorCode = query.get('error_code') || hash.get('error_code');
  if (!code && (!error || !storedFlow)) return null;
  sessionStorage.removeItem(PKCE_FLOW_KEY);
  sessionStorage.removeItem('edpvz-apple-oauth-flow');
@@ -128,9 +142,17 @@ async function consumeOAuth() {
  history.replaceState(null, '', location.pathname +
   (query.size ? '?' + query : '') + (hash.size ? '#' + hash : ''));
  if (!storedFlow) throw Error('Откройте страницу входа в том же браузере и начните вход заново.');
- const { provider = 'apple', verifier, draft, started } = JSON.parse(storedFlow);
+ const { provider = 'apple', verifier, draft, userId, started } = JSON.parse(storedFlow);
  if (Date.now() - started > 10 * 60 * 1000) throw Error('Время входа истекло. Попробуйте ещё раз.');
- if (error) throw Error('Вход не завершён. Попробуйте ещё раз.');
+ if (error) {
+  if (userId && callbackErrorCode === 'identity_already_exists') {
+   throw Error('Этот Яндекс ID уже привязан к аккаунту «Эд ПВЗ».');
+  }
+  throw Error(userId ? 'Привязка Яндекса не завершена. Попробуйте ещё раз.' : 'Вход не завершён. Попробуйте ещё раз.');
+ }
+ if (userId && (await ensure())?.user?.id !== userId) {
+  throw Error('Аккаунт изменился. Начните привязку Яндекса заново.');
+ }
  const data = await request('/auth/v1/token?grant_type=pkce', {
   method: 'POST',
   body: JSON.stringify({ auth_code: code, code_verifier: verifier })
@@ -138,8 +160,18 @@ async function consumeOAuth() {
  if (!data.access_token || !data.refresh_token || !data.user?.id) {
   throw Error('Не удалось получить сессию.');
  }
- setSession(data);
- return { provider, draft };
+ if (userId && data.user.id !== userId) throw Error('Яндекс вернул сессию другого аккаунта.');
+ // Only keep the Ed PVZ session, not the upstream provider's tokens.
+ const { provider_token, provider_refresh_token, ...accountSession } = data;
+ setSession(accountSession);
+ return { provider, draft, linked: Boolean(userId) };
+}
+
+async function yandexIdentity() {
+ const current = await ensure();
+ if (!current?.user?.id) return null;
+ const user = await request('/auth/v1/user', { headers: { Authorization: 'Bearer ' + current.access_token } });
+ return user.identities?.find(identity => identity.provider === 'custom:yandex') || null;
 }
 
 async function signOut(){try{if(session)await request('/auth/v1/logout',{method:'POST'})}finally{setSession(null)}}async function load(namespace){await ensure();if(!session)throw Error('Войдите в аккаунт');const id=encodeURIComponent(session.user.id),ns=encodeURIComponent(namespace);const rows=await request('/rest/v1/edpvz_user_data?user_id=eq.'+id+'&namespace=eq.'+ns+'&select=payload,updated_at');return rows[0]||null}async function save(namespace,payload){await ensure();if(!session)throw Error('Войдите в аккаунт');if(!/^[a-z0-9_-]{1,64}$/.test(namespace))throw Error('Некорректный раздел');const rows=await request('/rest/v1/edpvz_user_data?on_conflict=user_id,namespace',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({user_id:session.user.id,namespace,payload,updated_at:new Date().toISOString()})});return rows[0]}// Storage events also fire in the parent when sign-in happens in a same-origin iframe.
@@ -167,4 +199,4 @@ async function archiveRequest(path,body){
   return data;
  }catch(error){if(error.name==='AbortError')throw Error('Сервер архива не ответил вовремя. Повтори запрос.');throw error;}finally{clearTimeout(timer);}
 }
-window.EdPVZAccount={archiveRequest,checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signInWithTelegram,registerWithTelegram,beginGithubOAuth,beginGithubLink,consumeGithubOAuth,githubProfile,githubIdentity,beginGoogleOAuth,beginGoogleLink,consumeGoogleOAuth,googleProfile,googleIdentity,appleOAuthEnabled,beginOAuth,consumeOAuth,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
+window.EdPVZAccount={archiveRequest,checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signInWithTelegram,registerWithTelegram,beginGithubOAuth,beginGithubLink,consumeGithubOAuth,githubProfile,githubIdentity,beginGoogleOAuth,beginGoogleLink,consumeGoogleOAuth,googleProfile,googleIdentity,appleOAuthEnabled,beginOAuth,consumeOAuth,yandexIdentity,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
