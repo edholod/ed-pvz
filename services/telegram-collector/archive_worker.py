@@ -162,7 +162,9 @@ async def download_hls_source(job,clip,start,end,path):
     # observable before the final moov atom is written.
     args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y',
           '-rw_timeout','30000000','-protocol_whitelist','file,http,https,tcp,tls,crypto',
-          '-i',stream,'-t',str(end-start),'-map','0:v:0','-map','0:a:0?',
+          # Ivideon can publish archive playlists incrementally. The HLS demuxer
+          # otherwise starts three segments from the end of the current playlist.
+          '-live_start_index','0','-i',stream,'-t',str(end-start),'-map','0:v:0','-map','0:a:0?',
           '-c','copy','-movflags','+frag_keyframe+empty_moov',str(path)]
     try:
         task=asyncio.create_task(process(args,job,timeout=min(1200,max(180,(end-start)*4))))
