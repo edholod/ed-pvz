@@ -64,6 +64,7 @@ export function renderPointTickets(point, groups, scopes, failed, activeTab = 'w
    tickets[id].length ? renderTicketGroups(tickets[id], esc)
    : '<p class="empty">Активные тикеты в этой вкладке пока не найдены.</p>'
   }</div>`).join('')}
+  <details class="resolved-tickets"><summary>Решённые тикеты · ${resolved.length}</summary>${resolved.length? `<ul class="point-ticket-list">${resolved.map(ticket=>tile(ticket,esc)).join('')}</ul>` : '<p class="empty">Решённых тикетов пока нет.</p>'}</details>
  </section>`;
 }
 
