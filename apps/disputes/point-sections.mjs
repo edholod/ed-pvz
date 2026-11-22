@@ -66,7 +66,9 @@ function paintArchive(panel, rows) {
     if (!lists.has(month)) lists.set(month, element('ul', '', 'point-archive-list'));
     const item = element('li', '', 'point-archive-row');
     const date = [formatDate(row.operation_date), row.operation_time?.slice(0, 5)].filter(Boolean).join(' ');
-    item.append(element('strong', 'ШК ' + row.shk), element('strong', money(row.amount, currencyCode(row))), element('small', date));
+    const shk=element('strong', 'ШК ' + row.shk);
+    const copy=element('button','⧉ Копировать','copy-number');copy.type='button';copy.dataset.copyNumber=String(row.shk||'');
+    item.append(shk,copy,element('strong', money(row.amount, currencyCode(row))), element('small', date));
     const details = [
       row.cell && 'Ячейка ' + row.cell,
       row.return_box && 'Коробка возврата ' + row.return_box,
