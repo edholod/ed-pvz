@@ -89,7 +89,7 @@ function tile(ticket, esc, place = '') {
  const due = ticket.reply_due_at || '';
  return `<li${urgent ? ' class="ticket-needs-reply"' : ''}>
   <button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
-  <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)}</span><span>${esc(place || (ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'))}</span><span>${esc(ticket.created_local || '')}</span></div>
+  <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)} <button type="button" class="copy-number" data-copy-number="${esc(ticket.ticket_number)}" aria-label="Скопировать номер тикета">⧉ Копировать</button></span><span>${esc(place || (ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'))}</span><span>${esc(ticket.created_local || '')}</span></div>
   <span class="point-ticket-state">${esc(ticket.status)}</span>
   ${urgent ? `<span class="ticket-reply-clock" data-reply-due="${esc(due)}">${esc(replyCountdown(due))}</span>` : ''}
  </li>`;
