@@ -86,12 +86,18 @@ async function googleProfile(action,username,role){const current=await ensure();
 async function googleIdentity(){const current=await ensure();if(!current?.access_token)throw Error('Войдите в аккаунт');const response=await fetch(URL+'/auth/v1/user',{headers:{apikey:KEY,Authorization:'Bearer '+current.access_token},signal:AbortSignal.timeout(12000)});if(!response.ok)throw Error('Не удалось проверить Google');const user=await response.json();return (user.identities||[]).find(item=>item.provider==='google')||null}
 const PKCE_PROVIDERS = {
  apple: 'Apple',
- 'custom:yandex': 'Яндекс'
+ 'custom:yandex': 'Яндекс',
+ 'custom:vk': 'ВКонтакте'
 };
 const PKCE_FLOW_KEY = 'edpvz-pkce-oauth-flow';
 
 async function appleOAuthEnabled() {
  return (await request('/auth/v1/settings')).external?.apple === true;
+}
+
+async function vkOAuthConfigured() {
+ const response = await fetch(URL + '/functions/v1/edpvz-vk-id/status', { signal: AbortSignal.timeout(6000) });
+ return response.ok && (await response.json()).configured === true;
 }
 
 async function beginOAuth(provider, draft, link = false) {
@@ -111,13 +117,13 @@ async function beginOAuth(provider, draft, link = false) {
  let authorizationUrl = URL + '/auth/v1/authorize?' + params;
  if (link) {
   const current = await ensure();
-  if (!current?.user?.id) throw Error('Войдите в аккаунт перед привязкой Яндекса.');
+  if (!current?.user?.id) throw Error('Войдите в аккаунт перед привязкой.');
   userId = current.user.id;
   params.set('skip_http_redirect', 'true');
   const result = await request('/auth/v1/user/identities/authorize?' + params, {
    headers: { Authorization: 'Bearer ' + current.access_token }
   });
-  if (!result.url) throw Error('Не удалось начать привязку Яндекса.');
+  if (!result.url) throw Error('Не удалось начать привязку.');
   authorizationUrl = result.url;
  }
  sessionStorage.setItem(PKCE_FLOW_KEY, JSON.stringify({ provider, verifier, draft, userId, started: Date.now() }));
@@ -146,12 +152,12 @@ async function consumeOAuth() {
  if (Date.now() - started > 10 * 60 * 1000) throw Error('Время входа истекло. Попробуйте ещё раз.');
  if (error) {
   if (userId && callbackErrorCode === 'identity_already_exists') {
-   throw Error('Этот Яндекс ID уже привязан к аккаунту «Эд ПВЗ».');
+   throw Error('Этот аккаунт уже привязан к профилю «Эд ПВЗ».');
   }
-  throw Error(userId ? 'Привязка Яндекса не завершена. Попробуйте ещё раз.' : 'Вход не завершён. Попробуйте ещё раз.');
+  throw Error(userId ? 'Привязка не завершена. Попробуйте ещё раз.' : 'Вход не завершён. Попробуйте ещё раз.');
  }
  if (userId && (await ensure())?.user?.id !== userId) {
-  throw Error('Аккаунт изменился. Начните привязку Яндекса заново.');
+  throw Error('Аккаунт изменился. Начните привязку заново.');
  }
  const data = await request('/auth/v1/token?grant_type=pkce', {
   method: 'POST',
@@ -160,18 +166,18 @@ async function consumeOAuth() {
  if (!data.access_token || !data.refresh_token || !data.user?.id) {
   throw Error('Не удалось получить сессию.');
  }
- if (userId && data.user.id !== userId) throw Error('Яндекс вернул сессию другого аккаунта.');
+ if (userId && data.user.id !== userId) throw Error('Получена сессия другого аккаунта.');
  // Only keep the Ed PVZ session, not the upstream provider's tokens.
  const { provider_token, provider_refresh_token, ...accountSession } = data;
  setSession(accountSession);
  return { provider, draft, linked: Boolean(userId) };
 }
 
-async function yandexIdentity() {
+async function oauthIdentity(provider) {
  const current = await ensure();
  if (!current?.user?.id) return null;
  const user = await request('/auth/v1/user', { headers: { Authorization: 'Bearer ' + current.access_token } });
- return user.identities?.find(identity => identity.provider === 'custom:yandex') || null;
+ return user.identities?.find(identity => identity.provider === provider) || null;
 }
 
 async function signOut(){try{if(session)await request('/auth/v1/logout',{method:'POST'})}finally{setSession(null)}}async function load(namespace){await ensure();if(!session)throw Error('Войдите в аккаунт');const id=encodeURIComponent(session.user.id),ns=encodeURIComponent(namespace);const rows=await request('/rest/v1/edpvz_user_data?user_id=eq.'+id+'&namespace=eq.'+ns+'&select=payload,updated_at');return rows[0]||null}async function save(namespace,payload){await ensure();if(!session)throw Error('Войдите в аккаунт');if(!/^[a-z0-9_-]{1,64}$/.test(namespace))throw Error('Некорректный раздел');const rows=await request('/rest/v1/edpvz_user_data?on_conflict=user_id,namespace',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({user_id:session.user.id,namespace,payload,updated_at:new Date().toISOString()})});return rows[0]}// Storage events also fire in the parent when sign-in happens in a same-origin iframe.
@@ -199,4 +205,4 @@ async function archiveRequest(path,body){
   return data;
  }catch(error){if(error.name==='AbortError')throw Error('Сервер архива не ответил вовремя. Повтори запрос.');throw error;}finally{clearTimeout(timer);}
 }
-window.EdPVZAccount={archiveRequest,checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signInWithTelegram,registerWithTelegram,beginGithubOAuth,beginGithubLink,consumeGithubOAuth,githubProfile,githubIdentity,beginGoogleOAuth,beginGoogleLink,consumeGoogleOAuth,googleProfile,googleIdentity,appleOAuthEnabled,beginOAuth,consumeOAuth,yandexIdentity,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
+window.EdPVZAccount={archiveRequest,checkIvideon,rpc,createPoint,readTable,signUp,registerUsername,signIn,signInWithTelegram,registerWithTelegram,beginGithubOAuth,beginGithubLink,consumeGithubOAuth,githubProfile,githubIdentity,beginGoogleOAuth,beginGoogleLink,consumeGoogleOAuth,googleProfile,googleIdentity,appleOAuthEnabled,beginOAuth,consumeOAuth,oauthIdentity,vkOAuthConfigured,signOut,refresh,ensure,load,save,get user(){return session?.user||null},get signedIn(){return !!session?.access_token}}})();
