@@ -4,6 +4,7 @@ const tabs = [
 ];
 
 const withholdingTopic = /удержан|зависш|брак[а-яё]*|подмен/i;
+const isResolved = ticket => /^(реш[её]н|закрыт|заверш[её]н|отмен[её]н)/i.test(String(ticket.status||'').trim());
 
 function pointKey(row) {
  return JSON.stringify([row.organization_research_id, String(row.wb_point_id)]);
@@ -26,7 +27,8 @@ export function groupPointTickets(tickets, observations) {
  for (const ticket of sorted) {
   if (dateKey(ticket.created_local) < '2026-10-01') continue;
   const key = pointKey(ticket);
-  if (!groups.has(key)) groups.set(key, { withholding: [], other: [] });
+  if (!groups.has(key)) groups.set(key, { withholding: [], other: [], resolved: [] });
+  if(isResolved(ticket)){groups.get(key).resolved.push(ticket);continue;}
   const group = ticket.linked_withholding || withholdingTopic.test(ticket.title ?? '') || numbers.has(ticketKey(ticket, ticket.ticket_number))
    ? 'withholding' : 'other';
   groups.get(key)[group].push(ticket);
@@ -35,11 +37,12 @@ export function groupPointTickets(tickets, observations) {
 }
 
 export function renderPointTickets(point, groups, scopes, failed, activeTab = 'withholding', esc, urgentAbove = false) {
- const pointTickets = groups.get(pointKey(point)) ?? { withholding: [], other: [] };
+ const pointTickets = groups.get(pointKey(point)) ?? { withholding: [], other: [], resolved: [] };
  const tickets = urgentAbove ? {
   withholding: pointTickets.withholding.filter(ticket => ticket.reply_state !== 'needs_reply'),
   other: pointTickets.other.filter(ticket => ticket.reply_state !== 'needs_reply')
  } : pointTickets;
+ const resolved=pointTickets.resolved||[];
  const scopePrefix = `wb:${point.organization_research_id}:${point.wb_point_id}:tickets:`;
  const checks = ['legacy', 'new'].map(namespace => scopes.find(scope => scope.scope === scopePrefix + namespace));
  const checked = checks.every(scope => scope?.last_success)
