@@ -1,6 +1,6 @@
-import { bindPointSections, renderPointSections } from './point-sections.mjs?v=6';
+import { bindPointSections, renderPointSections } from './point-sections.mjs?v=copy-20261122';
 import { createTicketHistory } from './ticket-history.mjs';
-import { groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=point-sections-1';
+import { groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=copy-20261122';
 import { STATUSES, STATUS_CLASSES, initialNote, monthKey, monthGroups, photoPath, sourceMatches } from './cards-model.mjs?v=manual-hanging-1';
 
 const $ = id => document.getElementById(id);
@@ -90,6 +90,8 @@ function photo(row) {
   return box;
 }
 
+function copyNumberButton(value){const button=node('button','⧉ Копировать','copy-number');button.type='button';button.dataset.copyNumber=String(value);button.setAttribute('aria-label','Скопировать номер '+value);return button;}
+document.addEventListener('click',async event=>{const button=event.target.closest('[data-copy-number]');if(!button)return;event.preventDefault();event.stopPropagation();try{await navigator.clipboard.writeText(button.dataset.copyNumber);button.textContent='✓ Скопировано';setTimeout(()=>{if(button.isConnected)button.textContent='⧉ Копировать'},1500)}catch{button.textContent='Ошибка копирования'}});
 function card(row) {
   const note = rowNote(row.id);
   const color = STATUS_CLASSES[STATUSES.indexOf(note.status)] || 'new';
@@ -105,15 +107,15 @@ function card(row) {
     ['Обращение до', deadline]
   ]) {
     const field = node('div');
-    field.append(node('dt', label), node('dd', value));
+    const dd=node('dd',value);if(label==='ШК / стикер'&&value!=='—')dd.append(copyNumberButton(value));field.append(node('dt', label), dd);
     fields.append(field);
   }
   facts.append(fields, node('p', row.category, 'compact-type'), node('span', note.status, 'status-badge'));
   if (row.wb_ticket_number) {
     const wb = 'WB: обращение № ' + row.wb_ticket_number + (row.wb_ticket_status ? ' · ' + row.wb_ticket_status : '');
-    facts.append(node('div', wb, 'wb-ticket'));
+    const ticketLine=node('div',wb,'wb-ticket');ticketLine.append(copyNumberButton(row.wb_ticket_number));facts.append(ticketLine);
   }
-  if (row.ticket && row.ticket !== row.wb_ticket_number) facts.append(node('div', 'Тикет № ' + row.ticket, 'wb-ticket'));
+  if (row.ticket && row.ticket !== row.wb_ticket_number) {const ticketLine=node('div','Тикет № '+row.ticket,'wb-ticket');ticketLine.append(copyNumberButton(row.ticket));facts.append(ticketLine);}
   summary.append(photo(row), facts);
   article.append(summary);
   const annotations = [
