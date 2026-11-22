@@ -108,17 +108,17 @@ async function beginOAuth(provider, draft) {
   code_challenge_method: 's256'
  });
  sessionStorage.setItem(PKCE_FLOW_KEY, JSON.stringify({ provider, verifier, draft, started: Date.now() }));
- location.assign(URL + '/auth/v1/authorize?' + params);
+ // The profile can be embedded in the portal. OAuth must run in the main window.
+ window.top.location.assign(URL + '/auth/v1/authorize?' + params);
 }
 
 async function consumeOAuth() {
  const storedFlow = sessionStorage.getItem(PKCE_FLOW_KEY) || sessionStorage.getItem('edpvz-apple-oauth-flow');
- if (!storedFlow) return null;
  const query = new URLSearchParams(location.search);
  const hash = new URLSearchParams(location.hash.slice(1));
  const code = query.get('code');
  const error = query.get('error') || hash.get('error');
- if (!code && !error) return null;
+ if (!code && (!error || !storedFlow)) return null;
  sessionStorage.removeItem(PKCE_FLOW_KEY);
  sessionStorage.removeItem('edpvz-apple-oauth-flow');
  for (const key of ['code', 'error', 'error_code', 'error_description']) {
@@ -127,6 +127,7 @@ async function consumeOAuth() {
  }
  history.replaceState(null, '', location.pathname +
   (query.size ? '?' + query : '') + (hash.size ? '#' + hash : ''));
+ if (!storedFlow) throw Error('Откройте страницу входа в том же браузере и начните вход заново.');
  const { provider = 'apple', verifier, draft, started } = JSON.parse(storedFlow);
  if (Date.now() - started > 10 * 60 * 1000) throw Error('Время входа истекло. Попробуйте ещё раз.');
  if (error) throw Error('Вход не завершён. Попробуйте ещё раз.');
