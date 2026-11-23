@@ -90,11 +90,15 @@ export function updateReplyCountdowns(root = document) {
 function tile(ticket, esc, place = '') {
  const urgent = !isResolved(ticket) && ticket.reply_state === 'needs_reply';
  const due = ticket.reply_due_at || '';
+ const estimatedDeadline = Number.isFinite(Date.parse(due)) ? new Date(due).toLocaleString('ru-RU', {
+  timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+ }) + ' МСК' : '';
  return `<li${urgent ? ' class="ticket-needs-reply"' : ''}>
   <button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
   <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)} <button type="button" class="copy-number" data-copy-number="${esc(ticket.ticket_number)}" aria-label="Скопировать номер тикета">⧉</button></span><span>${esc(place || (ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'))}</span><span>${esc(ticket.created_local || '')}</span></div>
   <span class="point-ticket-state">${esc(ticket.status)}</span>
-  ${urgent ? `<span class="ticket-reply-clock" data-reply-due="${esc(due)}">${esc(replyCountdown(due))}</span>` : ''}
+  ${urgent ? `<span class="ticket-reply-clock" data-reply-due="${esc(due)}">${esc(replyCountdown(due))}</span>
+   ${estimatedDeadline ? `<small>Оценка по последнему ответу WB · до ${esc(estimatedDeadline)}. Точный срок проверяйте в WB.</small>` : ''}` : ''}
  </li>`;
 }
 
