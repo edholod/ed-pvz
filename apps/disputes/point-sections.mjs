@@ -87,6 +87,7 @@ function paintArchive(panel, rows) {
 
 export function bindPointSections(root, account, pointKey) {
   const selected = new Map();
+ const defaultPanel = new URLSearchParams(location.search).get('tab') === 'tickets' ? 'tickets' : 'disputes';
   const archive = new Map();
   let userId;
 
@@ -140,7 +141,7 @@ export function bindPointSections(root, account, pointKey) {
   });
 
   return {
-    active: point => selected.get(pointKey(point)) ?? 'disputes',
+    active: point => selected.get(pointKey(point)) ?? defaultPanel,
     hydrate,
     clear() {
       selected.clear();

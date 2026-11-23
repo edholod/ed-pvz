@@ -1,5 +1,5 @@
 import { holdingUpdateKeys, updateTime } from './update-time.mjs?v=coverage';
-import { bindPointSections, renderPointSections } from './point-sections.mjs?v=copy-20261122';
+import { bindPointSections, renderPointSections } from './point-sections.mjs?v=direct-tickets';
 import { createTicketHistory } from './ticket-history.mjs';
 import { bindTicketArchive, personalTicketGroups, renderTicketArchive, groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=ticket-coverage-three-hours';
 import { STATUSES, STATUS_CLASSES, initialNote, monthKey, monthGroups, photoPath, sourceMatches } from './cards-model.mjs?v=manual-hanging-1';
