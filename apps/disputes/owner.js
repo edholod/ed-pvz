@@ -1,7 +1,7 @@
 import { holdingUpdateKeys, updateTime } from './update-time.mjs?v=coverage';
 import { bindPointSections, renderPointSections } from './point-sections.mjs?v=copy-20261122';
 import { createTicketHistory } from './ticket-history.mjs';
-import { groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=wb-reply-48h';
+import { bindTicketArchive, personalTicketGroups, renderTicketArchive, groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=ticket-personal-archive';
 import { STATUSES, STATUS_CLASSES, initialNote, monthKey, monthGroups, photoPath, sourceMatches } from './cards-model.mjs?v=manual-hanging-1';
 
 const $ = id => document.getElementById(id);
@@ -157,7 +157,8 @@ function render() {
     count++;
   }
 
-  const pointTickets = groupPointTickets(ticketSnapshot?.tickets ?? [], []);
+  const pointTickets = personalTicketGroups(groupPointTickets(ticketSnapshot?.tickets ?? [], []), userId);
+  const archiveOpen = cases.querySelector('.personal-ticket-archive')?.open;
   const sections = points.filter(point => pointId ? point.id === pointId : !filtering || grouped.has(point.id)).map(point => {
     const section = node('details', null, 'point');
     section.dataset.point = point.id;
@@ -189,7 +190,8 @@ function render() {
   const ticketPoints = points.map(point => ({
     organization_research_id: displayedOrganization, wb_point_id: point.id, name: point.name
   }));
-  cases.insertAdjacentHTML('afterbegin', renderUrgentTickets(pointTickets, ticketPoints, escapeHTML, ticketsFailed, ticketSnapshot?.scopes));
+  cases.insertAdjacentHTML('afterbegin', renderUrgentTickets(pointTickets, ticketPoints, escapeHTML, ticketsFailed, ticketSnapshot?.scopes)
+    + renderTicketArchive(pointTickets, ticketPoints, escapeHTML, archiveOpen));
   if (filtering && !count) cases.append(node('p', 'По выбранным условиям удержаний нет.', 'empty'));
   $('owner-reset').hidden = !filtering;
   $('owner-count').textContent = 'Показано: ' + count + ' из ' + rows.length;
@@ -292,6 +294,7 @@ $('owner-reset').addEventListener('click', () => {
   for (const id of filterIds) $(id).value = '';
   render();
 });
+bindTicketArchive(cases, () => userId, render);
 cases.addEventListener('click', event => {
   const ticket = event.target.closest('[data-open-ticket]');
   if (ticket) { void ticketHistory.open(ticket.dataset.openTicket, ticket.textContent); return; }

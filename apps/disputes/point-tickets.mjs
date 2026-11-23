@@ -38,6 +38,63 @@ export function groupPointTickets(tickets, observations) {
  return groups;
 }
 
+function archiveKey(userId) {
+ return 'edpvz-ticket-archive:' + userId;
+}
+
+export function personalTicketGroups(groups, userId) {
+ let archived = new Set();
+ try {
+  if (userId) archived = new Set(JSON.parse(localStorage.getItem(archiveKey(userId)) || '[]'));
+ } catch { /* The ticket list is still available if storage is blocked. */ }
+ return new Map([...groups].map(([key, group]) => {
+  const personal = { archived: [] };
+  for (const category of ['withholding', 'other', 'resolved']) {
+   personal[category] = group[category].filter(ticket => {
+    if (!archived.has(ticket.id)) return true;
+    personal.archived.push(ticket);
+    return false;
+   });
+  }
+  return [key, personal];
+ }));
+}
+
+export function bindTicketArchive(root, getUserId, render) {
+ root.addEventListener('click', event => {
+  const button = event.target.closest('[data-archive-ticket],[data-restore-ticket]');
+  const uid = getUserId();
+  if (!button || !uid) return;
+  const { archiveTicket, restoreTicket } = button.dataset;
+  try {
+   const key = archiveKey(uid);
+   const archived = new Set(JSON.parse(localStorage.getItem(key) || '[]'));
+   if (restoreTicket) archived.delete(restoreTicket);
+   else archived.add(archiveTicket);
+   localStorage.setItem(key, JSON.stringify([...archived]));
+  } catch {
+   const message = document.createElement('span');
+   message.setAttribute('role', 'status');
+   message.textContent = 'Не удалось сохранить изменение архива.';
+   button.replaceWith(message);
+   return;
+  }
+  render();
+  if (restoreTicket) {
+   const archive = root.querySelector('.personal-ticket-archive');
+   if (archive) archive.open = true;
+  }
+ });
+}
+
+export function renderTicketArchive(groups, points, esc, open = false) {
+ const archives = points.flatMap(point => (groups.get(pointKey(point))?.archived || []).map(ticket =>
+  tile(ticket, esc, point.address_observed || point.name || 'ПВЗ ' + point.wb_point_id, true)));
+ return `<details class="personal-ticket-archive"${open ? ' open' : ''}><summary>Архив тикетов · ${archives.length}</summary>${
+  archives.length ? '<ul class="point-ticket-list">' + archives.join('') + '</ul>' : '<p class="empty">В архиве пока нет тикетов.</p>'
+ }</details>`;
+}
+
 export function renderPointTickets(point, groups, scopes, failed, activeTab = 'withholding', esc, urgentAbove = false) {
  const pointTickets = groups.get(pointKey(point)) ?? { withholding: [], other: [], resolved: [] };
  const tickets = urgentAbove ? {
@@ -87,14 +144,19 @@ export function updateReplyCountdowns(root = document) {
  }
 }
 
-function tile(ticket, esc, place = '') {
- const urgent = !isResolved(ticket) && ticket.reply_state === 'needs_reply';
+function tile(ticket, esc, place = '', archived = false) {
+ const urgent = !archived && !isResolved(ticket) && ticket.reply_state === 'needs_reply';
  const due = ticket.reply_due_at || '';
  const estimatedDeadline = Number.isFinite(Date.parse(due)) ? new Date(due).toLocaleString('ru-RU', {
   timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
  }) + ' МСК' : '';
  return `<li${urgent ? ' class="ticket-needs-reply"' : ''}>
+  <div class="point-ticket-heading">
   <button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
+  ${ticket.id ? (archived
+   ? `<button class="ticket-archive-action" type="button" data-restore-ticket="${esc(ticket.id)}">Вернуть</button>`
+   : `<button class="ticket-archive-action" type="button" data-archive-ticket="${esc(ticket.id)}" aria-label="Переместить тикет в архив" title="В архив">×</button>`) : ''}
+  </div>
   <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)} <button type="button" class="copy-number" data-copy-number="${esc(ticket.ticket_number)}" aria-label="Скопировать номер тикета">⧉</button></span><span>${esc(place || (ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'))}</span><span>${esc(ticket.created_local || '')}</span></div>
   <span class="point-ticket-state">${esc(ticket.status)}</span>
   ${urgent ? `<span class="ticket-reply-clock" data-reply-due="${esc(due)}">${esc(replyCountdown(due))}</span>

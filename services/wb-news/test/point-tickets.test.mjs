@@ -78,3 +78,35 @@ test('resolved tickets appear only in the archive and never show a running timer
  assert.match(document.querySelector('[data-ticket-panel="other"]').textContent, /Мы ответили · ждём WB/);
  assert.equal(document.querySelector('[data-reply-due]'), null);
 });
+
+test('personal archive removes a ticket from urgent and resolved lists and can restore it', async () => {
+ const { bindTicketArchive, personalTicketGroups, renderTicketArchive } = await import('../../../apps/disputes/point-tickets.mjs');
+ const groups = groupPointTickets([
+  ticket('1', 'Горящий тикет', '22.11.2026', { id: 'active', reply_state: 'needs_reply' }),
+  ticket('2', 'Решённый тикет', '22.11.2026', { id: 'closed', status: 'Решен' })
+ ], []);
+ const previous = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+ const storage = new Map();
+ Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true, value: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) }
+ });
+ try {
+  let click;
+  const root = { addEventListener(type, handler) { click = handler; }, querySelector() { return null; } };
+  bindTicketArchive(root, () => 'account-a', () => {});
+  for (const id of ['active', 'closed']) click({ target: { closest: () => ({ dataset: { archiveTicket: id } }) } });
+  const archived = personalTicketGroups(groups, 'account-a');
+  assert.doesNotMatch(renderUrgentTickets(archived, [point], escape), /data-open-ticket="active"/);
+  assert.doesNotMatch(renderPointTickets(point, archived, [], false, 'other', escape), /data-open-ticket="closed"/);
+  const archive = renderTicketArchive(archived, [point], escape);
+  assert.match(archive, /Архив тикетов · 2/);
+  assert.match(archive, /data-restore-ticket="active"/);
+  assert.doesNotMatch(archive, /data-reply-due/);
+  assert.match(renderUrgentTickets(personalTicketGroups(groups, 'account-b'), [point], escape), /data-open-ticket="active"/);
+  click({ target: { closest: () => ({ dataset: { restoreTicket: 'active' } }) } });
+  assert.match(renderUrgentTickets(personalTicketGroups(groups, 'account-a'), [point], escape), /data-open-ticket="active"/);
+ } finally {
+  if (previous) Object.defineProperty(globalThis, 'localStorage', previous);
+  else delete globalThis.localStorage;
+ }
+});

@@ -54,3 +54,9 @@
 .point-section-tabs button[data-point-tab="paid"] { color: #2c6743; }
 .point-section-tabs button[aria-pressed="true"]:is([data-point-tab="withheld"], [data-point-tab="paid"]) { box-shadow: inset 0 0 0 1px currentColor; }
 .point-archive-row small { grid-column: 1 / -1; overflow-wrap: anywhere; }
+.point-ticket-heading{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.ticket-archive-action{flex:none;min-width:34px;min-height:34px;padding:3px 8px;border:0;border-radius:8px;background:transparent;color:#78285a;cursor:pointer}
+.ticket-archive-action:hover,.ticket-archive-action:focus-visible{background:#f4e3ed}
+.personal-ticket-archive{margin:10px 0 16px}
+.personal-ticket-archive summary{cursor:pointer;font-weight:600}
+.personal-ticket-archive .point-ticket-list{margin-top:8px}
