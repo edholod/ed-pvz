@@ -575,27 +575,27 @@ async def import_ivideon_to_disk(source_url, target, token, job):
     source = urlparse(source_url)
     provider_key = parse_qs(source.query).get('access_token', [''])[0]
     if not provider_key:
-        return None
+        raise RuntimeError("Ivideon не выдал ссылку для прямой загрузки на Яндекс Диск. Запусти экспорт заново или скачай MP4.")
     headers = {'Authorization': 'OAuth ' + token}
     async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
         try:
             async with client.stream('GET', source_url, headers={'Range': 'bytes=0-0'}) as response:
                 if response.status_code not in (301, 302, 303, 307, 308) or not response.headers.get('location'):
-                    return None
+                    raise RuntimeError("Ivideon не выдал ссылку для прямой загрузки на Яндекс Диск. Запусти экспорт заново или скачай MP4.")
                 cdn_url = media_url(urljoin(source_url, response.headers['location']))
             cdn = urlparse(cdn_url)
             if not re.fullmatch(r'rr[0-9]+[.]extcam[.]com', cdn.hostname or ''):
-                return None
+                raise RuntimeError("Ivideon не выдал ссылку для прямой загрузки на Яндекс Диск. Запусти экспорт заново или скачай MP4.")
             decoded_url = unquote(cdn_url)
             if 'access_token' in decoded_url.lower() or provider_key in decoded_url:
-                return None
+                raise RuntimeError("Ivideon не выдал ссылку для прямой загрузки на Яндекс Диск. Запусти экспорт заново или скачай MP4.")
             async with client.stream('GET', cdn_url, headers={'Range': 'bytes=0-0'}) as response:
                 byte_range = re.fullmatch(r'bytes 0-0/(\d+)', response.headers.get('content-range', ''))
                 if response.status_code != 206 or not byte_range or int(byte_range[1]) < 1000:
-                    return None
+                    raise RuntimeError("Ivideon не выдал ссылку для прямой загрузки на Яндекс Диск. Запусти экспорт заново или скачай MP4.")
                 expected_size = int(byte_range[1])
-        except (httpx.HTTPError, RuntimeError, ValueError):
-            return None
+        except (httpx.HTTPError, ValueError):
+            raise RuntimeError("Не удалось проверить ссылку Ivideon для прямой загрузки.") from None
         if job.get('cancelled'):
             raise RuntimeError('Подготовка отменена.')
         job['message'] = 'Яндекс Диск забирает готовый MP4 из Ivideon'
@@ -605,8 +605,6 @@ async def import_ivideon_to_disk(source_url, target, token, job):
         except httpx.HTTPError:
             raise RuntimeError('Яндекс Диск не подтвердил запуск загрузки. Проверь папку приложения на Диске.') from None
         print(f'archive-yandex-url submit status={response.status_code}', flush=True)
-        if response.status_code in (400, 405, 415, 422, 501):
-            return None
         if response.status_code != 202:
             raise RuntimeError(f'Яндекс Диск отклонил загрузку по ссылке (HTTP {response.status_code}).')
         operation = urlparse(response.json().get('href', ''))
@@ -614,26 +612,34 @@ async def import_ivideon_to_disk(source_url, target, token, job):
                 or not re.fullmatch(r'/v1/disk/operations/[a-zA-Z0-9_-]+', operation.path)
                 or operation.query or operation.fragment):
             raise RuntimeError('Яндекс Диск не вернул адрес проверки загрузки.')
-        deadline = time.monotonic() + 15 * 60
+        confirmation_seconds = min(900, max(45, math.ceil(expected_size / 10_000_000) + 20))
+        deadline = time.monotonic() + confirmation_seconds
         while time.monotonic() < deadline:
             if job.get('cancelled'):
                 raise RuntimeError('Проверка отменена. Яндекс Диск может завершить уже начатую загрузку.')
             await asyncio.sleep(3)
             try:
-                status = await client.get(operation.geturl(), headers=headers)
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                status = await client.get(operation.geturl(), headers=headers, timeout=min(10, remaining))
                 if status.status_code != 200:
                     continue
                 state = status.json().get('status')
                 if state == 'failed':
-                    return None
+                    raise RuntimeError('Яндекс Диск не смог забрать MP4 по ссылке Ivideon. Запусти экспорт заново или скачай MP4.')
                 if state == 'success':
-                    metadata = await client.get(DISK_API, headers=headers, params={'path': target})
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        break
+                    metadata = await client.get(DISK_API, headers=headers, params={'path': target},
+                                                timeout=min(10, remaining))
                     if metadata.status_code == 200 and metadata.json().get('size') == expected_size:
                         print(f'archive-yandex-url complete bytes={expected_size}', flush=True)
                         return target.removeprefix('app:/')
             except httpx.TransportError:
                 continue
-        raise RuntimeError('Яндекс Диск ещё не подтвердил завершение загрузки. Проверь папку приложения на Диске.')
+        raise RuntimeError(f'Яндекс Диск не подтвердил загрузку за {confirmation_seconds} с. Проверь папку приложения: Диск ещё может завершить операцию.')
 
 
 async def run(job):
@@ -682,10 +688,9 @@ async def run(job):
                                 token = await cloud_token('yandex', job['user'], job['headers'])
                                 target = 'app:/' + clean_name(clip['name'])[:80] + '-' + secrets.token_hex(5) + '.mp4'
                                 saved = await import_ivideon_to_disk(source_url, target, token, job)
-                                if saved:
-                                    job.setdefault('cloudFiles', []).append(saved)
-                                    saved_directly = True
-                                    break
+                                job.setdefault('cloudFiles', []).append(saved)
+                                saved_directly = True
+                                break
                             await download_source(source_url,source,job)
                         except RuntimeError as mp4_error:
                             if whole_export or job.get('cancelled'):
