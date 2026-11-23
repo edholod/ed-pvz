@@ -51,7 +51,12 @@ export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietM
  for(let window=0;window<maxWindows;window++){
   await wait(180);
   const rows=await root.evaluate(extract);
-  rows.forEach((row,index)=>found.set(row.position??(row.point&&!row.number?'point:'+row.point:JSON.stringify([row.barcode,row.number,row.groupLabel,row.text,index])),row));
+  rows.forEach((row,index)=>{
+   const key=row.position??(row.point&&!row.number?'point:'+row.point:JSON.stringify([row.barcode,row.number,row.groupLabel,row.text,index]));
+   const previous=found.get(key);
+   if(previous?.dateLocal&&!row.dateLocal)row={...row,dateLocal:previous.dateLocal};
+   found.set(key,row);
+  });
   if(!has)return {rows:[...found.values()],complete:true};
   const metrics=await scroller.evaluate(e=>({top:e.scrollTop,height:e.clientHeight,total:e.scrollHeight,busy:[...e.querySelectorAll('[role="progressbar"],[aria-busy="true"]')].some(el=>el.getClientRects().length>0)}));
   const bottom=metrics.top+metrics.height>=metrics.total-3;
@@ -238,16 +243,16 @@ export function extractTicketRows(root){
   let el=button.parentElement,card=null;
   for(let depth=0;el&&depth<9;depth++,el=el.parentElement){
    const text=el.innerText||'';
-   if((text.match(/№\s*\d+/g)||[]).length>1)break;
+   if([...el.querySelectorAll('button')].filter(node=>/^№\s*\d+$/.test(node.innerText.trim())).length>1)break;
    if(/\bID\s+\d+/.test(text)&&/\d{2}\.\d{2}\.\d{4}/.test(text)){card=el;break}
   }
   if(!card)continue;
   const lines=card.innerText.split('\n').map(x=>x.trim()).filter(Boolean);
-  const status=lines.find(x=>/^(В работе|Новый|Реш[её]н|Закрыт|Ожидает|Отмен)/i.test(x))||null;
+  const status=lines.find(x=>/^(?:В работе|Новый|Реш[её]н[а-яё]*|Закрыт[а-яё]*|Ожидает|Отмен[её]н[а-яё]*|Заверш[её]н[а-яё]*|На рассмотрении|Переоткрыт)(?:\s|$)/i.test(x))||null;
   const at=lines.findIndex(x=>x.startsWith('№'));
   result.push({number:m[1],point:card.innerText.match(/\bID\s+(\d+)/)?.[1]||null,status,
    title:lines[at-1]||null,created_local:lines.find(x=>/^\d{2}\.\d{2}\.\d{4}/.test(x))||null,
-   position:card.closest('[data-index]')?.getAttribute('data-index')||m[1]});
+   position:JSON.stringify([card.innerText.match(/\bID\s+(\d+)/)?.[1],m[1]])});
  }
  return result;
 }
@@ -288,7 +293,7 @@ async function openTicket(page,{number,point}){
   let el=button.parentElement;
   for(let n=0;el&&n<9;n++,el=el.parentElement){
    const text=el.innerText||'';
-   if((text.match(/№\s*\d+/g)||[]).length>1)return null;
+   if([...el.querySelectorAll('button')].filter(node=>/^№\s*\d+$/.test(node.innerText.trim())).length>1)return null;
    const point=text.match(/\bID\s+(\d+)/)?.[1];
    if(point&&/\d{2}\.\d{2}\.\d{4}/.test(text))return point===expectedPoint?el:null;
   }return null;
@@ -305,7 +310,7 @@ async function openTicket(page,{number,point}){
    // already matched card, checking that virtualization did not recycle it.
    if(!await drawer.isVisible())await element.evaluate((card,{number,point})=>{
     const text=card.innerText||'';
-    if(!card.isConnected||text.match(/№\s*(\d+)/)?.[1]!==number||text.match(/\bID\s+(\d+)/)?.[1]!==point)throw Error('ticket_card_recycled');
+    if(!card.isConnected||![...card.querySelectorAll('button')].some(node=>node.innerText.trim().match(/^№\s*(\d+)$/)?.[1]===number)||text.match(/\bID\s+(\d+)/)?.[1]!==point)throw Error('ticket_card_recycled');
     card.click();
    },{number,point});
    await drawer.waitFor({state:'visible',timeout:10000});
@@ -320,7 +325,8 @@ export function extractMessages(root){
  const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
  const days=[...root.querySelectorAll('strong')].map(el=>{
   const m=el.innerText.match(/(\d+)\s+([а-я]+)\s+(\d{4})/i);
-  return m?{el,date:`${m[1].padStart(2,'0')}.${String(months.indexOf(m[2])+1).padStart(2,'0')}.${m[3]}`}:null;
+  if(!m||!months.includes(m[2].toLowerCase()))return null;
+  return {el,date:`${m[1].padStart(2,'0')}.${String(months.indexOf(m[2].toLowerCase())+1).padStart(2,'0')}.${m[3]}`};
  }).filter(Boolean);
  const result=[];const occurrences=new Map();
  for(const sub of root.querySelectorAll('sub')){
@@ -328,18 +334,21 @@ export function extractMessages(root){
   let candidate=sub.parentElement,card=null;
   for(let n=0;candidate&&n<10;n++,candidate=candidate.parentElement){
    if(candidate.querySelectorAll('sub').length!==1)break;
-   if(candidate.querySelector('p')&&!candidate.querySelector('strong'))card=candidate;
+   if(days.some(day=>candidate.contains(day.el)))break;
    if(candidate===root)break;
+   if(candidate.querySelector('p,a[href]'))card=candidate;
   }
   if(card){
-   const lines=card.innerText.split('\n').map(x=>x.trim()).filter(Boolean),author=lines[0];
+   const lines=card.innerText.split('\n').map(x=>x.trim()).filter(Boolean);
+   const firstParagraph=card.querySelector('p')?.innerText.trim().split('\n')[0];
+   const author=lines[0]===firstParagraph?'':lines[0];
    // DOM DOCUMENT_POSITION_FOLLOWING = 4, also works in HTML-only regression tests.
    const date=days.filter(x=>Boolean(x.el.compareDocumentPosition(card)&4)).at(-1)?.date;
    const paragraphs=[...card.querySelectorAll('p')].map(x=>x.innerText.trim()).filter(Boolean);
-   if(!paragraphs.length)continue;
-   const role=/^(Менеджер|Поддержка WB|Сотрудник поддержки)$/.test(author)?'wb_support':
-     /^(Бот|Система)$/.test(author)?'system':'unknown';
+   const role=/^(Менеджер|Поддержка WB|Сотрудник поддержки)$/i.test(author)?'wb_support':
+     /^(Бот|Система)$/i.test(author)?'system':/^(?:[0-9]{5,15}|Вы)$/.test(author)?'user':'unknown';
    const attachments=[...card.querySelectorAll('a[href]')].map(a=>a.href).filter(x=>x.startsWith('https://')).slice(0,100);
+   if(!paragraphs.length&&!attachments.length)continue;
    const signature=JSON.stringify([date,author,paragraphs,sub.innerText]);
    const occurrence=(occurrences.get(signature)||0)+1;occurrences.set(signature,occurrence);
    result.push({author,role,text:paragraphs.join('\n'),dateLocal:date?date+' '+sub.innerText.trim():'',attachments,
@@ -351,12 +360,14 @@ export function extractMessages(root){
 async function ticketDetail(page,row){
  await openTicket(page,row);
  const dialog=page.getByRole('dialog').last();
+ await dialog.locator('sub').filter({hasText:/^\s*\d{1,2}:\d{2}\s*$/}).first().waitFor({state:'visible',timeout:10000});
  const all=await scanVirtual(page,dialog,extractMessages);
  if(!all.rows.length)throw new WBReadError('messages_not_mapped');
  // Unknown blocks matching the signed-in user's display name are user messages.
  const header=(await page.getByTestId('app-header').innerText()).split('\n').map(x=>x.trim());
- const user=header[header.findIndex(x=>/^ID\s/.test(x))-1];
- const messages=normalizeMessages(all.rows.map(m=>({...m,role:m.role==='unknown'&&m.author===user?'user':m.role})));
+ const idIndex=header.findIndex(x=>/^ID\s/.test(x));
+ const user=idIndex>0?header[idIndex-1]:null;
+ const messages=normalizeMessages(all.rows.map(m=>({...m,role:user&&m.role==='unknown'&&m.author===user?'user':m.role})));
  await closeDrawers(page).catch(()=>{});
  return {messages,history_complete:all.complete};
 }
@@ -460,7 +471,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
- const phases=categories.includes('tickets')?['inventory','tickets','details']:['inventory'];
+ const phases=categories.includes('tickets')?['tickets','details','inventory']:['inventory'];
  for(const phase of phases)for(const org of ordered){
   report.phase=phase;
   if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
@@ -535,7 +546,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
       if(!/^№\s*\d+$/.test(button.innerText.trim()))return false;
       for(let el=button.parentElement,i=0;el&&i<9;el=el.parentElement,i++){
        const text=el.innerText||'';
-       if((text.match(/№\s*\d+/g)||[]).length>1)break;
+       if([...el.querySelectorAll('button')].filter(node=>/^№\s*\d+$/.test(node.innerText.trim())).length>1)break;
        if(text.match(/\bID\s+(\d+)/)?.[1]===point)return true;
       }
       return false;
@@ -555,12 +566,12 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
      if(Date.now()-started>budgetMs){detailsComplete=false;break}
      const ticket={ticket_number:row.number,status:row.status,title:row.title,created_local:row.created_local,
       namespace,wb_point_id:point.wb_point_id,organization_research_id:org.research_id};
-     const cached=tickets.find(x=>x.organization_research_id===org.research_id&&x.namespace===namespace&&x.ticket_number===row.number);
-     if(['Новый','В работе','Ожидает решения'].includes(row.status)
+     const cached=cacheFor(row);
+     if(!/^(?:реш[её]н|закрыт|заверш[её]н|отмен[её]н)/i.test(row.status||'')
        && localDate(row.created_local) >= '2026-09-30T21:00:00.000Z'
        && ticketNeedsDetail(row,cached)){detailQueue.push({organization:org.research_id,point:point.wb_point_id,namespace,row,cached,ticket});report.pending_dialogues=detailQueue.length;}
      saved.push(ticket);report.tickets++;
-     if(saved.length){await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved.splice(0),complete:false,status:'running'});onProgress(report)}
+     if(saved.length>=20){await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved.splice(0),complete:false,status:'running'});onProgress(report)}
     }
     if(!found.length&&!/Нет данных|Нет обращений|Нет тикетов|Ничего не найдено|Обращений пока нет|Тикетов пока нет/.test(await page.locator('body').innerText()))throw new WBReadError('ticket_list_not_mapped');
     await saveScope({scope,organization:org.research_id,point:point.wb_point_id,key:'tickets',namespace,tickets:saved,
@@ -593,7 +604,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
       await closeDrawers(page).catch(()=>{});await page.keyboard.press('Escape');
       const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();await search.fill(ticket.ticket_number,{timeout:5000});await sleep(400);
       Object.assign(ticket,await ticketDetail(page,task.row));
-      if(!ticket.history_complete){complete=false;failed++}
+      if(!ticket.history_complete){complete=false;failed++;ticket.detail_error='history_scan_incomplete'}
      }catch(e){
       if(['blocked','authentication_required'].includes(e.code)){report.state=e.code;return report}
       complete=false;failed++;ticket.detail_error=e.code||'detail_unavailable';

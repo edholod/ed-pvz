@@ -134,3 +134,17 @@ test('future withholding date stays distinct from the appeal deadline',()=>{
  assert.equal(row.withholdLabel,'Будет удержано 22.11.2026');
  assert.equal(row.dateLabel,'');
 });
+
+test('ticket cards with reused virtual indexes and numbers mentioned in titles stay distinct',()=>{
+ const {document}=parseHTML('<main><article data-index="0"><div>Завершён</div><div>По обращению № 555</div><button>№ 0001</button><div>ID 137168</div><div>21.11.2026</div></article><article data-index="0"><div>В работе</div><div>Возврат</div><button>№ 0002</button><div>ID 137168</div><div>22.11.2026</div></article></main>');
+ const rows=extractTicketRows(document.querySelector('main'));
+ assert.deepEqual(rows.map(row=>[row.number,row.status]),[['0001','Завершён'],['0002','В работе']]);
+ assert.notEqual(rows[0].position,rows[1].position);
+});
+
+test('owner replies with formatted text or only an attachment are retained',()=>{
+ const {document}=parseHTML('<main><strong>22 Ноября 2026 г.</strong><div><span>1234567</span><div><p><strong>Ответ</strong> собственника</p><sub>11:21</sub></div></div><div><span>Вы</span><div><a href="https://example.com/photo">Фото</a><sub>11:22</sub></div></div></main>');
+ const rows=extractMessages(document.querySelector('main'));
+ assert.deepEqual(rows.map(row=>[row.role,row.dateLocal]),[['user','22.11.2026 11:21'],['user','22.11.2026 11:22']]);
+ assert.deepEqual(rows[1].attachments,['https://example.com/photo']);
+});

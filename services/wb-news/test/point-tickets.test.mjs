@@ -66,3 +66,15 @@ test('urgent tickets are scoped to visible points and ordered by deadline', () =
  assert.equal(document.querySelectorAll('[data-reply-due]').length, 2);
  assert.match(renderPointTickets(point, groups, [], false, 'other', escape), /Мы ответили · ждём WB/);
 });
+
+test('resolved tickets appear only in the archive and never show a running timer',()=>{
+ const groups = groupPointTickets([
+  ticket('1', 'Закрытое обращение', '22.11.2026', { status: 'Решен досрочно', reply_state: 'needs_reply' }),
+  ticket('2', 'Мой ответ', '23.11.2026', { reply_state: 'answered' })
+ ], []);
+ const { document } = parseHTML(renderPointTickets(point, groups, [], false, 'other', escape));
+ assert.match(document.querySelector('.resolved-tickets').textContent, /Закрытое обращение/);
+ assert.doesNotMatch(document.querySelector('[data-ticket-panel="other"]').textContent, /Закрытое обращение/);
+ assert.match(document.querySelector('[data-ticket-panel="other"]').textContent, /Мы ответили · ждём WB/);
+ assert.equal(document.querySelector('[data-reply-due]'), null);
+});

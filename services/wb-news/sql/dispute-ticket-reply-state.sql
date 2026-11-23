@@ -123,7 +123,6 @@ begin
         join public.edpvz_dispute_points p on p.owner_id = t.owner_id
           and p.organization_research_id = t.organization_research_id and p.wb_point_id = t.wb_point_id
         where t.owner_id = admin and t.organization_research_id = p_org
-          and t.status in ('Новый', 'В работе', 'Ожидает решения')
           and t.created_local ~ '^[0-9]{2}[.][0-9]{2}[.][0-9]{4}'
           and (substring(t.created_local from 7 for 4) || substring(t.created_local from 4 for 2) || substring(t.created_local from 1 for 2)) >= '20261001'
       ), '[]'::jsonb),
