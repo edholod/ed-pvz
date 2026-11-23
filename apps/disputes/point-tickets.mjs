@@ -1,3 +1,5 @@
+import { updateTime } from './update-time.mjs';
+
 const tabs = [
  { id: 'withholding', label: 'Удержания' },
  { id: 'other', label: 'Все остальные' }
@@ -52,10 +54,11 @@ export function renderPointTickets(point, groups, scopes, failed, activeTab = 'w
  }) : '';
  const stale = checked && Date.now() - checked > 6 * 60 * 60 * 1000;
  const status = failed ? 'Не удалось обновить тикеты. Показаны последние загруженные данные.'
-  : checks.every(scope => scope?.state === 'ok') && date ? (stale ? 'Данные могут быть устаревшими. ' : '') + 'Оба списка WB проверены ' + date + ' МСК.'
+  : checks.every(scope => scope?.state === 'ok') && date ? (stale ? 'Данные могут быть устаревшими. ' : '') + 'Оба списка WB проверены.'
   : 'Проверка обоих списков WB ещё не завершена.';
  return `<section class="point-tickets">
   <h3>Тикеты</h3>
+  <p class="point-tickets-status">${esc(updateTime(scopes, ['legacy', 'new'].map(namespace => scopePrefix + namespace)))}</p>
   <p class="point-tickets-status">${esc(status)}</p>
   <div class="point-ticket-tabs" role="group" aria-label="Категории тикетов">${tabs.map(({ id, label }) =>
    `<button type="button" data-ticket-tab="${id}" aria-pressed="${id === activeTab}">${label} <span>${tickets[id].length}</span></button>`
