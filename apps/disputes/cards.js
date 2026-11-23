@@ -1,7 +1,7 @@
 import { holdingUpdateKeys, updateTime } from './update-time.mjs';
 import { bindPointSections, renderPointSections } from './point-sections.mjs?v=copy-20261122';
 import { createTicketHistory } from './ticket-history.mjs';
-import { groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=wb-update-time';
+import { groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=wb-overview-time';
 import { showInvite } from './owner-invite.js?v=3';
 import{STATUSES,STATUS_CLASSES,FIELDS,blankNote,initialNote,eligible,visibleObservations,mapNotes,monthKey,monthGroups,attachSourceTickets,pointCoverage,sourceMatches,validateNote,photoPath,csvCell,manualHangingObservation}from'./cards-model.mjs?v=manual-hanging-1';
 const BASE='https://duerixyhzapotoeclggz.supabase.co',KEY='sb_publishable_fKE2S2rAz7VMa54rgO4uvQ_vyzFPwmV',ADMIN='0f75065b-2b26-4a87-bf26-005f5a2284d4',api=window.EdPVZAccount,$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -152,6 +152,11 @@ async function loadCases(){if(busy||!permitted())return;busy=true;const loadingW
  if(!permitted())return;
  pointTicketsFailed=activeTickets===null;
  if(activeTickets)pointTickets=groupPointTickets(activeTickets,rows);const activeOwners=new Set(orgs.map(o=>o.research_id)),removedRows=new Set(observations.filter(row=>!activeOwners.has(row.organization_research_id)).map(row=>row.id));for(const [id,draft] of drafts)if(removedRows.has(id)||(draft.organization&&!activeOwners.has(draft.organization)))drafts.delete(id);persist();organizations=orgs;points=pp;scopes=ss;observations=visibleObservations(rows);
+const holdingUpdate=$('holding-update-time');
+if(holdingUpdate){
+ holdingUpdate.textContent='Удержания · '+updateTime(scopes,holdingUpdateKeys(points));
+ holdingUpdate.hidden=false;
+}
 const numbers=[...new Set(observations.map(row=>String(row.raw?.ticket_number||'')).filter(n=>/^\d+$/.test(n)))],linked=[];
 try{for(let offset=0;offset<numbers.length;offset+=100)linked.push(...await all('edpvz_dispute_tickets?select=ticket_number,status,last_checked_at,organization_research_id,wb_point_id&ticket_number=in.('+numbers.slice(offset,offset+100).join(',')+')'));}catch{/* The goods remain visible if linked-ticket metadata is unavailable. */}
 observations=attachSourceTickets(observations,linked);

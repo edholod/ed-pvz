@@ -132,6 +132,8 @@ export function renderUrgentTickets(groups, points, esc, failed, scopes = []) {
   uncheckedPoints ? `ПВЗ без полной свежей проверки списков: ${uncheckedPoints} из ${points.length}.` : ''
  ].filter(Boolean).join(' ');
  return `<section class="ticket-urgent"><h3>Горящие тикеты · нужно ответить${urgent.length ? ' · ' + urgent.length : ''}</h3>
+  <p class="point-tickets-status">${esc(updateTime(scopes, points.flatMap(point => ['legacy', 'new'].map(namespace =>
+   `wb:${point.organization_research_id}:${point.wb_point_id}:tickets:${namespace}`))))}</p>
   ${coverage || failed ? `<p class="ticket-coverage">${esc(failed ? 'Не удалось обновить данные WB. ' + coverage : coverage)}</p>` : ''}
   ${urgent.length ? `<ul class="point-ticket-list">${urgent.map(ticket => tile(ticket, esc, addresses.get(pointKey(ticket)) || 'ПВЗ ' + ticket.wb_point_id)).join('')}</ul>`
    : '<p>В загруженных переписках тикетов, требующих ответа, нет.</p>'}
