@@ -70,10 +70,16 @@ async def auth(request):
     return identity.json()['id'], headers
 
 
+class IvideonStatusUnavailable(RuntimeError):
+    pass
+
+
 async def edge(job, payload):
     headers={**job['headers'], 'origin':'https://edpvz.ru'}
     async with httpx.AsyncClient(timeout=25) as client:
         result = await client.post(BASE + '/functions/v1/edpvz-ivideon-check', headers=headers, json=payload)
+    if result.status_code in (408, 429, 500, 502, 503, 504) and payload.get('archive', {}).get('mode') == 'export-status':
+        raise IvideonStatusUnavailable(f'Ivideon временно не отвечает (HTTP {result.status_code}).')
     if result.status_code != 200:
         data = result.json()
         raise RuntimeError(data.get('error', 'Ivideon не отдал запись.'))
@@ -286,10 +292,20 @@ async def export_source(job, clip, start, end):
     export_id=result['exportId']
     print('archive-export created id='+str(export_id),flush=True)
     deadline=time.time()+600
+    status_failures = 0
     while time.time()<deadline:
         if job.get('cancelled'):
             raise RuntimeError('Подготовка отменена.')
-        result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{**({'connectionId':clip['connectionId']} if clip.get('connectionId') else {}),'mode':'export-status','exportId':export_id,'ingest':True}})
+        try:
+            result=await edge(job,{'action':'load','cameraId':clip['cameraId'],'archive':{**({'connectionId':clip['connectionId']} if clip.get('connectionId') else {}),'mode':'export-status','exportId':export_id,'ingest':True}})
+        except (IvideonStatusUnavailable, httpx.TransportError):
+            status_failures += 1
+            if status_failures >= 4:
+                raise RuntimeError('Ivideon не ответил на четыре проверки статуса экспорта. Запусти подготовку позже.') from None
+            job['message'] = 'Ivideon временно не отвечает. Повторяем проверку того же экспорта…'
+            await asyncio.sleep(5)
+            continue
+        status_failures = 0
         if result['state']=='ready':
             job['message']='Загружаем файл Ivideon на сервер «Эд ПВЗ»'
             print('archive-export ready id='+str(export_id),flush=True)
