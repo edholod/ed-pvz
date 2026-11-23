@@ -1,4 +1,4 @@
-import { updateTime } from './update-time.mjs';
+import { updateTime } from './update-time.mjs?v=coverage';
 
 const tabs = [
  { id: 'withholding', label: 'Удержания' },
