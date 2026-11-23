@@ -45,7 +45,7 @@ Deno.serve(async req=>{
   if(req.method==='GET'){
    const [session,orgs,points,tickets,control]=await Promise.all([
     db.from('edpvz_wb_encrypted_sessions').select('envelope').eq('owner_id',owner).maybeSingle(),
-    db.from('edpvz_dispute_organizations').select('research_id,name_exact').eq('owner_id',owner),
+    db.from('edpvz_dispute_organizations').select('research_id,name_exact').eq('owner_id',owner).eq('is_active',true),
     db.from('edpvz_dispute_points').select('wb_point_id,organization_research_id,address_observed').eq('owner_id',owner),
     Promise.resolve({data:[],error:null}),
     db.from('edpvz_dispute_sync_control').select('next_due_at,last_state').eq('owner_id',owner).maybeSingle()
