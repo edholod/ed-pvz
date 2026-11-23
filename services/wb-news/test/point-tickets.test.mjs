@@ -47,9 +47,9 @@ test('old checks and failed requests are visible, and WB topics are escaped', ()
 
 test('reply timer handles time remaining, expired deadlines and missing WB timestamps', () => {
  const start = Date.parse('2026-11-16T00:00:00Z');
- assert.equal(replyCountdown('2026-11-19T00:00:00Z', start), 'Осталось 72 ч 0 мин');
+ assert.equal(replyCountdown('2026-11-18T00:00:00Z', start), 'Осталось 48 ч 0 мин');
  assert.equal(replyCountdown('2026-11-16T00:00:30Z', start), 'Осталось 1 мин');
- assert.equal(replyCountdown('2026-11-16T00:00:00Z', start), '72 часа истекли');
+ assert.equal(replyCountdown('2026-11-16T00:00:00Z', start), '48 часов истекли');
  assert.match(replyCountdown('', start), /Срок неизвестен/);
 });
 

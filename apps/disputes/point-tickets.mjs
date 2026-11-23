@@ -75,7 +75,7 @@ export function renderPointTickets(point, groups, scopes, failed, activeTab = 'w
 export function replyCountdown(due, now = Date.now()) {
  const remaining = Date.parse(due) - now;
  if (!Number.isFinite(remaining)) return 'Срок неизвестен: WB не передал время ответа';
- if (remaining <= 0) return '72 часа истекли';
+ if (remaining <= 0) return '48 часов истекли';
  const minutes = Math.ceil(remaining / 60000);
  return minutes < 60 ? `Осталось ${minutes} мин` : `Осталось ${Math.floor(minutes / 60)} ч ${minutes % 60} мин`;
 }

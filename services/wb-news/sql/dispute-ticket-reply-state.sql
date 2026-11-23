@@ -9,7 +9,7 @@ select t.id, t.owner_id, t.organization_research_id, t.wb_point_id,
     when last_message.role = 'user' then 'waiting_wb'
     else 'unknown'
   end as reply_state,
-  case when last_message.role = 'wb_support' then last_message.message_at + interval '72 hours' end as reply_due_at
+  case when last_message.role = 'wb_support' then last_message.message_at + interval '48 hours' end as reply_due_at
 from public.edpvz_dispute_tickets t
 left join lateral (
   select m.message_at,
