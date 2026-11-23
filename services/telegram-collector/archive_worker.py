@@ -144,11 +144,17 @@ async def probe(path, job):
     return float(video.get('duration') or info['format']['duration']), max(rate, 1), video['width'], video['height']
 
 
+def hls_request_end(start, end):
+    # Ivideon can stop its playlist at the last complete segment before the end.
+    # Request a tail buffer while keeping the requested start and output length.
+    return min(end + 24, start + 3600, int(time.time()))
+
+
 async def download_hls_source(job,clip,start,end,path):
     """Use Ivideon's independent archive_stream/HLS API if MP4 export stalls."""
     job['message']='Экспорт MP4 недоступен. Получаем запись через архивный видеопоток Ivideon'
     result=await edge(job,{'action':'load','cameraId':clip['cameraId'],
-                           'archive':{**({'connectionId':clip['connectionId']} if clip.get('connectionId') else {}),'start':start,'end':end,'profile':job.get('profile','high')}})
+                           'archive':{**({'connectionId':clip['connectionId']} if clip.get('connectionId') else {}),'start':start,'end':hls_request_end(start,end),'profile':job.get('profile','high')}})
     stream=result.get('streamUrl','')
     if result.get('streamType')!='hls' or not stream:
         raise RuntimeError('Ivideon не предоставил альтернативный архивный поток.')
@@ -171,7 +177,9 @@ async def download_hls_source(job,clip,start,end,path):
         last_size=0
         stalled=0
         while not task.done():
-            await asyncio.sleep(10)
+            done, _ = await asyncio.wait({task}, timeout=10)
+            if done:
+                break
             size=path.stat().st_size if path.exists() else 0
             if size>last_size:
                 last_size=size
@@ -596,12 +604,14 @@ async def run(job):
                         continue
                     try:
                         job['message']='Запрашиваем запись у Ivideon'
-                        source_url=await export_source(job,clip,start,end)
                         try:
+                            source_url=await export_source(job,clip,start,end)
                             await download_source(source_url,source,job)
                         except RuntimeError as mp4_error:
                             if job.get('cancelled'):
                                 raise
+                            if end - start > 450:
+                                raise RuntimeError('Разбиваем длинный интервал для резервного потока Ivideon.') from mp4_error
                             print('archive mp4 unavailable, trying HLS fallback type='+type(mp4_error).__name__,flush=True)
                             await download_hls_source(job,clip,start,end,source)
                         original_duration,original_fps,_,_=await probe(source,job)
