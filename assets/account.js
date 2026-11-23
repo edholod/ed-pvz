@@ -7,6 +7,7 @@ const URL='https://duerixyhzapotoeclggz.supabase.co',KEY='sb_publishable_fKE2S2r
  const canRetry=method==='GET'||path.startsWith('/auth/v1/token?grant_type=refresh_token');
  let lastError;
  for(let attempt=0;attempt<(canRetry?3:1);attempt++){
+  externalSignal?.throwIfAborted();
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),12000);
   const abort=()=>controller.abort();

@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
+import {parseHTML} from 'linkedom';
 const source=await readFile(new URL('../../../assets/account.js',import.meta.url),'utf8');
-function setup(fetcher,session,{data=new Map(session?[['edpvz-auth-v1',JSON.stringify(session)]]:[]),locks}={}){
+function setup(fetcher,session,{data=new Map(session?[['edpvz-auth-v1',JSON.stringify(session)]]:[]),locks,timeout=AbortSignal.timeout}={}){
  const events={};
  const localStorage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};
  const window={addEventListener:(n,fn)=>events[n]=fn,dispatchEvent(){}};
- vm.runInNewContext(source,{window,document:{addEventListener(){},hidden:false},localStorage,fetch:fetcher,CustomEvent:class{},navigator:{locks},Date,JSON,Error,encodeURIComponent});
+ const {document}=parseHTML('<html><head></head><body></body></html>');
+ vm.runInNewContext(source,{window,document,localStorage,fetch:fetcher,CustomEvent:class{},navigator:{locks},Date,JSON,Error,encodeURIComponent,AbortController,AbortSignal:{timeout},setTimeout,clearTimeout});
  return {api:window.EdPVZAccount,data,events};
 }
 const reply=(status,data)=>({status,ok:status<300,text:async()=>JSON.stringify(data),json:async()=>data});
@@ -58,7 +60,7 @@ test('point creation stores the selected marketplace and authenticated owner',as
 test('parent page and iframe reuse the refreshed session even without a storage event',async()=>{
  let tail=Promise.resolve(),calls=0,finish;
  const gate=new Promise(resolve=>{finish=resolve});
- const locks={request(name,run){assert.equal(name,'edpvz-auth-v1-refresh');const job=tail.then(run);tail=job.catch(()=>{});return job}};
+ const locks={request(name,options,run){assert.ok(options.signal);assert.equal(name,'edpvz-auth-v1-refresh');const job=tail.then(run);tail=job.catch(()=>{});return job}};
  const data=new Map([['edpvz-auth-v1',JSON.stringify(old)]]);
  const fetcher=async()=>{calls++;await gate;return reply(200,fresh)};
  const parent=setup(fetcher,old,{data,locks}),iframe=setup(fetcher,old,{data,locks});
@@ -80,4 +82,17 @@ test('a temporary refresh failure keeps using the access token until it expires'
  const {api}=setup(async()=>reply(503,{message:'temporary'}),existing);
  assert.equal((await api.ensure()).access_token,'old');
  assert.equal(api.signedIn,true);
+});
+
+test('an expired refresh deadline does not start another request after backoff', async () => {
+ const controller = new AbortController();
+ let calls = 0;
+ const {api} = setup(async () => {
+  calls++;
+  if (calls > 1) return reply(200, []);
+  queueMicrotask(() => controller.abort());
+  return reply(503, {message: 'temporarily unavailable'});
+ }, old, {timeout: () => controller.signal});
+ await assert.rejects(api.ensure(), {name: 'AbortError'});
+ assert.equal(calls, 1);
 });
