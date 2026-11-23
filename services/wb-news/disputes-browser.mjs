@@ -43,7 +43,7 @@ async function closeTopDrawer(page){
  return true;
 }
 async function closeDrawers(page){for(let i=0;i<4;i++)if(!await closeTopDrawer(page))break}
-export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietMs=2500,wait=sleep,now=Date.now}={}){
+export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietMs=2500,settleUnlisted=false,wait=sleep,now=Date.now}={}){
  const found=new Map();let bottomPasses=0,lastSize=0,stalledPasses=0,lastMetrics=null,quietSince=null;
  const scroller=root.getByTestId('virtuoso-scroller').filter({visible:true}).last();
  const has=await scroller.count();
@@ -51,6 +51,12 @@ export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietM
  for(let window=0;window<maxWindows;window++){
   await wait(180);
   const rows=await root.evaluate(extract);
+  if(!has&&settleUnlisted){
+   const signature=JSON.stringify(rows);
+   if(signature!==lastMetrics){lastMetrics=signature;quietSince=now()}
+   if(now()-quietSince>=bottomQuietMs)return {rows,complete:true};
+   continue;
+  }
   rows.forEach((row,index)=>{
    const key=row.position??(row.point&&!row.number?'point:'+row.point:JSON.stringify([row.barcode,row.number,row.groupLabel,row.text,index]));
    const previous=found.get(key);
@@ -330,7 +336,7 @@ export function extractMessages(root){
  }).filter(Boolean);
  const result=[];const occurrences=new Map();
  for(const sub of root.querySelectorAll('sub')){
-  if(!/^\d{1,2}:\d{2}$/.test(sub.innerText.trim()))continue;
+  if(!/^\d{1,2}:\d{2}(?::\d{2})?$/.test(sub.innerText.trim()))continue;
   let candidate=sub.parentElement,card=null;
   for(let n=0;candidate&&n<10;n++,candidate=candidate.parentElement){
    if(candidate.querySelectorAll('sub').length!==1)break;
@@ -338,7 +344,8 @@ export function extractMessages(root){
    if(candidate===root)break;
    if(candidate.querySelector('p,a[href]'))card=candidate;
   }
-  if(card){
+  if(!card){result.push({unmapped:true,position:'unmapped:'+result.length});continue}
+  {
    const lines=card.innerText.split('\n').map(x=>x.trim()).filter(Boolean);
    const firstParagraph=card.querySelector('p')?.innerText.trim().split('\n')[0];
    const author=lines[0]===firstParagraph?'':lines[0];
@@ -349,10 +356,13 @@ export function extractMessages(root){
      /^(Бот|Система)$/i.test(author)?'system':/^(?:[0-9]{5,15}|Вы)$/.test(author)?'user':'unknown';
    const attachments=[...card.querySelectorAll('a[href]')].map(a=>a.href).filter(x=>x.startsWith('https://')).slice(0,100);
    if(!paragraphs.length&&!attachments.length)continue;
-   const signature=JSON.stringify([date,author,paragraphs,sub.innerText]);
-   const occurrence=(occurrences.get(signature)||0)+1;occurrences.set(signature,occurrence);
-   result.push({author,role,text:paragraphs.join('\n'),dateLocal:date?date+' '+sub.innerText.trim():'',attachments,
-    position:card.closest('[data-index]')?.getAttribute('data-index')||signature+'#'+occurrence});
+   const signature=JSON.stringify([author,paragraphs,attachments,sub.innerText.trim()]);
+   const index=card.closest('[data-index],[data-item-index]');
+   const itemIndex=index?.getAttribute('data-index')??index?.getAttribute('data-item-index');
+   const key=JSON.stringify([itemIndex??date,signature]);
+   const occurrence=(occurrences.get(key)||0)+1;occurrences.set(key,occurrence);
+   result.push({author,role,text:paragraphs.join('\n'),dateLocal:date?date+' '+sub.innerText.trim().split(':').slice(0,2).join(':'):'',attachments,
+    position:key+'#'+occurrence});
   }
  }
  return result;
@@ -360,16 +370,17 @@ export function extractMessages(root){
 async function ticketDetail(page,row){
  await openTicket(page,row);
  const dialog=page.getByRole('dialog').last();
- await dialog.locator('sub').filter({hasText:/^\s*\d{1,2}:\d{2}\s*$/}).first().waitFor({state:'visible',timeout:10000});
- const all=await scanVirtual(page,dialog,extractMessages);
- if(!all.rows.length)throw new WBReadError('messages_not_mapped');
+ await dialog.locator('sub').filter({hasText:/^\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/}).first().waitFor({state:'visible',timeout:10000});
+ const all=await scanVirtual(page,dialog,extractMessages,{settleUnlisted:true});
+ const mapped=all.rows.filter(message=>!message.unmapped);
+ if(!mapped.length)throw new WBReadError('messages_not_mapped');
  // Unknown blocks matching the signed-in user's display name are user messages.
  const header=(await page.getByTestId('app-header').innerText()).split('\n').map(x=>x.trim());
  const idIndex=header.findIndex(x=>/^ID\s/.test(x));
  const user=idIndex>0?header[idIndex-1]:null;
- const messages=normalizeMessages(all.rows.map(m=>({...m,role:user&&m.role==='unknown'&&m.author===user?'user':m.role})));
+ const messages=normalizeMessages(mapped.map(m=>({...m,role:user&&m.role==='unknown'&&m.author===user?'user':m.role})));
  await closeDrawers(page).catch(()=>{});
- return {messages,history_complete:all.complete};
+ return {messages,history_complete:all.complete&&mapped.length===all.rows.length};
 }
 export function calendarDayIndex(root,{day,month,year}){
  const months=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
@@ -603,7 +614,15 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
       detailsOnPage++;
       await closeDrawers(page).catch(()=>{});await page.keyboard.press('Escape');
       const search=page.getByPlaceholder('Поиск',{exact:true}).filter({visible:true}).last();await search.fill(ticket.ticket_number,{timeout:5000});await sleep(400);
-      Object.assign(ticket,await ticketDetail(page,task.row));
+      for(let attempt=0;attempt<2;attempt++){
+       try{
+        Object.assign(ticket,await ticketDetail(page,task.row));
+        if(ticket.history_complete)break;
+       }catch(error){
+        if(attempt||['blocked','authentication_required'].includes(error.code))throw error;
+       }
+       await closeDrawers(page).catch(()=>{});
+      }
       if(!ticket.history_complete){complete=false;failed++;ticket.detail_error='history_scan_incomplete'}
      }catch(e){
       if(['blocked','authentication_required'].includes(e.code)){report.state=e.code;return report}

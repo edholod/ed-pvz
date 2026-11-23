@@ -148,3 +148,11 @@ test('owner replies with formatted text or only an attachment are retained',()=>
  assert.deepEqual(rows.map(row=>[row.role,row.dateLocal]),[['user','22.11.2026 11:21'],['user','22.11.2026 11:22']]);
  assert.deepEqual(rows[1].attachments,['https://example.com/photo']);
 });
+
+test('ticket replies sharing a virtual bucket retain distinct scan keys',()=>{
+ const {document}=parseHTML('<main><strong>17 ноября 2026 г.</strong><section data-index="0"><div><span>Менеджер</span><p>Первый ответ</p><sub>12:27</sub></div></section><strong>19 ноября 2026 г.</strong><section data-index="0"><div><span>Вы</span><p>Ответ владельца</p><sub>14:22:05</sub></div></section></main>');
+ const rows=extractMessages(document.querySelector('main'));
+ assert.equal(new Set(rows.map(row=>row.position)).size,2);
+ assert.equal(rows[1].dateLocal,'19.11.2026 14:22');
+ assert.equal(rows[1].role,'user');
+});
