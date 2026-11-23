@@ -35,6 +35,10 @@ DISK_API = 'https://cloud-api.yandex.net/v1/disk/resources'
 DISK_PREFIX = 'app:/edpvz-'
 DISK_QUOTA = 100_000_000_000
 DISK_TTL = 86400
+IVIDEON_EXPORT_LIMIT = 5 * 60 * 60
+SOURCE_RETRY_LIMIT = 3
+SOURCE_RETRY_WINDOW = 15 * 60
+
 PROFILES = {'source': None, '1080': 1080, '720': 720, '480': 480}
 EXPORT_ENABLED = os.environ.get('ARCHIVE_EXPORT_ENABLED','false').lower() == 'true'
 
@@ -206,7 +210,7 @@ async def download_hls_source(job,clip,start,end,path):
 async def download_source(url,path,job):
     """Resume a stalled export at the last confirmed byte, without discarding progress."""
     url=media_url(url)
-    deadline=time.monotonic()+180
+    deadline=time.monotonic()+SOURCE_RETRY_WINDOW
     offset=path.stat().st_size if path.exists() else 0
     expected=None
     attempts=0
@@ -215,7 +219,7 @@ async def download_source(url,path,job):
     async with httpx.AsyncClient(http2=False,follow_redirects=True,max_redirects=5,
                                   timeout=httpx.Timeout(120,connect=25,read=35,write=35,pool=25),
                                   event_hooks={'request':[validate_redirect]}) as client:
-        while time.monotonic()<deadline and attempts<3:
+        while time.monotonic()<deadline and attempts<SOURCE_RETRY_LIMIT:
             if job.get('cancelled'):
                 raise RuntimeError('Подготовка отменена.')
             if shutil.disk_usage(ROOT).free<128*1024*1024:
@@ -237,7 +241,7 @@ async def download_source(url,path,job):
                             raise RuntimeError('Ivideon изменил исходный файл при скачивании.')
                         expected=int(match[3])
                     elif response.status_code==206:
-                        match=re.fullmatch(r'bytes (\\d+)-(\\d+)/(\\d+)',content_range)
+                        match=re.fullmatch(r'bytes (\d+)-(\d+)/(\d+)',content_range)
                         if not match or int(match[1])!=0:
                             raise RuntimeError('Ivideon вернул некорректный диапазон.')
                         expected=int(match[3])
@@ -265,7 +269,7 @@ async def download_source(url,path,job):
             except httpx.TransportError as error:
                 attempts+=1
                 print('archive-source retry attempt='+str(attempts)+' offset='+str(offset)+' type='+type(error).__name__,flush=True)
-                job['message']='Соединение Ivideon прервалось. Продолжаем с '+str(round(offset/1048576,1))+' МБ (попытка '+str(attempts)+'/18)'
+                job['message']='Соединение Ivideon прервалось. Продолжаем с '+str(round(offset/1048576,1))+' МБ (попытка '+str(attempts)+'/'+str(SOURCE_RETRY_LIMIT)+')'
                 await asyncio.sleep(min(2*attempts,12))
     raise RuntimeError('Ivideon не завершил передачу MP4 за 15 минут. Получено '+str(round(offset/1048576,1))+' МБ. Повторная попытка возможна.')
 
@@ -581,8 +585,9 @@ async def run(job):
                 job['message'] = 'Фрагмент ' + str(index + 1) + ' из ' + str(len(job['clips']))
                 pieces = []
                 piece_durations = []
-                # Retry a refused interval by bisecting it, down to one minute.
-                pending = list(chunks(clip['start'], clip['end']))
+                interval = (clip['start'], clip['end'])
+                whole_export = interval[1] - interval[0] <= IVIDEON_EXPORT_LIMIT
+                pending = [interval] if whole_export else list(chunks(*interval))
                 width = None
                 while pending:
                     start, end = pending.pop(0)
@@ -592,7 +597,7 @@ async def run(job):
                     path=folder/('part-'+str(index)+'-'+str(start)+'.mp4')
                     source=folder/('source-'+str(index)+'-'+str(start)+'.mp4')
                     checkpoint=next((p for p in job.get('checkpoints',[]) if p['clipIndex']==index and p['start']==start and p['end']==end),None)
-                    if checkpoint and await restore_piece(path,checkpoint,job):
+                    if not whole_export and checkpoint and await restore_piece(path,checkpoint,job):
                         w,h=checkpoint['width']
                         width=width or (w,h)
                         pieces.append(path)
@@ -608,18 +613,25 @@ async def run(job):
                             source_url=await export_source(job,clip,start,end)
                             await download_source(source_url,source,job)
                         except RuntimeError as mp4_error:
-                            if job.get('cancelled'):
+                            if whole_export or job.get('cancelled'):
                                 raise
                             if end - start > 450:
                                 raise RuntimeError('Разбиваем длинный интервал для резервного потока Ivideon.') from mp4_error
                             print('archive mp4 unavailable, trying HLS fallback type='+type(mp4_error).__name__,flush=True)
                             await download_hls_source(job,clip,start,end,source)
-                        original_duration,original_fps,_,_=await probe(source,job)
+                        original_duration,original_fps,_,original_height=await probe(source,job)
                         if original_duration < end-start-max(.15,2/original_fps):
                             print(f'archive-export duration mismatch requested={end-start:.3f} received={original_duration:.3f} fps={original_fps:.3f}', flush=True)
                             raise RuntimeError(f'Ivideon вернул {original_duration:.2f} с видео на запрос {end-start} с. Файл не сохранён: запись короче выбранного интервала.')
+                        target = PROFILES[job['quality']]
+                        if whole_export and (target is None or original_height <= target):
+                            source.replace(path)
+                            pieces.append(path)
+                            piece_durations.append(original_duration)
+                            completed += end - start
+                            job['progress'] = min(98, round(completed / total * 98))
+                            continue
                         args=['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-filter_threads','1','-threads','1','-xerror','-err_detect','explode','-i',str(source),'-map','0:v:0','-map','0:a:0?','-threads','1']
-                        target=PROFILES[job['quality']]
                         # Keep every frame even when Ivideon delivers duplicate timestamps.
                         filters=["settb=1/90000","setpts='if(eq(N,0),PTS,max(PTS,PREV_OUTPTS+1))'"]
                         if width:
@@ -640,26 +652,27 @@ async def run(job):
                             raise RuntimeError('При обработке потерялась часть исходной записи.')
                     except RuntimeError:
                         path.unlink(missing_ok=True);source.unlink(missing_ok=True)
-                        if end-start > 60 and not job.get('cancelled'):
+                        if not whole_export and end-start > 60 and not job.get('cancelled'):
                             middle = (start+end)//2
                             pending[0:0] = [(start,middle),(middle,end)]
                             continue
                         raise
                     width = width or (w,h)
-                    # A checkpoint is a recovery aid, not a prerequisite for a valid local MP4.
-                    # A transient cloud timeout must not discard a fully verified recording.
-                    job['message']='Сохраняем контрольную точку на Яндекс Диске'
-                    for checkpoint_attempt in range(2):
-                        try:
-                            await checkpoint_piece(path,job,index,start,end,duration,(w,h))
-                            break
-                        except (httpx.HTTPError, RuntimeError, HTTPException) as checkpoint_error:
-                            print('archive-checkpoint retry attempt=' + str(checkpoint_attempt + 1) +
-                                  ' type=' + type(checkpoint_error).__name__, flush=True)
-                            if checkpoint_attempt == 0:
-                                await asyncio.sleep(2)
-                    else:
-                        print('archive-checkpoint skipped; verified local segment retained',flush=True)
+                    if not whole_export:
+                        # A checkpoint is a recovery aid, not a prerequisite for a valid local MP4.
+                        # A transient cloud timeout must not discard a fully verified recording.
+                        job['message']='Сохраняем контрольную точку на Яндекс Диске'
+                        for checkpoint_attempt in range(2):
+                            try:
+                                await checkpoint_piece(path,job,index,start,end,duration,(w,h))
+                                break
+                            except (httpx.HTTPError, RuntimeError, HTTPException) as checkpoint_error:
+                                print('archive-checkpoint retry attempt=' + str(checkpoint_attempt + 1) +
+                                      ' type=' + type(checkpoint_error).__name__, flush=True)
+                                if checkpoint_attempt == 0:
+                                    await asyncio.sleep(2)
+                        else:
+                            print('archive-checkpoint skipped; verified local segment retained',flush=True)
                     pieces.append(path)
                     piece_durations.append(duration)
                     completed += end-start
@@ -675,7 +688,8 @@ async def run(job):
                     await process(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',str(manifest),'-map','0','-c','copy','-movflags','+faststart',str(output)],job)
                 job['message'] = 'Проверяем готовый MP4'
                 duration, fps, w, h = await probe(output,job)
-                await verify_frames(output,job,fps)
+                if not whole_export:
+                    await verify_frames(output,job,fps)
                 if duration < sum(piece_durations) - max(.05,2/fps):
                     raise RuntimeError('Склейка не прошла проверку длительности. Файл не выдан.')
                 job['files'].append({'id':str(index),'name':clip['name'] + '.mp4','size':output.stat().st_size,'duration':clip['end']-clip['start'],'measuredDuration':duration,'fps':fps,'width':w,'height':h,'path':str(output),'cameraId':clip['cameraId'],'connectionId':clip.get('connectionId'),'cameraName':clip.get('cameraName','Камера'),'sourceStart':clip['start']})
