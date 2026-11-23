@@ -13,7 +13,7 @@ import time
 import urllib.request
 import urllib.error
 from pathlib import Path
-from urllib.parse import urlparse, urljoin
+from urllib.parse import parse_qs, unquote, urlparse, urljoin
 
 import httpx
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -570,6 +570,72 @@ async def start_checkpoint_cleanup():
     task.add_done_callback(TASKS.discard)
 
 
+async def import_ivideon_to_disk(source_url, target, token, job):
+    """Offer Yandex a provider-issued file URL without forwarding the camera credential."""
+    source = urlparse(source_url)
+    provider_key = parse_qs(source.query).get('access_token', [''])[0]
+    if not provider_key:
+        return None
+    headers = {'Authorization': 'OAuth ' + token}
+    async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
+        try:
+            async with client.stream('GET', source_url, headers={'Range': 'bytes=0-0'}) as response:
+                if response.status_code not in (301, 302, 303, 307, 308) or not response.headers.get('location'):
+                    return None
+                cdn_url = media_url(urljoin(source_url, response.headers['location']))
+            cdn = urlparse(cdn_url)
+            if not re.fullmatch(r'rr[0-9]+[.]extcam[.]com', cdn.hostname or ''):
+                return None
+            decoded_url = unquote(cdn_url)
+            if 'access_token' in decoded_url.lower() or provider_key in decoded_url:
+                return None
+            async with client.stream('GET', cdn_url, headers={'Range': 'bytes=0-0'}) as response:
+                byte_range = re.fullmatch(r'bytes 0-0/(\d+)', response.headers.get('content-range', ''))
+                if response.status_code != 206 or not byte_range or int(byte_range[1]) < 1000:
+                    return None
+                expected_size = int(byte_range[1])
+        except (httpx.HTTPError, RuntimeError, ValueError):
+            return None
+        if job.get('cancelled'):
+            raise RuntimeError('Подготовка отменена.')
+        job['message'] = 'Яндекс Диск забирает готовый MP4 из Ivideon'
+        try:
+            response = await client.post(DISK_API + '/upload', headers=headers,
+                params={'url': cdn_url, 'path': target, 'disable_redirects': 'true'})
+        except httpx.HTTPError:
+            raise RuntimeError('Яндекс Диск не подтвердил запуск загрузки. Проверь папку приложения на Диске.') from None
+        print(f'archive-yandex-url submit status={response.status_code}', flush=True)
+        if response.status_code in (400, 405, 415, 422, 501):
+            return None
+        if response.status_code != 202:
+            raise RuntimeError(f'Яндекс Диск отклонил загрузку по ссылке (HTTP {response.status_code}).')
+        operation = urlparse(response.json().get('href', ''))
+        if (operation.scheme != 'https' or operation.netloc != urlparse(DISK_API).netloc
+                or not re.fullmatch(r'/v1/disk/operations/[a-zA-Z0-9_-]+', operation.path)
+                or operation.query or operation.fragment):
+            raise RuntimeError('Яндекс Диск не вернул адрес проверки загрузки.')
+        deadline = time.monotonic() + 15 * 60
+        while time.monotonic() < deadline:
+            if job.get('cancelled'):
+                raise RuntimeError('Проверка отменена. Яндекс Диск может завершить уже начатую загрузку.')
+            await asyncio.sleep(3)
+            try:
+                status = await client.get(operation.geturl(), headers=headers)
+                if status.status_code != 200:
+                    continue
+                state = status.json().get('status')
+                if state == 'failed':
+                    return None
+                if state == 'success':
+                    metadata = await client.get(DISK_API, headers=headers, params={'path': target})
+                    if metadata.status_code == 200 and metadata.json().get('size') == expected_size:
+                        print(f'archive-yandex-url complete bytes={expected_size}', flush=True)
+                        return target.removeprefix('app:/')
+            except httpx.TransportError:
+                continue
+        raise RuntimeError('Яндекс Диск ещё не подтвердил завершение загрузки. Проверь папку приложения на Диске.')
+
+
 async def run(job):
     async with LOCK:
         if job.get('cancelled'):
@@ -589,6 +655,7 @@ async def run(job):
                 whole_export = interval[1] - interval[0] <= IVIDEON_EXPORT_LIMIT
                 pending = [interval] if whole_export else list(chunks(*interval))
                 width = None
+                saved_directly = False
                 while pending:
                     start, end = pending.pop(0)
                     job['part'] = {'index':len(pieces)+1,'total':len(pieces)+len(pending)+1}
@@ -611,6 +678,14 @@ async def run(job):
                         job['message']='Запрашиваем запись у Ivideon'
                         try:
                             source_url=await export_source(job,clip,start,end)
+                            if whole_export and job.get('saveToYandex') and job['quality'] == 'source':
+                                token = await cloud_token('yandex', job['user'], job['headers'])
+                                target = 'app:/' + clean_name(clip['name'])[:80] + '-' + secrets.token_hex(5) + '.mp4'
+                                saved = await import_ivideon_to_disk(source_url, target, token, job)
+                                if saved:
+                                    job.setdefault('cloudFiles', []).append(saved)
+                                    saved_directly = True
+                                    break
                             await download_source(source_url,source,job)
                         except RuntimeError as mp4_error:
                             if whole_export or job.get('cancelled'):
@@ -678,6 +753,8 @@ async def run(job):
                     completed += end-start
                     job['progress'] = min(98, round(completed/total*98))
                 job.pop('part',None)
+                if saved_directly:
+                    continue
                 job['message'] = 'Собираем один MP4 из частей' if len(pieces)>1 else 'Проверяем готовый MP4'
                 output = folder / (str(index) + '.mp4')
                 if len(pieces) == 1:
@@ -1287,6 +1364,8 @@ async def save_to_owner_disk(item, token, job=None):
     headers = {'Content-Length': str(item['size']), 'Content-Type': item.get('mime', 'video/mp4')}
     async with httpx.AsyncClient(timeout=120) as client:
         destination = await disk_link(client,'upload',target,token)
+        started = time.monotonic()
+        print(f'archive-yandex-put started bytes={item["size"]}', flush=True)
         async def report(blocks):
             written = 0
             if job is not None:
@@ -1322,6 +1401,7 @@ async def save_to_owner_disk(item, token, job=None):
                 await asyncio.sleep(1)
         else:
             raise RuntimeError('Яндекс Диск не подтвердил размер сохранённого файла.')
+    print(f'archive-yandex-put confirmed seconds={time.monotonic()-started:.1f}', flush=True)
     return {'saved':True,'name':target.removeprefix('app:/')}
 
 
