@@ -494,54 +494,71 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
   }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,240),failureLog:String(e.message||'').slice(0,1800),diagnostic:e.diagnostic||await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}))});onProgress(report);if(state==='wb_page_not_ready'){report.state='unavailable';return report}if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
   for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='inventory'?(x.state==='to-hold'):phase==='secondary'?!(x.state==='to-hold'):false))){
    if(Date.now()-started>budgetMs){report.sections.push({key:'budget:goods',state:'partial'});break}
-   report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section'};onProgress(report);
-   try{
-    await openScope(ORIGIN+section.path,section.heading,org);
-    const dateProof=await selectCollectionPeriod(page,section.heading);
-    if(!dateProof.verified)report.sections.push({key:org.research_id+':'+section.key+':date-range',state:'date_range_unverified',diagnostic:dateProof});
-    if(section.state!=='to-hold'){
-     await page.getByRole('button',{name:section.tab,exact:true}).click();
-     await sleep(400);await pageReady(page,section.heading);
-    }
-    await page.waitForFunction(()=>/Товаров\s*\d|Нет товаров/.test(document.body?.innerText||''),null,{timeout:20000});
-    const groupScan=await scanVirtual(page,page.locator('body'),extractPointGroups);
-    const groups=groupScan.rows;
-    const proof=await page.locator('body').evaluate(readGoodsScopeProof);
-    const absentConfirmed=dateProof.verified&&groupScan.complete&&groups.every(group=>org.points.some(point=>point.wb_point_id===group.point))&&organizationLabelMatches(proof.header,org.name_exact)&&(proof.declaredPoints===new Set(groups.map(group=>group.point)).size||proof.noGoods);
-    let sectionComplete=groupScan.complete;
-    for(const point of org.points){
-     if(Date.now()-started>budgetMs){sectionComplete=false;break}
-     report.current={organization:org.research_id,point:point.wb_point_id,section:section.key,state:section.state,step:'reading_point'};onProgress(report);
-     const group=groups.find(x=>x.point===point.wb_point_id);
-     const scope={organization:org.research_id,point:point.wb_point_id,category:section.category,state:section.state,key:section.key};
-     // Missing group is not proof of zero goods: WB may not have mounted it,
-     // or the organization switch may have failed. Never archive existing rows.
-     if(!group){
-      if(absentConfirmed){
-       await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,rows:[],complete:true,status:'ok',expected_count:0,finished_at:stamp()});
-       checkedPoints.add(org.research_id+':'+point.wb_point_id);report.checked_points=checkedPoints.size;
-       report.sections.push({key:org.research_id+':'+point.wb_point_id+':'+section.key+':'+section.state,state:'ok',evidence:'complete_unfiltered_group_list',count:0});onProgress(report);continue;
-      }
-      await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,
-       rows:[],complete:false,status:'point_group_missing',expected_count:null,finished_at:stamp()});
-      sectionComplete=false;
-      report.sections.push({key:org.research_id+':'+point.wb_point_id+':'+section.key+':'+section.state,state:'point_group_missing',diagnostic:await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({})),groupIds:groups.map(group=>group.point)});
-      onProgress(report);
-      continue;
+   for(let attempt=0;attempt<2;attempt++){
+    report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section',attempt:attempt+1};onProgress(report);
+    try{
+     await openScope(ORIGIN+section.path,section.heading,org);
+     const dateProof=await selectCollectionPeriod(page,section.heading);
+     if(!dateProof.verified)report.sections.push({key:org.research_id+':'+section.key+':date-range',state:'date_range_unverified',diagnostic:dateProof});
+     if(section.state!=='to-hold'){
+      await page.getByRole('button',{name:section.tab,exact:true}).click();
+      await sleep(400);await pageReady(page,section.heading);
      }
-     let result={rows:[],complete:true};
-     if(group?.count>0)result=await collectPoint(page,point.wb_point_id,section);
-     const complete=dateProof.verified&&groupScan.complete&&result.complete&&(!group||result.rows.length===group.count);
-     const rows=observationRows(result.rows,{...scope,date_range_verified:dateProof.verified}).filter(row=>eligibleObservation(row));
-     const saved=await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,rows,complete,
-       status:complete?'ok':'partial',expected_count:group?.count||0,finished_at:stamp()});
-     sectionComplete&&=complete&&saved.complete!==false;
-     report.rows+=rows.length;checkedPoints.add(org.research_id+':'+point.wb_point_id);report.checked_points=checkedPoints.size;onProgress(report);
+     await page.waitForFunction(()=>/Товаров\s*\d|Нет товаров/.test(document.body?.innerText||''),null,{timeout:20000});
+     const groupScan=await scanVirtual(page,page.locator('body'),extractPointGroups);
+     const groups=groupScan.rows;
+     const proof=await page.locator('body').evaluate(readGoodsScopeProof);
+     const absentConfirmed=dateProof.verified&&groupScan.complete&&groups.every(group=>org.points.some(point=>point.wb_point_id===group.point))&&organizationLabelMatches(proof.header,org.name_exact)&&(proof.declaredPoints===new Set(groups.map(group=>group.point)).size||proof.noGoods);
+     let sectionComplete=groupScan.complete;
+     for(const point of org.points){
+      if(Date.now()-started>budgetMs){sectionComplete=false;break}
+      report.current={organization:org.research_id,point:point.wb_point_id,section:section.key,state:section.state,step:'reading_point'};onProgress(report);
+      const group=groups.find(x=>x.point===point.wb_point_id);
+      const scope={organization:org.research_id,point:point.wb_point_id,category:section.category,state:section.state,key:section.key};
+      // Missing group is not proof of zero goods: WB may not have mounted it,
+      // or the organization switch may have failed. Never archive existing rows.
+      if(!group){
+       if(absentConfirmed){
+        await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,rows:[],complete:true,status:'ok',expected_count:0,finished_at:stamp()});
+        checkedPoints.add(org.research_id+':'+point.wb_point_id);report.checked_points=checkedPoints.size;
+        report.sections.push({key:org.research_id+':'+point.wb_point_id+':'+section.key+':'+section.state,state:'ok',evidence:'complete_unfiltered_group_list',count:0});onProgress(report);continue;
+       }
+       await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,
+        rows:[],complete:false,status:'point_group_missing',expected_count:null,finished_at:stamp()});
+       sectionComplete=false;
+       report.sections.push({key:org.research_id+':'+point.wb_point_id+':'+section.key+':'+section.state,state:'point_group_missing',diagnostic:await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({})),groupIds:groups.map(group=>group.point)});
+       onProgress(report);
+       continue;
+      }
+      let result={rows:[],complete:true};
+      if(group?.count>0){
+       try{result=await collectPoint(page,point.wb_point_id,section)}
+       catch(error){
+        if(error.name!=='TimeoutError')throw error;
+        await closeDrawers(page).catch(()=>{});
+        const pointScope=`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`;
+        await saveScope({...scope,scope:pointScope,rows:[],complete:false,status:'drawer_timeout',finished_at:stamp()});
+        report.sections.push({key:pointScope,state:'drawer_timeout'});
+        onProgress(report);
+        sectionComplete=false;
+        continue;
+       }
+      }
+      const complete=dateProof.verified&&groupScan.complete&&result.complete&&(!group||result.rows.length===group.count);
+      const rows=observationRows(result.rows,{...scope,date_range_verified:dateProof.verified}).filter(row=>eligibleObservation(row));
+      const saved=await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,rows,complete,
+        status:complete?'ok':'partial',expected_count:group?.count||0,finished_at:stamp()});
+      sectionComplete&&=complete&&saved.complete!==false;
+      report.rows+=rows.length;checkedPoints.add(org.research_id+':'+point.wb_point_id);report.checked_points=checkedPoints.size;onProgress(report);
+     }
+     report.sections.push({key:org.research_id+':'+section.key+':'+section.state,state:sectionComplete?'ok':'partial'});
+     break;
+    }catch(e){const diagnostic=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}));await closeDrawers(page).catch(()=>{});const state=e.code||'unavailable';
+     if(attempt===0&&e.name==='TimeoutError'&&Date.now()-started<budgetMs)continue;
+     report.sections.push({key:org.research_id+':'+section.key+':'+section.state,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,200),diagnostic});onProgress(report);
+     await saveScope({scope:`wb:${org.research_id}:all:${section.key}`,organization:org.research_id,key:section.key,status:state,complete:false,rows:[]}).catch(()=>{});
+     if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
     }
-    report.sections.push({key:org.research_id+':'+section.key+':'+section.state,state:sectionComplete?'ok':'partial'});
-   }catch(e){const diagnostic=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}));await closeDrawers(page).catch(()=>{});const state=e.code||'unavailable';report.sections.push({key:org.research_id+':'+section.key+':'+section.state,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,200),diagnostic});onProgress(report);
-    await saveScope({scope:`wb:${org.research_id}:all:${section.key}`,organization:org.research_id,key:section.key,status:state,complete:false,rows:[]}).catch(()=>{});
-    if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
    }
   }
   if(phase==='tickets')for(const namespace of ['legacy','new'])for(const point of org.points){

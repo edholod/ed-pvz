@@ -191,7 +191,7 @@ export function renderUrgentTickets(groups, points, esc, failed, scopes = []) {
  const now = Date.now();
  const uncheckedPoints = points.filter(point => ['legacy', 'new'].some(namespace => {
   const scope = scopeMap.get(`wb:${point.organization_research_id}:${point.wb_point_id}:tickets:${namespace}`);
-  return scope?.state !== 'ok' || !(now - Date.parse(scope.last_success) <= 6 * 3600000);
+  return scope?.state !== 'ok' || !(now - Date.parse(scope.last_success) <= 3 * 3600000);
  })).length;
  const coverage = [
   unknown ? `Тикетов с неподтверждённым ответом: ${unknown}.` : '',
