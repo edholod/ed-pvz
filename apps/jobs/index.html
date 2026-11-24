@@ -438,6 +438,7 @@ function refreshFilterSummary(type, selected, labelFor, emptyLabel) {
 }
 let cityOptionsKey;
 function updateCityOptions(cities) {
+  cities = new Set([...cities, 'Калининградская область']);
   const options=[...cities].filter(city=>canonicalCities.has(city)&&!excludedNonRussianCities.has(city)).sort((a,b)=>a.localeCompare(b,'ru'));
   const key=options.join('\\n');if(key===cityOptionsKey)return;cityOptionsKey=key;
   const container=$('city-options');container.replaceChildren();
