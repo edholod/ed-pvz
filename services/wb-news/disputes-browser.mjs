@@ -482,16 +482,26 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
- const phases=categories.includes('tickets')?['tickets','details','inventory']:['inventory'];
+ // Persist retention scopes and ticket lists before opening individual replies.
+ const phases=categories.includes('tickets')?['inventory','tickets','details']:['inventory'];
  for(const phase of phases)for(const org of ordered){
   report.phase=phase;
   if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
   if(Date.now()-started>budgetMs){report.sections.push({key:'budget',state:'partial'});break}
   report.current={organization:org.research_id,section:'organization',step:'selecting_organization'};onProgress(report);
-  try{
+  const selectScopeOrganization=async()=>{
    if(!await page.getByTestId('app-header').count())await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
    await selectOrganization(page,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))});
-  }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,240),failureLog:String(e.message||'').slice(0,1800),diagnostic:e.diagnostic||await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}))});onProgress(report);if(state==='wb_page_not_ready'){report.state='unavailable';return report}if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
+  };
+  try{
+   try{await selectScopeOrganization()}
+   catch(error){
+    if(error.code!=='wb_page_not_ready'||Date.now()-started>=budgetMs)throw error;
+    page=await renewPage(page);
+    await page.goto(ORIGIN+'/pickpoints',{waitUntil:'domcontentloaded',timeout:45000});
+    await selectScopeOrganization();
+   }
+  }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,240),failureLog:String(e.message||'').slice(0,1800),diagnostic:e.diagnostic||await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}))});onProgress(report);if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
   for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='inventory'?(x.state==='to-hold'):phase==='secondary'?!(x.state==='to-hold'):false))){
    if(Date.now()-started>budgetMs){report.sections.push({key:'budget:goods',state:'partial'});break}
    for(let attempt=0;attempt<2;attempt++){
@@ -660,5 +670,9 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
   }
 
  }
- report.state=report.sections.some(x=>x.state!=='ok')?'partial':'ok';report.finished_at=stamp();return report;
+ const hasFailures=report.sections.some(section=>section.state!=='ok');
+ const savedScopes=report.sections.some(section=>section.state==='ok');
+ report.state=hasFailures?(savedScopes?'partial':'unavailable'):'ok';
+ report.finished_at=stamp();
+ return report;
 }
