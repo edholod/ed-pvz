@@ -11,3 +11,6 @@
 .bubble-footer>small{position:static!important;float:none!important;white-space:nowrap!important}
 .thread>.bubble:not(.mine){align-self:flex-start!important}.thread>.bubble.mine{align-self:flex-end!important}
 .bubble img{max-width:100%;height:auto}
+
+/* App viewport: only inbox and thread scroll, including embedded desktop. */
+html,body{height:100%!important;min-height:0!important;overflow:hidden!important;overscroll-behavior:none!important}body main{height:100dvh!important;max-height:100dvh!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;box-sizing:border-box!important;margin:0 auto!important;padding:8px!important}.layout,body.edsender-standalone .layout{flex:1 1 0!important;height:auto!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}.sidebar,.conversation{min-height:0!important;max-height:100%!important;overflow:hidden!important}.inbox,.thread{flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important}.chat-head,.composer,.side-head,.chat-shortcuts,.ed-chat-search{flex-shrink:0!important}#edpvz-report-error,#edpvz-support{display:none!important}body:has(#edpvz-bottom-nav) main{height:calc(100dvh - 75px - env(safe-area-inset-bottom,0px))!important}@media(max-width:650px){body main{padding:0!important}}
