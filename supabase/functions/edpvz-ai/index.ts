@@ -107,6 +107,11 @@ async function invoke(provider: Provider, model: string, system: string, prompt:
   const url = alice ? 'https://ai.api.cloud.yandex.net/v1/chat/completions'
     : 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
   try {
+    let reservation: string | null = null;
+    if (alice) {
+      reservation = await rest('rpc/edpvz_ai_alice_reserve', {p_model: model});
+      if (!reservation) return { status: 'monthly_budget', text: '', tokens: 0 };
+    }
     const response = await fetch(url, {
       method: 'POST', signal: AbortSignal.timeout(9500),
       headers: { 'content-type': 'application/json', ...(alice ? { authorization: 'Bearer ' + keys.alice, 'OpenAI-Project': aliceFolder } : { 'x-goog-api-key': keys.gemini! }) },
@@ -124,6 +129,11 @@ async function invoke(provider: Provider, model: string, system: string, prompt:
         : response.status >= 500 ? 30 : undefined,
     };
     const data = await response.json();
+    if (reservation && Number.isInteger(data.usage?.prompt_tokens) && Number.isInteger(data.usage?.completion_tokens)) {
+      await rest('rpc/edpvz_ai_alice_settle', {
+        p_id: reservation, p_input: data.usage.prompt_tokens, p_output: data.usage.completion_tokens,
+      }).catch(() => undefined);
+    }
     return {
       status: 'ok',
       text: alice ? data.choices?.[0]?.message?.content ?? '' : (data.candidates?.[0]?.content?.parts ?? []).filter((p: {thought?: boolean}) => !p.thought).map((p: {text?: string}) => p.text ?? '').join(''),
@@ -153,8 +163,8 @@ async function manage(input: Record<string, unknown>, settings: Record<string, u
     return reply({ ok: true });
   }
   if (input.action !== 'status') return reply({ error: 'invalid_action' }, 400);
-  const [stats, cooldowns] = await Promise.all([rest('rpc/edpvz_ai_stats', {}), rest('edpvz_ai_cooldowns?select=provider,until_at')]);
-  return reply({ settings, stats, cooldowns, aliceBillingApproved: Deno.env.get('EDPVZ_ALICE_BILLING_APPROVED') === 'true', geminiTermsVerified: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true', configured: { alice: Boolean(keys.alice), gemini: Boolean(keys.gemini) } });
+  const [stats, cooldowns, aliceBudget] = await Promise.all([rest('rpc/edpvz_ai_stats', {}), rest('edpvz_ai_cooldowns?select=provider,until_at'), rest('rpc/edpvz_ai_alice_budget', {})]);
+  return reply({ settings, stats, cooldowns, aliceBudget, aliceBillingApproved: Deno.env.get('EDPVZ_ALICE_BILLING_APPROVED') === 'true', geminiTermsVerified: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true', configured: { alice: Boolean(keys.alice), gemini: Boolean(keys.gemini) } });
 }
 
 async function handle(req: Request) {

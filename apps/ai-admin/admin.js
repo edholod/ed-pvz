@@ -7,7 +7,7 @@ const providerLabel = {alice: 'Алиса AI', gemini: 'Gemini'};
 const fmt = date => new Date(date).toLocaleString('ru-RU', {timeZone: 'Europe/Moscow'});
 
 async function load() {
-  const {settings, stats, cooldowns, configured, aliceBillingApproved, geminiTermsVerified} = await request({action: 'status'});
+  const {settings, stats, cooldowns, aliceBudget, configured, aliceBillingApproved, geminiTermsVerified} = await request({action: 'status'});
   for (const [key, val] of Object.entries(settings)) {
     const field = form.elements.namedItem(key);
     if (!field) continue;
@@ -25,6 +25,7 @@ async function load() {
   }
   const current = [settings.primary_provider, ...Object.keys(providerLabel)].find(key => eligible.has(key));
   status.textContent = settings.enabled ? (current ? 'Провайдер для следующего запроса — '+providerLabel[current] : 'Доступных провайдеров пока нет.') : 'Эд ИИ выключен.';
+  document.getElementById('alice-budget').textContent = 'Алиса AI · '+Number(aliceBudget.reservedOrSpentRub).toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽ из '+aliceBudget.limitRub+' ₽ на календарный месяц (МСК), с учётом резерва.';
   const periods = document.getElementById('periods');
   periods.replaceChildren();
   for (const item of stats.periods) {
