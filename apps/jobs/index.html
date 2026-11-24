@@ -388,7 +388,7 @@ function telegramCities(item) {
   if (!telegramCityCache.has(item)) {
     const cities = listingCities(item.city, item.text);
     const regional = String(item.source || '').trim().replace(/^@/, '').toLowerCase() === 'rabotapvz39';
-    telegramCityCache.set(item, regional ? [...new Set([...cities, 'Калининградская область'])] : cities.length ? cities : citiesFromSource(item));
+    telegramCityCache.set(item, regional ? [...new Set([...(cities.length ? cities : ['Калининград']), 'Калининградская область'])] : cities.length ? cities : citiesFromSource(item));
   }
   return telegramCityCache.get(item);
 }
