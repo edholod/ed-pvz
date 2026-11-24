@@ -55,15 +55,15 @@
     text.textContent = message.body;
     const meta = document.createElement('small');
     meta.textContent = new Date(message.created_at).toLocaleString('ru-RU', {
-      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-    }) + (deleted ? '' : delivery);
-    bubble.append(attachment || text, meta);
+      hour: '2-digit', minute: '2-digit'
+    }) + (deleted ? '' : delivery.replace(' Прочитано','').replace(' Отправлено',''));
+    const footer = document.createElement('div'); footer.className = 'bubble-footer'; const actions = document.createElement('span'); actions.className = 'message-actions'; footer.append(meta, actions); bubble.append(attachment || text, footer);
 
     if (!deleted) {
-      bubble.append(action('message-forward', 'Переслать',
+      actions.append(action('message-forward', 'Переслать',
         'M14 5l7 7-7 7v-4c-6 0-9 1.5-12 5 1-8 5-12 12-12V5z', onForward));
       if (message.is_mine) {
-        bubble.append(action('message-delete', 'Удалить',
+        actions.append(action('message-delete', 'Удалить',
           'M4 7h16M10 4h4m-8 3 1 13h10l1-13M10 11v6m4-6v6', async () => {
             if (!confirm('Удалить сообщение у всех участников переписки?')) return;
             try { await onDelete(); } catch (error) { onError(error.message); }
