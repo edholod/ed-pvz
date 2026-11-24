@@ -3,11 +3,11 @@ const status = document.getElementById('status');
 const save = document.getElementById('save');
 const probes = [...form.querySelectorAll('[data-probe]')];
 const request = data => window.EdPVZAI.request({section: 'admin', ...data});
-const providerLabel = {groq: 'Groq', gemini: 'Gemini'};
+const providerLabel = {alice: 'Алиса AI', gemini: 'Gemini'};
 const fmt = date => new Date(date).toLocaleString('ru-RU', {timeZone: 'Europe/Moscow'});
 
 async function load() {
-  const {settings, stats, cooldowns, configured, geminiTermsVerified} = await request({action: 'status'});
+  const {settings, stats, cooldowns, configured, aliceBillingApproved, geminiTermsVerified} = await request({action: 'status'});
   for (const [key, val] of Object.entries(settings)) {
     const field = form.elements.namedItem(key);
     if (!field) continue;
@@ -19,18 +19,8 @@ async function load() {
     const key = button.dataset.probe;
     const cooldown = cooldowns.find(c => c.provider === key && Date.parse(c.until_at) > Date.now());
     if (configured[key] && settings[key+'_enabled'] && !cooldown) eligible.add(key);
-    document.getElementById(key+'-status').textContent = !configured[key] ? (key === 'gemini' && !geminiTermsVerified ? 'Ожидает проверки условий использования Gemini' : 'Ожидает API-ключ')
+    document.getElementById(key+'-status').textContent = !configured[key] ? (key === 'alice' && !aliceBillingApproved ? 'Ожидает подтверждения платного API' : key === 'gemini' && !geminiTermsVerified ? 'Ожидает проверки условий использования Gemini' : 'Ожидает API-ключ')
       : !settings[key+'_enabled'] ? 'Выключен' : cooldown ? 'Пауза до '+fmt(cooldown.until_at) : 'Настроен';
-    if (key === 'groq') {
-      const last = stats.recent.find(item=>item.attempts.some(a=>a.provider===key && Object.keys(a.remaining||{}).length));
-      const limits = last?.attempts.find(a=>a.provider===key)?.remaining;
-      if (limits) {
-        const parts = [];
-        if (limits.requestsToday !== undefined) parts.push(limits.requestsToday+' запросов на сутки');
-        if (limits.tokensThisMinute !== undefined) parts.push(limits.tokensThisMinute+' токенов на минуту');
-        document.getElementById(key+'-status').append(document.createTextNode(' · Остаток по ответу от '+fmt(last.started_at)+' — '+parts.join(', ')));
-      }
-    }
     button.disabled = !configured[key];
   }
   const current = [settings.primary_provider, ...Object.keys(providerLabel)].find(key => eligible.has(key));
@@ -45,7 +35,7 @@ async function load() {
     periods.append(card);
   }
   document.getElementById('recent').textContent = stats.recent.map(item =>
-    [fmt(item.started_at), item.outcome, ...item.attempts.map(a=>providerLabel[a.provider]+' '+a.status)].join(' · ')
+    [fmt(item.started_at), item.outcome, ...item.attempts.map(a=>(providerLabel[a.provider] || a.provider)+' '+a.status)].join(' · ')
   ).join('\n') || 'Запросов пока нет.';
   form.hidden = false;
 }

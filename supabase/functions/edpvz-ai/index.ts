@@ -12,14 +12,15 @@ const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const admin = '0f75065b-2b26-4a87-bf26-005f5a2284d4';
 const reply = (data: unknown, status = 200) => Response.json(data, { headers, status });
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const providerNames = ['groq', 'gemini'] as const;
+const providerNames = ['alice', 'gemini'] as const;
 type Provider = typeof providerNames[number];
 type Row = string[];
 type Advice = { matches: Array<{id: string; reason: string}>; question: string; draft: string; evidence: string[] };
-type Remaining = { requestsToday?: number; tokensThisMinute?: number };
-type Attempt = {provider: Provider; status: string; remaining?: Remaining};
+type Attempt = {provider: Provider; status: string};
+const aliceFolder = Deno.env.get('YANDEX_CLOUD_FOLDER_ID') ?? '';
 const keys: Record<Provider, string | undefined> = {
-  groq: Deno.env.get('GROQ_API_KEY'),
+  alice: Deno.env.get('EDPVZ_ALICE_BILLING_APPROVED') === 'true' && /^[a-z0-9]{10,40}$/.test(aliceFolder)
+    ? Deno.env.get('YANDEX_AI_API_KEY') : undefined,
   gemini: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true' ? Deno.env.get('GEMINI_API_KEY') : undefined,
 };
 const cache = new Map<string, { expires: number; advice: Advice }>();
@@ -102,39 +103,31 @@ function retrySeconds(value: string | null) {
 
 async function invoke(provider: Provider, model: string, system: string, prompt: string) {
   if (!keys[provider]) return { status: 'unconfigured', text: '', tokens: 0 };
-  const groq = provider === 'groq';
-  const url = groq ? 'https://api.groq.com/openai/v1/chat/completions'
+  const alice = provider === 'alice';
+  const url = alice ? 'https://ai.api.cloud.yandex.net/v1/chat/completions'
     : 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
   try {
     const response = await fetch(url, {
       method: 'POST', signal: AbortSignal.timeout(9500),
-      headers: { 'content-type': 'application/json', ...(groq ? { authorization: 'Bearer ' + keys.groq } : { 'x-goog-api-key': keys.gemini! }) },
-      body: JSON.stringify(groq ? {
-        model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }, max_completion_tokens: 1100, reasoning_effort: 'low',
+      headers: { 'content-type': 'application/json', ...(alice ? { authorization: 'Bearer ' + keys.alice, 'OpenAI-Project': aliceFolder } : { 'x-goog-api-key': keys.gemini! }) },
+      body: JSON.stringify(alice ? {
+        model: 'gpt://' + aliceFolder + '/' + model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }, max_tokens: 1100, temperature: 0.1,
       } : {
         systemInstruction: { parts: [{ text: system }] }, contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1100, temperature: 0.1 },
       }),
     });
-    const remaining: Remaining = {};
-    for (const [key, name] of [
-      ['requestsToday', 'x-ratelimit-remaining-requests'],
-      ['tokensThisMinute', 'x-ratelimit-remaining-tokens'],
-    ] as const) {
-      const value = response.headers.get(name);
-      if (groq && value !== null && /^\d+$/.test(value)) remaining[key] = Number(value);
-    }
     if (!response.ok) return {
-      remaining, status: 'http_' + response.status, text: '', tokens: 0,
+      status: 'http_' + response.status, text: '', tokens: 0,
       cooldown: response.status === 429 ? retrySeconds(response.headers.get('Retry-After'))
         : response.status >= 500 ? 30 : undefined,
     };
     const data = await response.json();
     return {
-      status: 'ok', remaining,
-      text: groq ? data.choices?.[0]?.message?.content ?? '' : (data.candidates?.[0]?.content?.parts ?? []).filter((p: {thought?: boolean}) => !p.thought).map((p: {text?: string}) => p.text ?? '').join(''),
-      tokens: Number(groq ? data.usage?.total_tokens : data.usageMetadata?.totalTokenCount) || 0,
+      status: 'ok',
+      text: alice ? data.choices?.[0]?.message?.content ?? '' : (data.candidates?.[0]?.content?.parts ?? []).filter((p: {thought?: boolean}) => !p.thought).map((p: {text?: string}) => p.text ?? '').join(''),
+      tokens: Number(alice ? data.usage?.total_tokens : data.usageMetadata?.totalTokenCount) || 0,
     };
   } catch {
     return { status: 'network_or_timeout', text: '', tokens: 0, cooldown: 30 };
@@ -144,7 +137,7 @@ async function invoke(provider: Provider, model: string, system: string, prompt:
 async function manage(input: Record<string, unknown>, settings: Record<string, unknown>) {
   if (input.action === 'probe') {
     const p = input.provider;
-    if (p !== 'groq' && p !== 'gemini') return reply({ error: 'invalid_provider' }, 400);
+    if (p !== 'alice' && p !== 'gemini') return reply({ error: 'invalid_provider' }, 400);
     const result = await invoke(p, String(settings[p + '_model']), 'Верни JSON {"ok":true}.', 'Проверка подключения.');
     let ok = false;
     try { ok = JSON.parse(result.text).ok === true; } catch { /* The provider returned no valid JSON. */ }
@@ -153,7 +146,7 @@ async function manage(input: Record<string, unknown>, settings: Record<string, u
   if (input.action === 'save') {
     const patch = input.settings;
     if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return reply({ error: 'invalid_settings' }, 400);
-    const allowed = new Set(['enabled','tickets_enabled','groq_enabled','gemini_enabled','primary_provider','groq_model','gemini_model','user_daily','total_daily']);
+    const allowed = new Set(['enabled','tickets_enabled','alice_enabled','gemini_enabled','primary_provider','alice_model','gemini_model','user_daily','total_daily']);
     if (Object.keys(patch).some(key => !allowed.has(key))) return reply({ error: 'invalid_settings' }, 400);
     await rest('edpvz_ai_settings?id=eq.true', patch, 'PATCH');
     cache.clear();
@@ -161,7 +154,7 @@ async function manage(input: Record<string, unknown>, settings: Record<string, u
   }
   if (input.action !== 'status') return reply({ error: 'invalid_action' }, 400);
   const [stats, cooldowns] = await Promise.all([rest('rpc/edpvz_ai_stats', {}), rest('edpvz_ai_cooldowns?select=provider,until_at')]);
-  return reply({ settings, stats, cooldowns, geminiTermsVerified: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true', configured: { groq: Boolean(keys.groq), gemini: Boolean(keys.gemini) } });
+  return reply({ settings, stats, cooldowns, aliceBillingApproved: Deno.env.get('EDPVZ_ALICE_BILLING_APPROVED') === 'true', geminiTermsVerified: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true', configured: { alice: Boolean(keys.alice), gemini: Boolean(keys.gemini) } });
 }
 
 async function handle(req: Request) {
@@ -208,7 +201,7 @@ async function handle(req: Request) {
   try {
     const market = input.market as keyof typeof catalog;
     const rows = shortlist(catalog[market], clean);
-    const order: readonly Provider[] = settings.primary_provider === 'gemini' ? ['gemini', 'groq'] : providerNames;
+    const order: readonly Provider[] = settings.primary_provider === 'gemini' ? ['gemini', 'alice'] : providerNames;
     const cooldowns: {provider: Provider; until_at: string}[] = await rest('edpvz_ai_cooldowns?select=provider,until_at');
     for (const p of order) {
       if (!settings[p + '_enabled'] || !keys[p]) continue;
@@ -231,13 +224,13 @@ async function handle(req: Request) {
           'POST', 'resolution=merge-duplicates').catch(() => undefined);
       }
       if (result.status !== 'ok') {
-        attempts.push({ provider: p, status: result.status, remaining: result.remaining });
+        attempts.push({ provider: p, status: result.status });
         continue;
       }
       let advice: Advice;
       try { advice = readAdvice(result.text, rows); }
       catch { attempts.push({ provider: p, status: 'invalid_response' }); continue; }
-      attempts.push({ provider: p, status: 'ok', remaining: result.remaining });
+      attempts.push({ provider: p, status: 'ok' });
       outcome = p;
       if (genericQueries.has(generic) && advice.matches.length) {
         cache.set(cacheKey, { expires: Date.now() + 300000, advice });
