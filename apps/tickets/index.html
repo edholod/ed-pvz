@@ -142,17 +142,30 @@ el('libAnalyze').onclick=async()=>{
   const matches=advice
     ? advice.matches.slice(0,3).filter(m=>byId.has(m.id)).map(m=>({...byId.get(m.id),reason:m.reason}))
     : candidates.map(x=>({...x,s:score(x.t,x.g,q)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,3);
-  if (matches.length) line(out, 'Подходящие темы');
-  if (advice?.question) line(out, advice.question + ' Дополните описание и подготовьте обращение ещё раз.');
-  if (!matches.length && !advice?.question) {
-    line(out, 'Подходящая тема не найдена. Уточните описание или откройте расширенную форму.');
-    const manual = document.createElement('button');
-    manual.type='button';
-    manual.className='alt';
-    manual.textContent='Открыть расширенную форму';
-    manual.onclick=()=>{el('manualComposer').open=true;el('facts').value=q;el('facts').focus()};
-    out.append(manual);
+  const rewritten = advice?.draft?.trim();
+  const preservesNumbers = (q.match(/\d+/g) || []).every(number => rewritten?.includes(number));
+  const description = rewritten && preservesNumbers &&
+    !/\[(?:имя|номер|ссылка|почта|идентификатор) удал[её]н/i.test(rewritten) ? rewritten : q;
+  if (!matches.length) {
+    resetForm();
+    const point = el('point').value.trim();
+    const label = marketAtRequest === 'ozon' ? 'Ozon' : 'Wildberries';
+    el('libResult').value = [
+      'Тема: Обращение по работе ПВЗ', 'Здравствуйте!',
+      'Маркетплейс: ' + label + (point ? '\nПВЗ: ' + point : ''),
+      'Обстоятельства:\n' + description,
+      'Прошу проверить ситуацию и сообщить, какие действия нужно выполнить.'
+    ].join('\n\n');
+    el('libResult').hidden=false;
+    el('libCopy').hidden=false;
+    el('libCopy').textContent=data.buttons.copy;
+    el('libOpen').href=data.help_url;
+    el('libOpen').textContent=data.buttons.open;
+    el('libOpen').hidden=false;
+    el('libResult').scrollIntoView({block:'nearest'});
+    return;
   }
+  if (matches.length > 1) line(out, 'Другие подходящие темы');
   const activate = ({g, t}, description) => {
     el('libSearch').value = '';
     group = g.id;
@@ -162,17 +175,14 @@ el('libAnalyze').onclick=async()=>{
     if (facts) facts.value = description;
     showDraft(t, {pvz: el('point').value.trim(), facts: description});
   };
-  for (const [i, match] of matches.entries()) {
+  activate(matches[0], description);
+  for (const [i, match] of matches.slice(1).entries()) {
     const {g,t,reason} = match;
     const box = document.createElement('div');
     box.className = 'tiles';
     const route = t.route.observed_button_path?.join(' → ') || t.route.suggested_topics?.join(' → ') || 'Уточните маршрут в кабинете';
-    const rewritten = advice?.draft?.trim();
-    // The provider rewrites only the description for its best match.
-    const description = i === 0 && rewritten && !/\[(?:имя|номер|ссылка|почта|идентификатор) удал[её]н/i.test(rewritten) ? rewritten : q;
-    tile(box, t.problem, [g.title, route, reason].filter(Boolean).join(' · '), () => activate(match, description), i);
+    tile(box, t.problem, [g.title, route, reason].filter(Boolean).join(' · '), () => activate(match, q), i);
     out.append(box);
-    if (i === 0 && !advice?.question && (advice || matches.length === 1 || match.s > matches[1].s)) activate(match, description);
   }
   if (advice?.evidence?.length) line(out, 'Полезные материалы — ' + advice.evidence.join(', ') + '.');
 };
