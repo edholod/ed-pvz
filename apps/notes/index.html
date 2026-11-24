@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f8f5ff">
   <title>Личные заметки — Эд ПВЗ</title>
-  <link rel="stylesheet" href="./notes.css?v=3">
+  <link rel="stylesheet" href="./notes.css?v=4">
   <script defer src="../../assets/account.js?v=20261115-notes"></script>
   <script defer src="./format.js?v=1"></script>
-  <script defer src="./notes.js?v=4"></script>
+  <script defer src="./notes.js?v=5"></script>
   <script defer src="./export.js?v=1"></script>
-</head>
+<style>#editor>label{display:none}#title{border:0;background:transparent;font-size:24px;font-weight:750;padding:8px 0;margin:0 0 12px}.editor-tools{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:4px;padding:5px;background:#f5effa;border-radius:12px}.editor-tools button{flex:0 0 36px;height:38px;padding:0;border:0;background:transparent;font-size:19px;color:#62459a}#rich{border:0;min-height:300px;padding:12px 2px;outline:none;font-size:16px;line-height:1.6}#rich:empty:before{content:attr(data-placeholder);color:#aaa}#rich input[type=checkbox]{margin:0;width:20px;height:20px;flex:none}#rich .checks label{display:block}#rich .checks input{margin-right:8px;vertical-align:middle}#rich td,#rich th{min-width:65px}#editor .actions{border-top:1px solid #eee5f5;padding-top:10px}.export-menu{margin-top:12px;color:#62459a;font-size:14px}.export-menu summary{cursor:pointer}#editor-status{font-size:12px} @media(max-width:650px){main:has(#editor:not([hidden])) header,main:has(#editor:not([hidden])) .layout>section{display:none}main:has(#editor:not([hidden])){padding:10px 12px 90px}#editor{padding:12px}#rich{min-height:45vh}}</style></head>
 <body>
 <main>
   <a class="back" href="../../">← Главная</a>
@@ -32,28 +32,28 @@
       <input id="title" maxlength="120" placeholder="Без названия" autocomplete="off">
       <label for="body">Заметка</label>
       <div class="editor-tools" id="tools" role="group" aria-label="Форматирование">
-        <button data-format="heading" type="button">Заголовок</button>
-        <button data-format="bold" type="button"><strong>Жирный</strong></button>
-        <button data-format="italic" type="button"><em>Курсив</em></button>
-        <button data-format="strike" type="button"><s>Зачеркнуть</s></button>
-        <button data-format="bullets" type="button">Список</button>
-        <button data-format="numbered" type="button">Нумерация</button>
-        <button data-format="checklist" type="button">Чек-лист</button>
-        <button data-format="table" type="button">Таблица</button>
-        <button data-format="link" type="button">Ссылка</button>
-        <button data-format="quote" type="button">Цитата</button>
-        <button data-format="code" type="button">Код</button>
-        <button data-format="divider" type="button">Разделитель</button>
+        <button data-format="heading" type="button" title="Заголовок" aria-label="Заголовок">H</button>
+        <button data-format="bold" type="button" title="Жирный" aria-label="Жирный">B</button>
+        <button data-format="italic" type="button" title="Курсив" aria-label="Курсив">𝑰</button>
+        <button data-format="strike" type="button" title="Зачеркнуть" aria-label="Зачеркнуть">S̶</button>
+        <button data-format="bullets" type="button" title="Список" aria-label="Список">☷</button>
+        <button data-format="numbered" type="button" title="Нумерация" aria-label="Нумерация">1≡</button>
+        <button data-format="checklist" type="button" title="Чек-лист" aria-label="Чек-лист">☑</button>
+        <button data-format="table" type="button" title="Таблица" aria-label="Таблица">▦</button>
+        <button data-format="link" type="button" title="Ссылка" aria-label="Ссылка">↗</button>
+        <button data-format="quote" type="button" title="Цитата" aria-label="Цитата">❝</button>
+        <button data-format="code" type="button" title="Код" aria-label="Код">‹/›</button>
+        <button data-format="divider" type="button" title="Разделитель" aria-label="Разделитель">―</button>
       </div>
-      <button id="preview-toggle" type="button" aria-pressed="false">Предпросмотр</button>
+      
       <div id="preview" class="formatted-note" aria-label="Предпросмотр заметки" hidden></div>
-      <textarea id="body" maxlength="20000" rows="12" placeholder="Напиши, что нужно запомнить"></textarea>
+      <div id="rich" class="formatted-note" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Текст заметки" data-placeholder="Напиши, что нужно запомнить"></div><textarea hidden id="body" maxlength="20000" rows="12" placeholder="Напиши, что нужно запомнить"></textarea>
       <div class="actions">
         <button class="primary" id="save" type="submit">Сохранить</button>
         <button id="cancel" type="button">Закрыть</button>
         <button class="danger" id="delete" type="button" hidden>Удалить</button>
       </div>
-      <div class="export-actions">
+      <details class="export-menu"><summary>Экспорт заметки</summary><div class="export-actions">
         <label for="export-format">Формат файла</label>
         <select id="export-format">
           <option value="txt">Текст (.txt)</option>
@@ -65,7 +65,7 @@
         <button id="export-note" type="button">Скачать заметку</button>
         <p id="export-status" role="status" aria-live="polite"></p>
       </div>
-      <p id="editor-status" role="status" aria-live="polite"></p>
+      </details><p id="editor-status" role="status" aria-live="polite"></p>
     </form>
   </div>
   <dialog id="insert-table">
