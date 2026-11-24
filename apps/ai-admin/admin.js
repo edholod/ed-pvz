@@ -27,7 +27,12 @@ async function load() {
   }
   const current = geminiQuota ? (eligible.has('alice') ? 'alice' : null) : (eligible.has('gemini') ? 'gemini' : null);
   status.textContent = settings.enabled ? (current ? 'Провайдер для следующего запроса — '+providerLabel[current] : 'Доступных провайдеров пока нет.') : 'Эд ИИ выключен.';
-  document.getElementById('alice-budget').textContent = 'Алиса AI · '+Number(aliceBudget.reservedOrSpentRub).toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽ из '+aliceBudget.limitRub+' ₽ на календарный месяц (МСК), с учётом резерва.';
+  const rub = amount => Number(amount).toLocaleString('ru-RU', {maximumFractionDigits: 2});
+  const windowLabel = aliceBudget.period === 'grant'
+    ? 'на весь срок гранта до 23 января 2027 г. (МСК)' : 'на календарный месяц (МСК)';
+  document.getElementById('alice-budget').textContent =
+    'Алиса AI · ' + rub(aliceBudget.reservedOrSpentRub) + ' ₽ из ' +
+    rub(aliceBudget.limitRub) + ' ₽ ' + windowLabel + ', с учётом резерва.';
   const periods = document.getElementById('periods');
   periods.replaceChildren();
   for (const item of stats.periods) {
