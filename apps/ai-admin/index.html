@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Управление ИИ — Эд ПВЗ</title>
+  <style>
+    :root{font:16px system-ui;color:#29243c;background:#f8f6fb}
+    main{max-width:900px;margin:auto;padding:20px}
+    header,section{padding:18px;border-radius:20px;margin:12px 0;background:white}
+    header{background:linear-gradient(115deg,#fce7f1,#e4efff)}
+    h1,h2,h3{margin:0 0 .65rem}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+    article{border-radius:16px;padding:14px;background:#e4efff}
+    article:nth-child(odd){background:#fce7f1}
+    label{display:block;margin:10px 0}
+    select,input,button{font:inherit}
+    select,input[type=number]{display:block;max-width:100%;margin-top:5px}
+    button{padding:8px 14px;border:0;border-radius:10px;background:#573b7c;color:white;cursor:pointer}
+    button:disabled{opacity:.55}
+    svg{width:24px;height:24px;vertical-align:middle}
+    output{white-space:pre-wrap;overflow-wrap:anywhere}
+  </style>
+</head>
+<body>
+<main>
+  <a href="../account/">← Профиль</a>
+  <header><h1><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5z"/></svg> Управление ИИ</h1><p id="status" role="status">Проверяем доступ…</p></header>
+  <form id="settings" hidden>
+    <section>
+      <h2>Настройки Эд ИИ</h2>
+      <label><input type="checkbox" name="enabled"> Включить Эд ИИ</label>
+      <label><input type="checkbox" name="tickets_enabled"> Включить в конструкторе обращений</label>
+      <label>Основной провайдер <select name="primary_provider"><option value="groq">Groq</option><option value="gemini">Gemini</option></select></label>
+      <div class="grid">
+        <article><h3>Groq</h3><p id="groq-status"></p><label><input type="checkbox" name="groq_enabled"> Разрешить запросы</label>
+          <label>Модель <select name="groq_model"><option value="openai/gpt-oss-120b">GPT-OSS 120B</option><option value="openai/gpt-oss-20b">GPT-OSS 20B</option></select></label>
+          <button type="button" data-probe="groq">Проверить Groq</button>
+        </article>
+        <article><h3>Gemini</h3><p id="gemini-status"></p><label><input type="checkbox" name="gemini_enabled"> Разрешить запросы</label>
+          <label>Модель <select name="gemini_model"><option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option><option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option></select></label>
+          <button type="button" data-probe="gemini">Проверить Gemini</button>
+        </article>
+        <article><h3>Лимиты Эд ПВЗ</h3><label>На пользователя в сутки <input type="number" name="user_daily" required min="1" max="200"></label>
+          <label>На весь сайт в сутки <input type="number" name="total_daily" required min="1" max="1000"></label>
+          <p>Квоты провайдеров зависят от проекта и аккаунта.</p>
+        </article>
+      </div>
+      <p><button id="save">Сохранить настройки</button></p>
+    </section>
+    <section><h2>Использование</h2><div class="grid" id="periods"></div></section>
+    <section><h2>Последние запросы</h2><output id="recent"></output></section>
+  </form>
+</main>
+<script src="../../assets/account.js"></script>
+<script src="../../assets/edpvz-ai.js?v=1"></script>
+<script type="module" src="admin.js?v=1"></script>
+</body>
+</html>
