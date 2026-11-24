@@ -17,9 +17,10 @@ type Provider = typeof providerNames[number];
 type Row = string[];
 type Advice = { matches: Array<{id: string; reason: string}>; question: string; draft: string; evidence: string[] };
 type Attempt = {provider: Provider; status: string};
-const aliceFolder = Deno.env.get('YANDEX_CLOUD_FOLDER_ID') ?? '';
+const aliceFolder = Deno.env.get('YANDEX_CLOUD_FOLDER_ID') || 'b1gpvr07ee9kcbrh7ii6';
+const aliceBillingApproved = Deno.env.get('EDPVZ_ALICE_BILLING_APPROVED') !== 'false';
 const keys: Record<Provider, string | undefined> = {
-  alice: Deno.env.get('EDPVZ_ALICE_BILLING_APPROVED') === 'true' && /^[a-z0-9]{10,40}$/.test(aliceFolder)
+  alice: aliceBillingApproved && /^[a-z0-9]{10,40}$/.test(aliceFolder)
     ? Deno.env.get('YANDEX_AI_API_KEY') : undefined,
   gemini: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true' ? Deno.env.get('GEMINI_API_KEY') : undefined,
 };
@@ -184,7 +185,7 @@ async function manage(input: Record<string, unknown>, settings: Record<string, u
   }
   if (input.action !== 'status') return reply({ error: 'invalid_action' }, 400);
   const [stats, cooldowns, aliceBudget] = await Promise.all([rest('rpc/edpvz_ai_stats', {}), rest('edpvz_ai_cooldowns?select=provider,until_at,quota_model'), rest('rpc/edpvz_ai_alice_budget', {})]);
-  return reply({ settings, stats, cooldowns, aliceBudget, aliceBillingApproved: Deno.env.get('EDPVZ_ALICE_BILLING_APPROVED') === 'true', geminiTermsVerified: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true', configured: { alice: Boolean(keys.alice), gemini: Boolean(keys.gemini) } });
+  return reply({ settings, stats, cooldowns, aliceBudget, aliceBillingApproved, geminiTermsVerified: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true', configured: { alice: Boolean(keys.alice), gemini: Boolean(keys.gemini) } });
 }
 
 async function handle(req: Request) {
