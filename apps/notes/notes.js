@@ -88,11 +88,11 @@
     $('editor').hidden = false;
     showPreview(false);
     render();
-    $(note ? 'body' : 'title').focus();
+    $(note ? 'rich' : 'title').focus();
   }
 
   function close() {
-    selected = null;
+    clearTimeout(timer); selected = null;
     if ($('insert-table').open) $('insert-table').close();
     showPreview(false);
     $('editor').hidden = true;
@@ -104,8 +104,8 @@
   }
 
   function setBusy(value) {
-    busy = value;
-    for (const id of ['save','delete','cancel','new-note','title','body','preview-toggle']) $(id).disabled = value;
+    busy = value; $('rich').contentEditable=String(!value);
+    for (const id of ['save','delete','cancel','new-note','title','body']) $(id).disabled = value;
     for (const control of $('editor').querySelectorAll('[data-format],#preview input')) control.disabled = value;
   }
 
@@ -175,7 +175,7 @@
         $('title').value = selected.title;
         $('body').value = selected.body;
         $('delete').hidden = false;
-        if (previewing) showPreview(true);
+        
         $('editor-status').textContent = 'Сохранено.';
         $('status').textContent = '';
         render();
@@ -187,121 +187,24 @@
     }
   }
 
-  const bodyInput = $('body');
-  const tableDialog = $('insert-table');
-  let previewing = false, tableSelection;
-
-  function showPreview(value) {
-    previewing = value;
-    bodyInput.hidden = value;
-    $('tools').hidden = value;
-    $('preview').hidden = !value;
-    $('preview-toggle').textContent = value ? 'Редактировать' : 'Предпросмотр';
-    $('preview-toggle').setAttribute('aria-pressed', String(value));
-    if (!value) {
-      $('preview').replaceChildren();
-      return;
-    }
-    window.EdPVZNoteFormat.render(bodyInput.value, $('preview'), (index, checked) => {
-      const lines = bodyInput.value.split('\n');
-      lines[index] = lines[index].replace(/^(\s*[-*] \[)[ xX](\] )/, (_, start, end) => start + (checked ? 'x' : ' ') + end);
-      bodyInput.value = lines.join('\n');
-      $('editor-status').textContent = 'Изменено. Нажми «Сохранить».';
-    });
-  }
-
-  function replaceText(text, start, end, selectionStart = text.length, selectionEnd = selectionStart) {
-    if (bodyInput.value.length - (end - start) + text.length > bodyInput.maxLength) {
-      $('editor-status').textContent = 'Форматирование превышает лимит заметки.';
-      return;
-    }
-    bodyInput.setRangeText(text, start, end);
-    bodyInput.setSelectionRange(start + selectionStart, start + selectionEnd);
-    bodyInput.focus();
-    $('editor-status').textContent = '';
-  }
-
-  function blocks(prefix, sample) {
-    const {value, selectionStart, selectionEnd} = bodyInput;
-    const start = selectionStart === 0 ? 0 : value.lastIndexOf('\n', selectionStart - 1) + 1;
-    const boundary = selectionEnd > selectionStart && value[selectionEnd - 1] === '\n' ? selectionEnd - 1 : selectionEnd;
-    const lineEnd = value.indexOf('\n', boundary);
-    const end = lineEnd < 0 ? value.length : lineEnd;
-    const original = value.slice(start, end);
-    const text = (original || sample).split('\n').map((line, index) => prefix(index) + line).join('\n');
-    replaceText(text, start, end, original ? text.length : prefix(0).length, text.length);
-  }
-
-  function format(action) {
-    if (busy || previewing) return;
-    const {value, selectionStart: start, selectionEnd: end} = bodyInput;
-    const selectedText = value.slice(start, end);
-    const wrappers = {bold:'**', italic:'*', strike:'~~', code:'`'};
-    if (wrappers[action]) {
-      const marker = action === 'code' && selectedText.includes('\n') ? '\n```\n' : wrappers[action];
-      const closing = marker.length > 1 && action === 'code' ? '\n```\n' : marker;
-      const text = selectedText || 'текст';
-      replaceText(marker + text + closing, start, end, marker.length, marker.length + text.length);
-      return;
-    }
-    switch (action) {
-      case 'heading': blocks(() => '## ', 'Заголовок'); break;
-      case 'bullets': blocks(() => '- ', 'Пункт списка'); break;
-      case 'numbered': blocks(index => (index + 1) + '. ', 'Пункт списка'); break;
-      case 'checklist': blocks(() => '- [ ] ', 'Новая задача'); break;
-      case 'quote': blocks(() => '> ', 'Цитата'); break;
-      case 'divider': replaceText('\n\n---\n\n', end, end); break;
-      case 'link': {
-        const input = prompt('Адрес ссылки', 'https://');
-        if (input === null) break;
-        const url = window.EdPVZNoteFormat.safeLink(input.trim());
-        if (!url) {
-          $('editor-status').textContent = 'Введи полный адрес, начинающийся с https:// или http://.';
-          break;
-        }
-        const title = (selectedText || 'Ссылка').replace(/[\[\]\n]/g, ' ');
-        replaceText('[' + title + '](' + url.replace(/\(/g, '%28').replace(/\)/g, '%29') + ')', start, end, 1, title.length + 1);
-        break;
-      }
-      case 'table':
-        tableSelection = [start, end];
-        tableDialog.returnValue = '';
-        tableDialog.showModal();
-        break;
-    }
-  }
-
-  $('tools').addEventListener('pointerdown', event => {
-    if (event.target.closest('[data-format]')) event.preventDefault();
-  });
-  $('tools').addEventListener('click', event => {
-    const button = event.target.closest('[data-format]');
-    if (button) format(button.dataset.format);
-  });
-  $('preview-toggle').onclick = () => { if (!busy) showPreview(!previewing); };
-  $('cancel-table').onclick = () => tableDialog.close();
-  tableDialog.addEventListener('close', () => {
-    if (tableDialog.returnValue !== 'insert' || !tableSelection || $('editor').hidden || busy) return;
-    const columns = Number($('table-cols').value);
-    const rows = Number($('table-rows').value);
-    if (!Number.isInteger(columns) || columns < 1 || columns > 10 || !Number.isInteger(rows) || rows < 1 || rows > 30) return;
-    const header = Array.from({length:columns}, (_, index) => 'Столбец ' + (index + 1));
-    const line = values => '| ' + values.join(' | ') + ' |';
-    const text = '\n\n' + [line(header), line(header.map(() => '---')), ...Array.from({length:rows}, () => line(header.map(() => '')))].join('\n') + '\n\n';
-    replaceText(text, ...tableSelection, 4, 4 + header[0].length);
-  });
-  $('editor').addEventListener('keydown', event => {
-    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-    const key = event.key.toLowerCase();
-    if (key === 's') {
-      event.preventDefault();
-      if (!busy) $('editor').requestSubmit();
-    } else if (event.target === bodyInput && ['b','i'].includes(key)) {
-      event.preventDefault();
-      format(key === 'b' ? 'bold' : 'italic');
-    }
-  });
-
+  const bodyInput=$('body'), rich=$('rich'), tableDialog=$('insert-table');
+  let previewing=false, timer, range;
+  function inline(n){if(n.nodeType===3)return n.textContent;const t=n.tagName;if(t==='INPUT')return '';if(t==='BR')return '\n';const s=Array.from(n.childNodes,inline).join('');if(['B','STRONG'].includes(t))return '**'+s+'**';if(['I','EM'].includes(t))return '*'+s+'*';if(['S','STRIKE','DEL'].includes(t))return '~~'+s+'~~';if(t==='CODE')return '`'+s+'`';if(t==='A'){const u=window.EdPVZNoteFormat.safeLink(n.getAttribute('href'));return u?'['+s+']('+u.replace(/\(/g,'%28').replace(/\)/g,'%29')+')':s}return s}
+  function serialize(){return Array.from(rich.childNodes,n=>{if(n.nodeType===3)return n.textContent;const t=n.tagName;if(t==='UL'||t==='OL')return Array.from(n.children,(li,i)=>{const check=li.querySelector('input[type=checkbox]');return (check?(check.checked?'- [x] ':'- [ ] '):t==='OL'?(i+1)+'. ':'- ')+inline(li)}).join('\n');if(n.querySelector('table')||t==='TABLE'){const rows=Array.from(n.querySelectorAll('tr'),r=>Array.from(r.cells,c=>inline(c).replace(/\|/g,'¦').replace(/\n/g,' ')));if(!rows.length)return '';const line=a=>'| '+a.join(' | ')+' |';return [line(rows[0]),line(rows[0].map(()=> '---')),...rows.slice(1).map(line)].join('\n')}if(t==='HR')return '---';if(t==='PRE')return '```\n'+n.textContent+'\n```';if(/^H[1-4]$/.test(t))return '## '+inline(n);if(t==='BLOCKQUOTE')return inline(n).split('\n').map(x=>'> '+x).join('\n');return inline(n)}).join('\n').trim()}
+  function sync(){bodyInput.value=serialize();clearTimeout(timer);$('editor-status').textContent='Изменено…';timer=setTimeout(()=>{if(!busy&&!$('editor').hidden&&bodyInput.value.length<=20000){const v=draft();if((v.title||v.body)&&(v.title!==(selected?.title||'')||v.body!==(selected?.body||'')))change(selected?'PATCH':'POST',v)}},1800)}
+  function showPreview(){clearTimeout(timer);range=null;window.EdPVZNoteFormat.render(bodyInput.value,rich,()=>sync());for(const x of rich.querySelectorAll('input[type=checkbox]')){x.contentEditable='false';x.onchange=sync}if(!rich.childNodes.length)rich.append(document.createElement('p'))}
+  function remember(){const s=getSelection();if(s.rangeCount&&rich.contains(s.anchorNode))range=s.getRangeAt(0).cloneRange()}
+  document.addEventListener('selectionchange',remember);
+  function restore(){rich.focus();if(range&&rich.contains(range.commonAncestorContainer)){const s=getSelection();s.removeAllRanges();s.addRange(range)}}
+  function insert(html){restore();document.execCommand('insertHTML',false,html);sync()}
+  rich.addEventListener('input',sync);$('title').addEventListener('input',sync);
+  rich.addEventListener('paste',e=>{e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));sync()});
+  $('tools').addEventListener('pointerdown',e=>{if(e.target.closest('button')){remember();e.preventDefault()}});
+  $('tools').addEventListener('click',e=>{const b=e.target.closest('[data-format]');if(!b||busy)return;const a=b.dataset.format;restore();const commands={bold:'bold',italic:'italic',strike:'strikeThrough',bullets:'insertUnorderedList',numbered:'insertOrderedList',undo:'undo',redo:'redo'};if(commands[a])document.execCommand(commands[a]);else if(a==='heading'||a==='quote'||a==='code')document.execCommand('formatBlock',false,({heading:'h2',quote:'blockquote',code:'pre'})[a]);else if(a==='divider')document.execCommand('insertHorizontalRule');else if(a==='checklist'){insert('<ul class="checks"><li><label><input type="checkbox" contenteditable="false"> Новая задача</label></li></ul><p><br></p>');return}else if(a==='table'){remember();tableDialog.returnValue='';tableDialog.showModal();return}else if(a==='link'){const u=window.EdPVZNoteFormat.safeLink(prompt('Адрес ссылки','https://')||'');if(u){restore();document.execCommand('createLink',false,u)}}sync()});
+  rich.addEventListener('change',e=>{if(e.target.type==='checkbox')sync()});
+  $('cancel-table').onclick=()=>tableDialog.close();
+  tableDialog.addEventListener('close',()=>{if(tableDialog.returnValue!=='insert'||busy)return;const cols=Number($('table-cols').value),rows=Number($('table-rows').value);if(!Number.isInteger(cols)||cols<1||cols>10||!Number.isInteger(rows)||rows<1||rows>30)return;insert('<div class="note-table"><table><thead><tr>'+Array.from({length:cols},(_,i)=>'<th>Столбец '+(i+1)+'</th>').join('')+'</tr></thead><tbody>'+('<tr>'+'<td><br></td>'.repeat(cols)+'</tr>').repeat(rows)+'</tbody></table></div><p><br></p>')});
+  $('editor').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();$('editor').requestSubmit()}});
   $('search').addEventListener('input', render);
   $('new-note').onclick = () => { if (mayClose()) open(null); };
   $('cancel').onclick = () => { if (mayClose()) close(); };
@@ -313,7 +216,7 @@
     event.preventDefault();
     if (busy) return;
     const value = draft();
-    if (!value.title && !value.body) {
+    if(value.body.length>20000){$('editor-status').textContent='Лимит заметки — 20 000 символов.';return;} if (!value.title && !value.body) {
       $('editor-status').textContent = 'Напиши заголовок или текст заметки.';
       return;
     }
