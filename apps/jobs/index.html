@@ -371,6 +371,7 @@ const telegramSourceCities = new Map([
   ['mskpodmena', 'Москва'],
   ['spbpvz', 'Санкт-Петербург'],
   ['ozonpvzarh', 'Архангельск'],
+  ['rabotapvz39', 'Калининградская область'],
 ]);
 function citiesFromSource(item) {
   const source = String(item.source || '').trim().replace(/^@/, '');
@@ -386,11 +387,12 @@ const telegramCityCache = new WeakMap();
 function telegramCities(item) {
   if (!telegramCityCache.has(item)) {
     const cities = listingCities(item.city, item.text);
-    telegramCityCache.set(item, cities.length ? cities : citiesFromSource(item));
+    const regional = String(item.source || '').trim().replace(/^@/, '').toLowerCase() === 'rabotapvz39';
+    telegramCityCache.set(item, regional ? [...new Set([...cities, 'Калининградская область'])] : cities.length ? cities : citiesFromSource(item));
   }
   return telegramCityCache.get(item);
 }
-const canonicalCities = new Set(cityAliases.values());
+const canonicalCities = new Set([...cityAliases.values(), 'Калининградская область']);
 const marketChoices = new Map([
   ['wb', 'Wildberries'], ['ozon', 'Ozon'], ['ym', 'Яндекс Маркет'],
   ['avito', 'Авито'], ['cdek', 'СДЭК'], ['lamoda', 'Lamoda'],
