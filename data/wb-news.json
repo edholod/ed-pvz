@@ -1,6 +1,91 @@
 {
-  "updated": "2026-11-24T05:56:31.496Z",
+  "updated": "2026-11-24T17:31:52.902Z",
   "items": [
+    {
+      "id": "wb-pvz-7e743e1f8ce0e2e9f384ac76",
+      "title": "Добавили партнёрские фулфилмент-центры на карту WB ПВЗ",
+      "content": "Новый раздел покажет, где уже открыты и где можно открыть ПФЦ. Кроме этого, вы сможете посмотреть, в каких зонах высокий спрос на открытие, где можно арендовать подходящее помещение и какие есть условия открытия.\n\nДля этого перейдите в раздел «ПФЦ и ППТ» в панели навигации карты и выберите «ПФЦ» в переключателе вверху экрана.\n\nЧто уже можно увидеть в разделе\n\n• Приоритетные зоны открытия — территории, где сформирован высокий спрос на открытие новых ПФЦ.\n• Охранные зоны и действующие ПФЦ — зоны, где открытие новых ПФЦ ограничено, так как в них уже расположены действующие фулфилменты.\n• Ключевые дороги — автомобильные дороги для оценки транспортной доступности локации и выбора удобной локации для открытия.\n• Предложения об аренде помещений — объявления о сдаче помещений площадью от 1000 м² с информацией о стоимости аренды и ссылкой для просмотра объявления.\n• Тарифы и условия — подробная информация о требованиях к помещению, оборудованию, транспорту, инфраструктуре и тарифах на услуги.\n\nПодать заявку на открытие партнёрского фулфилмент-центра можно через сайт https://pfc.wb.ru/ или карту https://map.wb.ru/",
+      "date": "2026-11-24T11:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/owners#ed-news-7e743e1f8ce0e2e9f384ac76",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "owners"
+      ],
+      "links": [
+        {
+          "text": "https://pfc.wb.ru/",
+          "url": "https://pfc.wb.ru/"
+        },
+        {
+          "text": "https://map.wb.ru/",
+          "url": "https://map.wb.ru/"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/aa12cc8f-e7eb-11f1-b001-02ff0e837ac2.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/aa12cc8f-e7eb-11f1-b001-02ff0e837ac2.webp"
+      ],
+      "origin": "my-pvz"
+    },
+    {
+      "id": "wb-pvz-4f2d8d25af294a20a133c586",
+      "title": "Вебинар «Реферальная программа WB Банка»",
+      "content": "Сегодня, 24 ноября, в 14:00 мск состоится вебинар для владельцев ПВЗ Wildberries.\n\nМы подробно расскажем, как работает реферальная программа WB Банка. Приглашаем всех, кому актуальна эта тема.\n\nПрисоединяйтесь по ссылке: https://stream.wb.ru/room/vebinar_wb_pvz \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».\n\nЕсли не получается зайти по ссылке, введите код встречи: vebinar_wb_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nПожалуйста, подготовьте для встречи вопросы на тему вебинара. Если у вас есть вопросы по тикетам или на другую тему, напишите в поддержку.\n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-24T10:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/owners#ed-news-4f2d8d25af294a20a133c586",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "owners"
+      ],
+      "links": [
+        {
+          "text": "https://stream.wb.ru/room/vebinar_wb_pvz",
+          "url": "https://stream.wb.ru/room/vebinar_wb_pvz"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/fb71c61f-e4ed-11f1-be38-d21ff05e51b2.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/fb71c61f-e4ed-11f1-be38-d21ff05e51b2.webp"
+      ],
+      "origin": "my-pvz"
+    },
+    {
+      "id": "wb-pvz-920597400e07dda06dcacbfc",
+      "title": "Вебинар «Выдача заказов»",
+      "content": "Сегодня, 24 ноября, в 11:00 мск состоится вебинар для менеджеров ПВЗ Wildberries.\n\nПрисоединяйтесь по ссылке: https://lnk.wb.ru/j3nO9 \n\nВо время подключения нажмите «Войти как гость» и обязательно укажите своё имя в поле «Вас зовут».\n\nЕсли не получается зайти по ссылке, введите код встречи: obucheniye_dlya_novykh_sotrudnikov_pvz\n\nРасписание встреч есть в нашем учебном центре: https://edtech.rwb.ru/pvz/ru/pvz-events\n\nПожалуйста, подготовьте для встречи вопросы на тему вебинара и посмотрите курс: 🟣про выдачу: https://lnk.wb.ru/Wvs4O \n\nКоманда WB ПВЗ 🟣",
+      "date": "2026-11-24T07:00:00.000Z",
+      "url": "https://my-pvz.wb.ru/news/employees#ed-news-920597400e07dda06dcacbfc",
+      "source": "WB Мой ПВЗ",
+      "category": "Мой ПВЗ",
+      "audience": [
+        "employees"
+      ],
+      "links": [
+        {
+          "text": "https://lnk.wb.ru/j3nO9",
+          "url": "https://lnk.wb.ru/j3nO9"
+        },
+        {
+          "text": "https://edtech.rwb.ru/pvz/ru/pvz-events",
+          "url": "https://edtech.rwb.ru/pvz/ru/pvz-events"
+        },
+        {
+          "text": "https://lnk.wb.ru/Wvs4O",
+          "url": "https://lnk.wb.ru/Wvs4O"
+        }
+      ],
+      "image": "https://pvz-infra.wb.ru/static/29/1/123/f6d975f6-e4ec-11f1-8b84-66ba1c4ef1d9.webp",
+      "images": [
+        "https://pvz-infra.wb.ru/static/29/1/123/f6d975f6-e4ec-11f1-8b84-66ba1c4ef1d9.webp"
+      ],
+      "origin": "my-pvz"
+    },
     {
       "id": "wb-pvz-10b6af36a41a89fded78e1ba",
       "title": "Проверяйте содержимое каждой доставки WB Track",
@@ -983,7 +1068,7 @@
   "status": {
     "state": "ok",
     "sessionRevision": "2f779972da63fa72c222d555",
-    "checked": "2026-11-24T05:56:31.504Z",
+    "checked": "2026-11-24T17:31:52.916Z",
     "intervalMinutes": 30
   }
 }
