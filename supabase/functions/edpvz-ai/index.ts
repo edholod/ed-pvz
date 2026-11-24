@@ -12,7 +12,7 @@ const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const admin = '0f75065b-2b26-4a87-bf26-005f5a2284d4';
 const reply = (data: unknown, status = 200) => Response.json(data, { headers, status });
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const providerNames = ['gemini', 'alice'] as const;
+const providerNames = ['alice', 'gemini'] as const;
 type Provider = typeof providerNames[number];
 type Row = string[];
 type Advice = { matches: Array<{id: string; reason: string}>; question: string; draft: string; evidence: string[] };
@@ -23,8 +23,15 @@ const keys: Record<Provider, string | undefined> = {
     ? Deno.env.get('YANDEX_AI_API_KEY') : undefined,
   gemini: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true' ? Deno.env.get('GEMINI_API_KEY') : undefined,
 };
-const cache = new Map<string, { expires: number; advice: Advice }>();
-const genericQueries = new Set(['не работает камера', 'штрихкод не сканируется', 'не пришла выплата', 'не приехал водитель', 'не могу выдать заказ']);
+const encoder = new TextEncoder();
+const cacheVersion = 'alice-ticket-selection-v1';
+async function templateFingerprint(market: string, model: string, description: string) {
+  const normalized = description.toLowerCase().replaceAll('ё', 'е')
+    .replace(/[.!?]+$/, '').replace(/\s+/gu, ' ').trim();
+  const key = await crypto.subtle.importKey('raw', encoder.encode(serviceKey), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+  const digest = await crypto.subtle.sign('HMAC', key, encoder.encode(JSON.stringify([cacheVersion, market, model, normalized])));
+  return [...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,'0')).join('');
+}
 const tasks = {
   'tickets.recommend': {
     section: 'tickets',
@@ -161,7 +168,7 @@ async function manage(input: Record<string, unknown>, settings: Record<string, u
   if (input.action === 'probe') {
     const p = input.provider;
     if (p !== 'alice' && p !== 'gemini') return reply({ error: 'invalid_provider' }, 400);
-    if (p === 'alice') return reply({ error: 'alice_quota_only' }, 409);
+    if (p === 'gemini') return reply({ error: 'gemini_disabled' }, 409);
     const result = await invoke(p, String(settings[p + '_model']), 'Верни JSON {"ok":true}.', 'Проверка подключения.');
     let ok = false;
     try { ok = JSON.parse(result.text).ok === true; } catch { /* The provider returned no valid JSON. */ }
@@ -173,7 +180,6 @@ async function manage(input: Record<string, unknown>, settings: Record<string, u
     const allowed = new Set(['enabled','tickets_enabled','alice_enabled','gemini_enabled','alice_model','gemini_model','user_daily','total_daily']);
     if (Object.keys(patch).some(key => !allowed.has(key))) return reply({ error: 'invalid_settings' }, 400);
     await rest('edpvz_ai_settings?id=eq.true', patch, 'PATCH');
-    cache.clear();
     return reply({ ok: true });
   }
   if (input.action !== 'status') return reply({ error: 'invalid_action' }, 400);
@@ -218,60 +224,61 @@ async function handle(req: Request) {
   const clean = sanitize(input.text);
   if (clean.length < 5 || unsafe(clean)) return reply({ error: 'private_input' }, 422);
   if (!settings?.enabled || !settings.tickets_enabled) return reply({ error: 'disabled' }, 503);
+  const model = settings.alice_model;
+  const market = input.market as keyof typeof catalog;
+  const allRows = catalog[market];
+  const fingerprint = await templateFingerprint(market, model, clean);
+  const cachePath = 'edpvz_ai_template_cache?fingerprint=eq.' + fingerprint;
+  const [cached] = await rest(cachePath + '&select=template_ids,expires_at');
+  if (cached?.template_ids?.length && Date.parse(cached.expires_at) > Date.now()) {
+    const known = new Set(allRows.map(row=>row[0]));
+    const matches = cached.template_ids.filter((id: string)=>known.has(id)).slice(0,3).map((id: string)=>({id, reason:''}));
+    if (matches.length) return reply({provider:'alice',cached:true,matches,draft:'',question:'',evidence:[]});
+  }
+  if (!settings.alice_enabled || !keys.alice) return reply({error:'providers_unavailable'},503);
   const reservation = await rest('rpc/edpvz_ai_reserve', {p_user: user.id, p_request: input.requestId, p_section: task.section});
-  if (reservation !== 'ok') return reply({ error: reservation }, reservation === 'duplicate' ? 409 : reservation === 'limit' ? 429 : 503);
+  if (reservation !== 'ok') return reply({error:reservation}, reservation === 'duplicate' ? 409 : reservation === 'limit' ? 429 : 503);
   const attempts: Attempt[] = [];
-  let outcome = 'unavailable', tokens = 0;
+  let outcome = 'unavailable', tokens = 0, claimed = false, saved = false;
+  const leasePath = cachePath + '&lease=eq.' + input.requestId;
   try {
-    const market = input.market as keyof typeof catalog;
-    const rows = shortlist(catalog[market], clean);
-    if (!settings.gemini_enabled || !keys.gemini) return reply({ error: 'providers_unavailable' }, 503);
-    const cooldowns: {provider: Provider; until_at: string; quota_model: string | null}[] =
-      await rest('edpvz_ai_cooldowns?select=provider,until_at,quota_model');
-    let geminiQuota = false;
-    for (const p of providerNames) {
-      if (p === 'alice' && !geminiQuota) break;
-      if (!settings[p + '_enabled'] || !keys[p]) continue;
-      const model = settings[p + '_model'];
-      const cooldown = cooldowns.find(c => c.provider === p && Date.parse(c.until_at) > Date.now());
-      if (cooldown && (!cooldown.quota_model || cooldown.quota_model === model)) {
-        geminiQuota = p === 'gemini' && cooldown.quota_model === model;
-        attempts.push({ provider: p, status: geminiQuota ? 'quota_cooldown' : 'cooldown' });
-        continue;
-      }
-      const generic = clean.toLowerCase().replace(/[.!?]+$/, '');
-      const cacheKey = JSON.stringify([market, p, settings[p + '_model'], generic]);
-      const cached = genericQueries.has(generic) ? cache.get(cacheKey) : undefined;
-      if (cached && cached.expires > Date.now()) {
-        outcome = p;
-        return reply({ provider: p, cached: true, ...cached.advice });
-      }
-      const result = await invoke(p, model, task.instruction, JSON.stringify({ market, description: clean, candidates: rows }));
-      tokens += result.tokens;
-      if (p === 'gemini') geminiQuota = result.status === 'quota_exhausted';
-      if (result.cooldown) {
-        await rest('edpvz_ai_cooldowns?on_conflict=provider',
-          {provider: p, until_at: new Date(Date.now() + result.cooldown * 1000).toISOString(), quota_model: geminiQuota && p === 'gemini' ? model : null},
-          'POST', 'resolution=merge-duplicates').catch(() => undefined);
-      }
-      if (result.status !== 'ok') {
-        attempts.push({ provider: p, status: result.status });
-        continue;
-      }
-      let advice: Advice;
-      try { advice = readAdvice(result.text, rows); }
-      catch { attempts.push({ provider: p, status: 'invalid_response' }); continue; }
-      attempts.push({ provider: p, status: 'ok' });
-      outcome = p;
-      if (genericQueries.has(generic) && advice.matches.length) {
-        cache.set(cacheKey, { expires: Date.now() + 300000, advice });
-      }
-      return reply({ provider: p, ...advice });
+    const cooldowns: {provider: Provider; until_at: string}[] = await rest('edpvz_ai_cooldowns?select=provider,until_at');
+    if (cooldowns.some(c=>c.provider==='alice' && Date.parse(c.until_at)>Date.now())) {
+      return reply({error:'providers_unavailable'},503);
     }
-    return reply({ error: 'providers_unavailable' }, 503);
+    claimed = await rest('rpc/edpvz_ai_claim_template', {p_fingerprint:fingerprint,p_lease:input.requestId});
+    if (!claimed) return reply({error:'duplicate'},409);
+    const rows = shortlist(allRows, clean);
+    const result = await invoke('alice', model, task.instruction, JSON.stringify({market,description:clean,candidates:rows}));
+    tokens = result.tokens;
+    if (result.cooldown) {
+      await rest('edpvz_ai_cooldowns?on_conflict=provider',
+        {provider:'alice',until_at:new Date(Date.now()+result.cooldown*1000).toISOString(),quota_model:null},
+        'POST','resolution=merge-duplicates').catch(()=>undefined);
+    }
+    if (result.status !== 'ok') {
+      attempts.push({provider:'alice',status:result.status});
+      return reply({error:'providers_unavailable'},503);
+    }
+    let advice: Advice;
+    try { advice=readAdvice(result.text,rows); }
+    catch {
+      attempts.push({provider:'alice',status:'invalid_response'});
+      return reply({error:'invalid_response'},502);
+    }
+    attempts.push({provider:'alice',status:'ok'});
+    outcome='alice';
+    if (advice.matches.length) {
+      saved = await rest(leasePath, {
+        template_ids:advice.matches.map(match=>match.id),
+        expires_at:new Date(Date.now()+30*86400000).toISOString(),
+      }, 'PATCH').then(()=>true).catch(()=>false);
+    }
+    return reply({provider:'alice',...advice});
   } finally {
-    await rest('edpvz_ai_usage?user_id=eq.' + user.id + '&request_id=eq.' + input.requestId,
-      { finished_at: new Date().toISOString(), outcome, attempts, tokens }, 'PATCH').catch(() => undefined);
+    if (claimed && !saved) await rest(leasePath,{expires_at:new Date().toISOString()},'PATCH').catch(()=>undefined);
+    await rest('edpvz_ai_usage?user_id=eq.'+user.id+'&request_id=eq.'+input.requestId,
+      {finished_at:new Date().toISOString(),outcome,attempts,tokens},'PATCH').catch(()=>undefined);
   }
 }
 
