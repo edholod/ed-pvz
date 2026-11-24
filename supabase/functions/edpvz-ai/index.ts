@@ -12,7 +12,7 @@ const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const admin = '0f75065b-2b26-4a87-bf26-005f5a2284d4';
 const reply = (data: unknown, status = 200) => Response.json(data, { headers, status });
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-const providerNames = ['alice', 'gemini'] as const;
+const providerNames = ['gemini', 'alice'] as const;
 type Provider = typeof providerNames[number];
 type Row = string[];
 type Advice = { matches: Array<{id: string; reason: string}>; question: string; draft: string; evidence: string[] };
@@ -123,11 +123,24 @@ async function invoke(provider: Provider, model: string, system: string, prompt:
         generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1100, temperature: 0.1 },
       }),
     });
-    if (!response.ok) return {
-      status: 'http_' + response.status, text: '', tokens: 0,
-      cooldown: response.status === 429 ? retrySeconds(response.headers.get('Retry-After'))
-        : response.status >= 500 ? 30 : undefined,
-    };
+    if (!response.ok) {
+      let quota = false;
+      if (provider === 'gemini' && response.status === 429) {
+        const {error} = await response.json().catch(() => ({}));
+        const message = String(error?.message ?? '');
+        const hasQuotaFailure = Array.isArray(error?.details) && error.details.some(
+          (detail: Record<string, unknown> | null) => detail?.['@type'] === 'type.googleapis.com/google.rpc.QuotaFailure',
+        );
+        quota = error?.status === 'RESOURCE_EXHAUSTED' &&
+          (hasQuotaFailure || /exceeded your current quota|quota exceeded|rate limit exceeded/i.test(message)) &&
+          !/limit\s*[:=]\s*0(?![\d.])/i.test(message);
+      }
+      return {
+        status: quota ? 'quota_exhausted' : 'http_' + response.status, text: '', tokens: 0,
+        cooldown: response.status === 429 ? retrySeconds(response.headers.get('Retry-After'))
+          : response.status >= 500 ? 30 : undefined,
+      };
+    }
     const data = await response.json();
     if (reservation && Number.isInteger(data.usage?.prompt_tokens) && Number.isInteger(data.usage?.completion_tokens)) {
       await rest('rpc/edpvz_ai_alice_settle', {
@@ -148,6 +161,7 @@ async function manage(input: Record<string, unknown>, settings: Record<string, u
   if (input.action === 'probe') {
     const p = input.provider;
     if (p !== 'alice' && p !== 'gemini') return reply({ error: 'invalid_provider' }, 400);
+    if (p === 'alice') return reply({ error: 'alice_quota_only' }, 409);
     const result = await invoke(p, String(settings[p + '_model']), 'Верни JSON {"ok":true}.', 'Проверка подключения.');
     let ok = false;
     try { ok = JSON.parse(result.text).ok === true; } catch { /* The provider returned no valid JSON. */ }
@@ -156,14 +170,14 @@ async function manage(input: Record<string, unknown>, settings: Record<string, u
   if (input.action === 'save') {
     const patch = input.settings;
     if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return reply({ error: 'invalid_settings' }, 400);
-    const allowed = new Set(['enabled','tickets_enabled','alice_enabled','gemini_enabled','primary_provider','alice_model','gemini_model','user_daily','total_daily']);
+    const allowed = new Set(['enabled','tickets_enabled','alice_enabled','gemini_enabled','alice_model','gemini_model','user_daily','total_daily']);
     if (Object.keys(patch).some(key => !allowed.has(key))) return reply({ error: 'invalid_settings' }, 400);
     await rest('edpvz_ai_settings?id=eq.true', patch, 'PATCH');
     cache.clear();
     return reply({ ok: true });
   }
   if (input.action !== 'status') return reply({ error: 'invalid_action' }, 400);
-  const [stats, cooldowns, aliceBudget] = await Promise.all([rest('rpc/edpvz_ai_stats', {}), rest('edpvz_ai_cooldowns?select=provider,until_at'), rest('rpc/edpvz_ai_alice_budget', {})]);
+  const [stats, cooldowns, aliceBudget] = await Promise.all([rest('rpc/edpvz_ai_stats', {}), rest('edpvz_ai_cooldowns?select=provider,until_at,quota_model'), rest('rpc/edpvz_ai_alice_budget', {})]);
   return reply({ settings, stats, cooldowns, aliceBudget, aliceBillingApproved: Deno.env.get('EDPVZ_ALICE_BILLING_APPROVED') === 'true', geminiTermsVerified: Deno.env.get('EDPVZ_GEMINI_TERMS_VERIFIED') === 'true', configured: { alice: Boolean(keys.alice), gemini: Boolean(keys.gemini) } });
 }
 
@@ -211,12 +225,18 @@ async function handle(req: Request) {
   try {
     const market = input.market as keyof typeof catalog;
     const rows = shortlist(catalog[market], clean);
-    const order: readonly Provider[] = settings.primary_provider === 'gemini' ? ['gemini', 'alice'] : providerNames;
-    const cooldowns: {provider: Provider; until_at: string}[] = await rest('edpvz_ai_cooldowns?select=provider,until_at');
-    for (const p of order) {
+    if (!settings.gemini_enabled || !keys.gemini) return reply({ error: 'providers_unavailable' }, 503);
+    const cooldowns: {provider: Provider; until_at: string; quota_model: string | null}[] =
+      await rest('edpvz_ai_cooldowns?select=provider,until_at,quota_model');
+    let geminiQuota = false;
+    for (const p of providerNames) {
+      if (p === 'alice' && !geminiQuota) break;
       if (!settings[p + '_enabled'] || !keys[p]) continue;
-      if (cooldowns.some(c => c.provider === p && Date.parse(c.until_at) > Date.now())) {
-        attempts.push({ provider: p, status: 'cooldown' });
+      const model = settings[p + '_model'];
+      const cooldown = cooldowns.find(c => c.provider === p && Date.parse(c.until_at) > Date.now());
+      if (cooldown && (!cooldown.quota_model || cooldown.quota_model === model)) {
+        geminiQuota = p === 'gemini' && cooldown.quota_model === model;
+        attempts.push({ provider: p, status: geminiQuota ? 'quota_cooldown' : 'cooldown' });
         continue;
       }
       const generic = clean.toLowerCase().replace(/[.!?]+$/, '');
@@ -226,11 +246,12 @@ async function handle(req: Request) {
         outcome = p;
         return reply({ provider: p, cached: true, ...cached.advice });
       }
-      const result = await invoke(p, settings[p + '_model'], task.instruction, JSON.stringify({ market, description: clean, candidates: rows }));
+      const result = await invoke(p, model, task.instruction, JSON.stringify({ market, description: clean, candidates: rows }));
       tokens += result.tokens;
+      if (p === 'gemini') geminiQuota = result.status === 'quota_exhausted';
       if (result.cooldown) {
         await rest('edpvz_ai_cooldowns?on_conflict=provider',
-          {provider: p, until_at: new Date(Date.now() + result.cooldown * 1000).toISOString()},
+          {provider: p, until_at: new Date(Date.now() + result.cooldown * 1000).toISOString(), quota_model: geminiQuota && p === 'gemini' ? model : null},
           'POST', 'resolution=merge-duplicates').catch(() => undefined);
       }
       if (result.status !== 'ok') {

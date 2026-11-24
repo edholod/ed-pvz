@@ -14,16 +14,18 @@ async function load() {
     if (field.type === 'checkbox') field.checked = val;
     else field.value = val;
   }
+  let geminiQuota = false;
   const eligible = new Set();
-  for (const button of probes) {
-    const key = button.dataset.probe;
+  for (const key of ['gemini','alice']) {
+    const button = probes.find(probe=>probe.dataset.probe===key);
     const cooldown = cooldowns.find(c => c.provider === key && Date.parse(c.until_at) > Date.now());
+    if (key==='gemini') geminiQuota = Boolean(cooldown && cooldown.quota_model===settings.gemini_model && configured.gemini && settings.gemini_enabled);
     if (configured[key] && settings[key+'_enabled'] && !cooldown) eligible.add(key);
     document.getElementById(key+'-status').textContent = !configured[key] ? (key === 'alice' && !aliceBillingApproved ? 'Ожидает подтверждения платного API' : key === 'gemini' && !geminiTermsVerified ? 'Ожидает проверки условий использования Gemini' : 'Ожидает API-ключ')
       : !settings[key+'_enabled'] ? 'Выключен' : cooldown ? 'Пауза до '+fmt(cooldown.until_at) : 'Настроен';
-    button.disabled = !configured[key];
+    if(button)button.disabled = !configured[key];
   }
-  const current = [settings.primary_provider, ...Object.keys(providerLabel)].find(key => eligible.has(key));
+  const current = geminiQuota ? (eligible.has('alice') ? 'alice' : null) : (eligible.has('gemini') ? 'gemini' : null);
   status.textContent = settings.enabled ? (current ? 'Провайдер для следующего запроса — '+providerLabel[current] : 'Доступных провайдеров пока нет.') : 'Эд ИИ выключен.';
   document.getElementById('alice-budget').textContent = 'Алиса AI · '+Number(aliceBudget.reservedOrSpentRub).toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽ из '+aliceBudget.limitRub+' ₽ на календарный месяц (МСК), с учётом резерва.';
   const periods = document.getElementById('periods');
