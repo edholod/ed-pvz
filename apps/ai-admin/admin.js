@@ -25,12 +25,11 @@ async function load() {
   }
   const current = eligible.has('alice') ? 'alice' : null;
   status.textContent = settings.enabled ? (current ? 'Провайдер для следующего запроса — '+providerLabel[current] : 'Доступных провайдеров пока нет.') : 'Эд ИИ выключен.';
-  const rub = amount => Number(amount).toLocaleString('ru-RU', {maximumFractionDigits: 2});
+  const rub = amount => Number(amount).toLocaleString('ru-RU', {maximumFractionDigits: 4});
   const windowLabel = aliceBudget.period === 'grant'
     ? 'на весь срок гранта до 23 января 2027 г. (МСК)' : 'на календарный месяц (МСК)';
   document.getElementById('alice-budget').textContent =
-    'Алиса AI · ' + rub(aliceBudget.reservedOrSpentRub) + ' ₽ из ' +
-    rub(aliceBudget.limitRub) + ' ₽ ' + windowLabel + ', с учётом резерва.';
+    'Алиса AI · расчётный расход: ' + rub(aliceBudget.spentRub ?? aliceBudget.reservedOrSpentRub) + ' ₽ из ' + rub(aliceBudget.limitRub) + ' ₽ ' + windowLabel + '. Незакрытый резерв: ' + rub(aliceBudget.pendingRub ?? 0) + ' ₽. Средняя стоимость рассчитанного запроса: ' + rub((aliceBudget.spentRub ?? 0) / Math.max(1, aliceBudget.settledCount ?? 0)) + ' ₽. Это локальная оценка, не выписка Яндекс Cloud.';
   const periods = document.getElementById('periods');
   periods.replaceChildren();
   for (const item of stats.periods) {
