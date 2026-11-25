@@ -71,7 +71,7 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
     url.search=new URLSearchParams(params).toString();
     try {
       const response=await fetch(url,{headers:{Referer:'https://edpvz.ru/',Accept:'application/json'},signal:AbortSignal.timeout(8000)});
-      if(!response.ok){console.warn('address_provider_http',mode,response.status);return send(response.status===429?429:502,{error:'address_provider_unavailable',providerStatus:response.status})}
+      if(!response.ok){const raw=await response.text();const reason= /referer|referrer/i.test(raw)?'referer_restriction':/ip.address|ip restriction|ip not allowed/i.test(raw)?'ip_restriction':/invalid.key|invalid apikey|key not found/i.test(raw)?'invalid_key':/quota|limit exceeded/i.test(raw)?'quota':/subscription|tariff|permission|not activated/i.test(raw)?'permission': 'unknown';console.warn('address_provider_http',mode,response.status,reason);return send(response.status===429?429:502,{error:'address_provider_unavailable',providerStatus:response.status,reason})}
       const data=await response.json();
       if(mode==='suggest')return send(200,{results:(data.results||[]).map(x=>x.address?.formatted_address||[x.subtitle?.text,x.title?.text].filter(Boolean).join(', ')).filter(Boolean)});
       const obj=data.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
