@@ -12,7 +12,7 @@ import httpx
 logger=logging.getLogger('edpvz.collector')
 logger.setLevel(logging.INFO)
 app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
-CHANNELS=['pvz_zamena','mskpodmena','marketplacepvz','whitelistpvz','zamena_vPVZ','OZONpvzArh','rabotapvz','pvz889','OnlinePvz','rabotapvzoff','pvzrabota','pvzzamena','Rabota_Zamena_PVZ','spbpvz','rabota_v_pvz','tochka_pvz','wildberries_ozone_help','pvzworks']
+CHANNELS=['pvz_zamena','mskpodmena','marketplacepvz','whitelistpvz','zamena_vPVZ','OZONpvzArh','rabotapvz','pvz889','OnlinePvz','rabotapvzoff','pvzrabota','pvzzamena','Rabota_Zamena_PVZ','spbpvz','rabota_v_pvz','tochka_pvz','wildberries_ozone_help','pvzworks','rabotapvz39']
 # Message links supplied by the portal owner. These are message IDs, not necessarily topic IDs.
 SEED_MESSAGES={
     'pvz_zamena':[8984,6854,911,5626,912,910,546],
