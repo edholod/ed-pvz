@@ -49,6 +49,8 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
   };
   const closeControl = () => { for (const socket of sockets) socket.destroy(); sockets.clear(); };
   const addressBudget = {day:'',suggest:0,verify:0};
+  const budgetPath=sessionStorePath?sessionStorePath+'.address-budget':null;
+  if(budgetPath)try{Object.assign(addressBudget,JSON.parse(readFileSync(budgetPath,'utf8')))}catch(e){if(e.code!=='ENOENT')throw e}
   const addressClients = new Map();
   async function addressLookup(req, pathname, send) {
     if (!publicOrigins.has(req.headers.origin)) return send(403,{error:'origin_rejected'});
@@ -63,6 +65,7 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
     const recent=(addressClients.get(ip)||[]).filter(t=>now-t<60000);
     if(recent.length>=60||addressBudget[mode]>=900)return send(429,{error:'address_limit'});
     recent.push(now);addressClients.set(ip,recent);addressBudget[mode]++;
+    if(budgetPath){mkdirSync(dirname(budgetPath),{recursive:true});writeFileSync(budgetPath+'.tmp',JSON.stringify(addressBudget),{mode:0o600});renameSync(budgetPath+'.tmp',budgetPath)}
     const url=new URL(mode==='suggest'?'https://suggest-maps.yandex.ru/v1/suggest':'https://geocode-maps.yandex.ru/1.x/');
     const params=mode==='suggest'?{apikey:key,text:q,lang:'ru_RU',types:'house',results:'5',print_address:'1'}:{apikey:key,geocode:q,format:'json',lang:'ru_RU',kind:'house',results:'1'};
     url.search=new URLSearchParams(params).toString();
