@@ -48,6 +48,36 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
     try { return new URL(req.headers.origin).host === req.headers.host; } catch { return false; }
   };
   const closeControl = () => { for (const socket of sockets) socket.destroy(); sockets.clear(); };
+  const addressBudget = {day:'',suggest:0,verify:0};
+  const addressClients = new Map();
+  async function addressLookup(req, pathname, send) {
+    if (!publicOrigins.has(req.headers.origin)) return send(403,{error:'origin_rejected'});
+    const q = new URL(req.url,'http://localhost').searchParams.get('q')?.trim();
+    if (!q || q.length<4 || q.length>200) return send(400,{error:'invalid_address'});
+    const mode=pathname.endsWith('/suggest')?'suggest':'verify';
+    const key=process.env[mode==='suggest'?'YANDEX_SUGGEST_API_KEY':'YANDEX_GEOCODER_API_KEY'];
+    if(!key)return send(503,{error:'address_service_unconfigured'});
+    const day=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Moscow'});
+    if(addressBudget.day!==day){addressBudget.day=day;addressBudget.suggest=0;addressBudget.verify=0;addressClients.clear()}
+    const ip=req.socket.remoteAddress||'unknown', now=Date.now();
+    const recent=(addressClients.get(ip)||[]).filter(t=>now-t<60000);
+    if(recent.length>=60||addressBudget[mode]>=900)return send(429,{error:'address_limit'});
+    recent.push(now);addressClients.set(ip,recent);addressBudget[mode]++;
+    const url=new URL(mode==='suggest'?'https://suggest-maps.yandex.ru/v1/suggest':'https://geocode-maps.yandex.ru/1.x/');
+    const params=mode==='suggest'?{apikey:key,text:q,lang:'ru_RU',types:'house',results:'5',print_address:'1'}:{apikey:key,geocode:q,format:'json',lang:'ru_RU',kind:'house',results:'1'};
+    url.search=new URLSearchParams(params).toString();
+    try {
+      const response=await fetch(url,{signal:AbortSignal.timeout(8000)});
+      if(!response.ok)return send(response.status===429?429:502,{error:'address_provider_unavailable'});
+      const data=await response.json();
+      if(mode==='suggest')return send(200,{results:(data.results||[]).map(x=>x.address?.formatted_address||[x.subtitle?.text,x.title?.text].filter(Boolean).join(', ')).filter(Boolean)});
+      const obj=data.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
+      const meta=obj?.metaDataProperty?.GeocoderMetaData;
+      if(meta?.kind!=='house'||meta?.precision!=='exact')return send(422,{error:'address_not_exact'});
+      const [lon,lat]=obj.Point.pos.split(' ').map(Number);
+      return send(200,{address:meta.text,lat,lon});
+    }catch{return send(502,{error:'address_provider_unavailable'})}
+  }
   const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
@@ -67,6 +97,7 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
       if (req.method === 'OPTIONS' && pathname.startsWith('/api/')) {
         res.setHeader('Access-Control-Allow-Methods', 'GET'); return send(204, '');
       }
+      if (req.method === 'GET' && ['/api/address/suggest','/api/address/verify'].includes(pathname)) return await addressLookup(req,pathname,send);
       if (req.method === 'GET' && pathname === '/healthz') return send(200, {ok: true});
       if (req.method === 'GET' && pathname === '/api/status') {const {disputeInspection, ...publicStatus}=collector.status();return send(200, {...publicStatus, publicationEnabled: publish});}
       if (req.method === 'GET' && pathname === '/api/news') {
