@@ -57,7 +57,7 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
     const q = new URL(req.url,'http://localhost').searchParams.get('q')?.trim();
     if (!q || q.length<4 || q.length>200) return send(400,{error:'invalid_address'});
     const mode=pathname.endsWith('/suggest')?'suggest':'verify';
-    const key=process.env[mode==='suggest'?'YANDEX_SUGGEST_API_KEY':'YANDEX_GEOCODER_API_KEY'];
+    const key=process.env[mode==='suggest'?'YANDEX_SUGGEST_API_KEY':'YANDEX_GEOCODER_API_KEY']?.trim();
     if(!key)return send(503,{error:'address_service_unconfigured'});
     const day=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Moscow'});
     if(addressBudget.day!==day){addressBudget.day=day;addressBudget.suggest=0;addressBudget.verify=0;addressClients.clear()}
@@ -70,7 +70,7 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
     const params=mode==='suggest'?{apikey:key,text:q,lang:'ru_RU',types:'house',results:'5',print_address:'1'}:{apikey:key,geocode:q,format:'json',lang:'ru_RU',kind:'house',results:'1'};
     url.search=new URLSearchParams(params).toString();
     try {
-      const response=await fetch(url,{signal:AbortSignal.timeout(8000)});
+      const response=await fetch(url,{headers:{Referer:'https://edpvz.ru/',Accept:'application/json'},signal:AbortSignal.timeout(8000)});
       if(!response.ok){console.warn('address_provider_http',mode,response.status);return send(response.status===429?429:502,{error:'address_provider_unavailable',providerStatus:response.status})}
       const data=await response.json();
       if(mode==='suggest')return send(200,{results:(data.results||[]).map(x=>x.address?.formatted_address||[x.subtitle?.text,x.title?.text].filter(Boolean).join(', ')).filter(Boolean)});
