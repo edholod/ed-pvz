@@ -71,7 +71,7 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
     url.search=new URLSearchParams(params).toString();
     try {
       const response=await fetch(url,{signal:AbortSignal.timeout(8000)});
-      if(!response.ok)return send(response.status===429?429:502,{error:'address_provider_unavailable'});
+      if(!response.ok){console.warn('address_provider_http',mode,response.status);return send(response.status===429?429:502,{error:'address_provider_unavailable',providerStatus:response.status})}
       const data=await response.json();
       if(mode==='suggest')return send(200,{results:(data.results||[]).map(x=>x.address?.formatted_address||[x.subtitle?.text,x.title?.text].filter(Boolean).join(', ')).filter(Boolean)});
       const obj=data.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
@@ -79,7 +79,7 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
       if(meta?.kind!=='house'||meta?.precision!=='exact')return send(422,{error:'address_not_exact'});
       const [lon,lat]=obj.Point.pos.split(' ').map(Number);
       return send(200,{address:meta.text,lat,lon});
-    }catch{return send(502,{error:'address_provider_unavailable'})}
+    }catch(e){console.warn('address_provider_failure',mode,e.name);return send(502,{error:'address_provider_unavailable'})}
   }
   const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
