@@ -1,0 +1,36 @@
+name: Static image cache manifest
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - image-cache-manifest.json
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: image-cache-manifest
+  cancel-in-progress: true
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate manifest
+        run: |
+          python - <<'PY'
+          import subprocess,json,pathlib,urllib.parse
+          files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          extensions={'.png','.jpg','.jpeg','.webp','.svg','.gif','.avif','.ico'}
+          paths=[]
+          for f in files:
+              p=pathlib.PurePosixPath(f)
+              if not f or p.suffix.lower() not in extensions or any(x.startswith('.') or x.lower() in {'uploads','storage','api','private','user-content','node_modules'} for x in p.parts): continue
+              paths.append(urllib.parse.quote(f,safe='/'))
+          pathlib.Path('image-cache-manifest.json').write_text(json.dumps(sorted(set(paths)),ensure_ascii=True)+'\n')
+          PY
+      - name: Publish changed manifest
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add image-cache-manifest.json
+          git diff --cached --quiet || (git commit -m 'Refresh static image cache manifest' && git push)
