@@ -67,10 +67,10 @@ export function createServer({collector, adminToken, sessionStorePath, publish =
     recent.push(now);addressClients.set(ip,recent);addressBudget[mode]++;
     if(budgetPath){mkdirSync(dirname(budgetPath),{recursive:true});writeFileSync(budgetPath+'.tmp',JSON.stringify(addressBudget),{mode:0o600});renameSync(budgetPath+'.tmp',budgetPath)}
     const url=new URL(mode==='suggest'?'https://suggest-maps.yandex.ru/v1/suggest':'https://geocode-maps.yandex.ru/1.x/');
-    const params=mode==='suggest'?{apikey:key,text:q,lang:'ru_RU',types:'house',results:'5',print_address:'1'}:{apikey:key,geocode:q,format:'json',lang:'ru_RU',kind:'house',results:'1'};
+    const params=mode==='suggest'?{apikey:key,text:q,lang:'ru_RU',types:'locality,street,house',results:'7',print_address:'1'}:{apikey:key,geocode:q,format:'json',lang:'ru_RU',kind:'house',results:'1'};
     url.search=new URLSearchParams(params).toString();
     try {
-      const response=await fetch(url,{headers:{Referer:'https://edpvz.ru/',Accept:'application/json'},signal:AbortSignal.timeout(8000)});
+      const response=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(8000)});
       if(!response.ok){const raw=await response.text();const reason= /referer|referrer/i.test(raw)?'referer_restriction':/ip.address|ip restriction|ip not allowed/i.test(raw)?'ip_restriction':/invalid.key|invalid apikey|key not found/i.test(raw)?'invalid_key':/quota|limit exceeded/i.test(raw)?'quota':/subscription|tariff|permission|not activated/i.test(raw)?'permission': 'unknown';console.warn('address_provider_http',mode,response.status,reason,raw.replaceAll(key,'[REDACTED]').replace(/\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/gi,'[REDACTED]').slice(0,300));return send(response.status===429?429:502,{error:'address_provider_unavailable',providerStatus:response.status,reason})}
       const data=await response.json();
       if(mode==='suggest')return send(200,{results:(data.results||[]).map(x=>x.address?.formatted_address||[x.subtitle?.text,x.title?.text].filter(Boolean).join(', ')).filter(Boolean)});
