@@ -37,14 +37,14 @@
     box-sizing: border-box;
   }
 
-  .beta-zone-outline[data-zone="points"] { --beta-zone-background: #e8ddfb; }
-  .beta-zone-outline[data-zone="reviews"] { --beta-zone-background: #f9dfef; }
-  .beta-zone-outline[data-zone="maps"] { --beta-zone-background: #dbe9fc; }
-  .beta-zone-outline[data-zone="learning"] { --beta-zone-background: #e6e9ff; }
-  .beta-zone-outline[data-zone="equipment"] { --beta-zone-background: #e6ebf2; }
-  .beta-zone-outline[data-zone="shifts"] { --beta-zone-background: #ddf1e8; }
-  .beta-zone-outline[data-zone="codes"] { --beta-zone-background: #fff0cf; }
-  .beta-zone-outline[data-zone="appeals"] { --beta-zone-background: #fbe4dd; }
+  .beta-zone-outline[data-zone="points"] { --beta-zone-background: #d8c5f3; }
+  .beta-zone-outline[data-zone="reviews"] { --beta-zone-background: #efc5df; }
+  .beta-zone-outline[data-zone="maps"] { --beta-zone-background: #bed5f4; }
+  .beta-zone-outline[data-zone="learning"] { --beta-zone-background: #ced4f7; }
+  .beta-zone-outline[data-zone="equipment"] { --beta-zone-background: #cbd5e2; }
+  .beta-zone-outline[data-zone="shifts"] { --beta-zone-background: #c0e3d4; }
+  .beta-zone-outline[data-zone="codes"] { --beta-zone-background: #f5dda4; }
+  .beta-zone-outline[data-zone="appeals"] { --beta-zone-background: #f1cabd; }
 
   body.desktop-beta:not(.in-app):not(.services-mode) > .home-head {
     display: flex;
