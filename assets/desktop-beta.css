@@ -121,7 +121,8 @@
 
   body.desktop-beta:not(.in-app):not(.services-mode) > main > #category-1::before,
   body.desktop-beta:not(.in-app):not(.services-mode) > main > #category-0::before,
-  body.desktop-beta:not(.in-app):not(.services-mode) > main > #reference-tools::before {
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #reference-tools::before,
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack #beta-code-heading {
     display: flex;
     align-items: center;
     min-width: 0;
@@ -179,7 +180,7 @@
 
   body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack {
     grid-area: 3 / 14 / 8 / 21 !important;
-    grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, .72fr) clamp(34px, 6dvh, 50px) !important;
+    grid-template-rows: minmax(0, 1fr) var(--beta-heading) minmax(0, 1fr) minmax(0, .72fr) clamp(34px, 6dvh, 50px) !important;
     gap: var(--beta-gap);
   }
 
@@ -227,37 +228,13 @@
     display: block !important;
   }
 
-  body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack #beta-code-heading {
-    background: none;
-    border: 0;
-    border-radius: 0;
-    padding: 3px 7px 4px;
-    border-bottom: 1px solid #49395530;
-    gap: 7px;
-  }
-
-  #beta-right-stack #beta-code-heading svg {
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    border-radius: 0;
-    background: none;
-  }
-
-  #beta-right-stack #beta-code-heading > span {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0 8px;
+  #beta-right-stack #beta-code-heading :is(svg, small) {
+    display: none;
   }
 
   #beta-right-stack #beta-code-heading strong {
-    font-size: clamp(12px, 1vw, 15px);
-  }
-
-  #beta-right-stack #beta-code-heading small {
-    margin: 0;
-    color: #574a62;
+    font-size: inherit;
+    font-weight: inherit;
   }
 
   body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack .search-box {
