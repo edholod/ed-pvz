@@ -43,14 +43,15 @@ function archiveKey(userId) {
 }
 
 export function personalTicketGroups(groups, userId) {
- let archived = new Set();
+ let archived = new Set(), marked = new Set();
+ try { marked = new Set(JSON.parse(localStorage.getItem('edpvz-ticket-working:'+userId)||'[]')); } catch {}
  try {
   if (userId) archived = new Set(JSON.parse(localStorage.getItem(archiveKey(userId)) || '[]'));
  } catch { /* The ticket list is still available if storage is blocked. */ }
  return new Map([...groups].map(([key, group]) => {
   const personal = { archived: [] };
   for (const category of ['withholding', 'other', 'resolved']) {
-   personal[category] = group[category].filter(ticket => {
+   personal[category] = group[category].map(ticket=>({...ticket,personalWorking:marked.has(ticket.id)})).filter(ticket => {
     if (!archived.has(ticket.id)) return true;
     personal.archived.push(ticket);
     return false;
@@ -62,10 +63,11 @@ export function personalTicketGroups(groups, userId) {
 
 export function bindTicketArchive(root, getUserId, render) {
  root.addEventListener('click', event => {
-  const button = event.target.closest('[data-archive-ticket],[data-restore-ticket]');
+  const button = event.target.closest('[data-archive-ticket],[data-restore-ticket],[data-working-ticket]');
   const uid = getUserId();
   if (!button || !uid) return;
-  const { archiveTicket, restoreTicket } = button.dataset;
+  const { archiveTicket, restoreTicket, workingTicket } = button.dataset;
+  if(workingTicket){try{const key='edpvz-ticket-working:'+uid;const marked=new Set(JSON.parse(localStorage.getItem(key)||'[]'));if(marked.has(workingTicket))marked.delete(workingTicket);else marked.add(workingTicket);localStorage.setItem(key,JSON.stringify([...marked]));render();}catch{alert('Не удалось сохранить отметку');}return;}
   try {
    const key = archiveKey(uid);
    const archived = new Set(JSON.parse(localStorage.getItem(key) || '[]'));
@@ -150,7 +152,7 @@ function tile(ticket, esc, place = '', archived = false) {
  const estimatedDeadline = Number.isFinite(Date.parse(due)) ? new Date(due).toLocaleString('ru-RU', {
   timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
  }) + ' МСК' : '';
- return `<li${urgent ? ' class="ticket-needs-reply"' : ''}>
+ return `<li class="${urgent?'ticket-needs-reply':''}"${ticket.personalWorking?' style="background:#fff3c4;border-color:#d5a72b;color:#493600"':''}>
   <div class="point-ticket-heading">
   <button class="point-ticket-open" type="button" data-open-ticket="${esc(ticket.id)}">${esc(ticket.title?.trim() || 'Тема не указана в WB')}</button>
   ${ticket.id ? (archived
@@ -158,7 +160,7 @@ function tile(ticket, esc, place = '', archived = false) {
    : `<button class="ticket-archive-action" type="button" data-archive-ticket="${esc(ticket.id)}" aria-label="Переместить тикет в архив" title="В архив">×</button>`) : ''}
   </div>
   <div class="point-ticket-meta"><span>№ ${esc(ticket.ticket_number)} <button type="button" class="copy-number" data-copy-number="${esc(ticket.ticket_number)}" aria-label="Скопировать номер тикета">⧉</button></span><span>${esc(place || (ticket.namespace === 'new' ? 'Обращения WB' : 'Тикеты WB'))}</span><span>${esc(ticket.created_local || '')}</span></div>
-  <span class="point-ticket-state">${esc(ticket.status)}</span>
+  <span class="point-ticket-state">${esc(ticket.status)}</span> ${ticket.id?`<button type="button" data-working-ticket="${esc(ticket.id)}" aria-pressed="${!!ticket.personalWorking}" style="background:#fff0a6;color:#634700;border:1px solid #d5a72b;border-radius:8px;padding:5px 9px">${ticket.personalWorking?"✓ В работе · снять":"Отметить в работе"}</button>`:""}
   ${urgent ? `<span class="ticket-reply-clock" data-reply-due="${esc(due)}">${esc(replyCountdown(due))}</span>
    ${estimatedDeadline ? `<small>Оценка по последнему ответу WB · до ${esc(estimatedDeadline)}. Точный срок проверяйте в WB.</small>` : ''}` : ''}
  </li>`;
