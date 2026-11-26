@@ -73,3 +73,71 @@
   window.addEventListener('resize', schedule);
   schedule();
 })();
+
+(() => {
+  const mode = matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)');
+  const observedDocuments = new WeakSet();
+  const styleId = 'edpvz-beta-cursor';
+  const surface = 'iframe#viewer, dialog[open] iframe';
+  const controls = 'a[href], button:enabled, summary, select:enabled, [role="button"]:not([aria-disabled="true"])';
+  const cursor = (path, x, y) => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="' + path + '" fill="#7325cf" stroke="white" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+    return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") ' + x + ' ' + y;
+  };
+  const arrow = cursor('M4 2v20l5-5 4 8 4-2-4-8h7Z', 4, 2);
+  const hand = cursor('M10 14V5a2 2 0 0 1 4 0v6a2 2 0 0 1 4 0 2 2 0 0 1 4 1 2 2 0 0 1 3 2v5c0 4-3 7-7 7h-3c-3 0-5-2-6-4l-4-6a2 2 0 0 1 3-2l2 2Z', 12, 3);
+
+  function active() {
+    return mode.matches && document.body.classList.contains('desktop-beta');
+  }
+
+  function styleDocument(doc, enabled, defaultCursor, controlCursor) {
+    let style = doc.getElementById(styleId);
+    if (!enabled) {
+      style?.remove();
+      return;
+    }
+    if (!style) {
+      style = doc.createElement('style');
+      style.id = styleId;
+      doc.head.append(style);
+    }
+    const css = 'html, body {cursor:' + defaultCursor + '} ' + controls + ' {cursor:' + controlCursor + ' !important}';
+    if (style.textContent !== css) style.textContent = css;
+  }
+
+  function sync() {
+    const enabled = active();
+    const defaultCursor = getComputedStyle(document.body).cursor;
+    const controlCursor = getComputedStyle(document.querySelector('#beta-messenger')).cursor;
+    const chosenArrow = defaultCursor.startsWith('url(') ? defaultCursor : arrow + ', auto';
+    const chosenHand = controlCursor.startsWith('url(') ? controlCursor : hand + ', pointer';
+    styleDocument(document, enabled, chosenArrow, chosenHand);
+    for (const frame of document.querySelectorAll(enabled ? surface : 'iframe')) {
+      syncFrame(frame, enabled, chosenArrow, chosenHand);
+    }
+  }
+
+  function syncFrame(frame, enabled, chosenArrow, chosenHand) {
+    const doc = frame.contentDocument;
+    if (!doc?.head || doc.URL === 'about:blank') return;
+    styleDocument(doc, enabled, chosenArrow, chosenHand);
+    observe(doc);
+    for (const nested of doc.querySelectorAll('iframe')) {
+      syncFrame(nested, enabled, chosenArrow, chosenHand);
+    }
+  }
+
+  function observe(doc) {
+    if (observedDocuments.has(doc)) return;
+    observedDocuments.add(doc);
+    doc.addEventListener('load', event => {
+      if (event.target.tagName === 'IFRAME') sync();
+    }, true);
+  }
+
+  observe(document);
+  new MutationObserver(sync).observe(document.body, {attributes: true, attributeFilter: ['class']});
+  mode.addEventListener('change', sync);
+  sync();
+})();
