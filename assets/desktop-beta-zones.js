@@ -378,6 +378,7 @@
   const editing = 'input, textarea, select, [role="textbox"]';
   function onKey(event) {
     if (!mode.matches || !document.body.classList.contains('desktop-beta')) return;
+    if (document.getElementById('widget-store')?.open) return;
     if (event.defaultPrevented || event.repeat || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
     if (event.composedPath().some(node => node.isContentEditable || node.matches?.(editing))) return;
     const run = byKey.get(event.key.toLowerCase());
