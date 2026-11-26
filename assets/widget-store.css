@@ -94,7 +94,7 @@ body:is(.in-app, .services-mode) #widget-board { display: none; }
 #widget-board .wm-open::before { content: '⊞'; margin-right: 7px; }
 #widget-board .wm-board-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(132px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(132px, 100%), 1fr));
   align-items: start;
   gap: 6px;
   min-height: 0;
