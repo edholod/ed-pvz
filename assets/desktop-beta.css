@@ -310,7 +310,7 @@
 
   @media (prefers-reduced-motion: no-preference) {
     body.desktop-beta #beta-right-stack #beta-messenger::before {
-      transition: transform 380ms cubic-bezier(.22, .7, .25, 1);
+      transition: transform 800ms cubic-bezier(.35, .15, .3, 1);
     }
   }
 
