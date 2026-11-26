@@ -641,7 +641,7 @@ body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack #bet
     align-self: stretch;
     margin-bottom: calc(var(--beta-hire-height) + var(--beta-gap) * .65);
     justify-self: end;
-    width: min(380px, 100%);
+    width: min(210px, 100%);
     padding: 8px 12px;
     box-sizing: border-box;
     background: linear-gradient(145deg, #48104e, #260d38 48%, #180b2d);
