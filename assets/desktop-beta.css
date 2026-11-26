@@ -502,3 +502,47 @@ html.edpvz-nav-bottom #desktop-beta-window #viewer,
   margin: 0 !important;
   border: 0;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  body.desktop-beta dialog[open] {
+    animation: beta-window-enter 250ms cubic-bezier(.2, .75, .25, 1) both;
+  }
+
+  body.desktop-beta dialog[open]::backdrop {
+    animation: beta-backdrop-enter 230ms ease-out both;
+  }
+
+  body.desktop-beta #beta-services-modal[open] {
+    transform-origin: left bottom;
+    animation: beta-services-enter 420ms cubic-bezier(.2, .8, .25, 1) both;
+  }
+
+  body.desktop-beta #edpvz-bottom-nav button[data-tab="services"] {
+    transform-origin: center bottom;
+    transition: transform 220ms cubic-bezier(.2, .8, .25, 1);
+  }
+
+  body.desktop-beta #edpvz-bottom-nav button[data-tab="services"]:is(:hover, :focus-visible) {
+    transform: translateY(-4px) scale(1.05);
+  }
+}
+
+@keyframes beta-window-enter {
+  from { opacity: 0; transform: translateY(12px) scale(.975); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes beta-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes beta-services-enter {
+  from {
+    opacity: 0;
+    transform: translate(calc(30px - max(0px, (100vw - min(1050px, 92vw)) / 2)), 22dvh) scale(.14, .06) skewX(-8deg);
+  }
+
+  65% { opacity: 1; }
+  to { opacity: 1; transform: none; }
+}
