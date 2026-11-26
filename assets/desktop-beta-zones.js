@@ -339,14 +339,10 @@
     const row = document.createElement('li');
     const button = document.createElement('button');
     button.type = 'button';
-    button.setAttribute('aria-keyshortcuts', latin.toUpperCase() + ' ' + cyrillic.toUpperCase());
-    const keys = document.createElement('span');
-    for (const key of [latin, cyrillic]) {
-      const keycap = document.createElement('kbd');
-      keycap.textContent = key.toUpperCase();
-      keys.append(keycap);
-    }
-    button.append(keys, document.createTextNode(label));
+    button.setAttribute('aria-keyshortcuts', latin.toUpperCase());
+    const keycap = document.createElement('kbd');
+    keycap.textContent = latin.toUpperCase();
+    button.append(keycap, document.createTextNode(label));
     button.addEventListener('click', run);
     row.append(button);
     list.append(row);
