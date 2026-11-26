@@ -317,16 +317,30 @@
   }
 
   const press = selector => document.querySelector(selector)?.click();
-  const calendar = () => {
-    const tile = document.querySelector('#category-0 a[href*="/apps/control/"]');
-    if (tile) window.openSection(tile.href, 'Календарь смен');
-  };
+  function toggleDialog(selector, open) {
+    const dialog = document.querySelector(selector);
+    if (dialog?.open) dialog.close();
+    else open();
+  }
+
+  function toggleSection(selector, title) {
+    const tile = document.querySelector(selector);
+    if (!tile) return;
+    const dialog = document.getElementById('desktop-beta-window');
+    const current = history.state?.section;
+    if (dialog.open && current && new URL(current, location.href).pathname === new URL(tile.href).pathname) {
+      press('#desktop-beta-window #back');
+      return;
+    }
+    window.openSection(tile.href, title);
+  }
+
   const openTab = url => window.open(url, '_blank', 'noopener,noreferrer');
   const actions = [
-    ['s', 'ы', 'Сервисы', () => window.__edpvzShowServices()],
-    ['z', 'я', 'Все ПВЗ', () => press('#beta-all-points')],
-    ['q', 'й', 'Эдсенджер', () => window.openSection(document.querySelector('#beta-messenger').href, 'Эдсенджер')],
-    ['k', 'л', 'Календарь смен', calendar],
+    ['s', 'ы', 'Сервисы', () => toggleDialog('#beta-services-modal', () => window.__edpvzShowServices())],
+    ['z', 'я', 'Все ПВЗ', () => toggleDialog('#beta-points-dialog', () => press('#beta-all-points'))],
+    ['q', 'й', 'Эдсенджер', () => toggleSection('#beta-messenger', 'Эдсенджер')],
+    ['k', 'л', 'Календарь смен', () => toggleSection('#category-0 a[href*="/apps/control/"]', 'Календарь смен')],
     ['a', 'ф', 'Скриншот', screenshot],
     ['w', 'ц', 'Открыть WB Point', () => openTab('https://pvz-lk.wb.ru/')],
     ['o', 'щ', 'Открыть Турбо ПВЗ', () => openTab('https://turbo-pvz.ozon.ru/')]
