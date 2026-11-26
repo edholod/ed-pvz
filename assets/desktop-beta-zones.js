@@ -319,8 +319,12 @@
   const press = selector => document.querySelector(selector)?.click();
   function toggleDialog(selector, open) {
     const dialog = document.querySelector(selector);
-    if (dialog?.open) dialog.close();
-    else open();
+    if (dialog?.open) {
+      dialog.close();
+      return;
+    }
+    open();
+    if (dialog?.open) dialog.querySelector('button')?.focus({preventScroll: true});
   }
 
   function toggleSection(selector, title) {
