@@ -1,0 +1,248 @@
+@media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+  body.desktop-beta:not(.in-app):not(.services-mode) {
+    --beta-gap: 10px;
+    --beta-toolbar-width: clamp(340px, 26vw, 460px);
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden !important;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: start;
+    padding: 14px 16px 84px !important;
+    gap: var(--beta-gap);
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > .home-head {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > .home-head #home-auth-banner:not([hidden]) {
+    width: min(340px, 50%);
+    margin: 0;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > .home-head .head-top {
+    margin: 0;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main {
+    --beta-row: clamp(64px, 8vh, 84px);
+    --beta-last-row: var(--beta-row);
+    grid-template-rows: 44px repeat(4, var(--beta-row)) 44px var(--beta-row) var(--beta-last-row) minmax(56px, auto) !important;
+    gap: var(--beta-gap);
+    overflow: auto !important;
+    scrollbar-width: thin;
+    align-content: start;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main:has(#home-points-list .home-point-card ~ .home-point-card) {
+    /* Leave room for two point cards above the four management rows. */
+    --beta-last-row: max(var(--beta-row), calc(436px - 5 * var(--beta-row)));
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points {
+    grid-area: 1 / 1 / 9 / 9 !important;
+    gap: 8px !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points #home-points-list {
+    grid-auto-rows: 104px !important;
+    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) clamp(98px, 8vw, 132px) !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points #home-points-list:not(:has(.home-point-card)) {
+    grid-auto-rows: auto !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points #beta-all-points {
+    width: 100% !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points #beta-team-row {
+    grid-template-rows: repeat(4, minmax(60px, auto)) !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #category-1 {
+    grid-area: 1 / 9 / 6 / 14 !important;
+    grid-template-rows: subgrid;
+    gap: var(--beta-gap);
+    top: auto;
+    height: auto;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #category-1::before,
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #category-0::before,
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #reference-tools::before {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0 12px;
+    border: 1px solid #ffffffc9;
+    border-radius: 12px;
+    background: #ffffff85;
+    color: #402d4b;
+    font-weight: 750;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #category-1::before {
+    content: "Новости и обучение";
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #category-0::before {
+    content: "Найм и смены";
+    grid-area: 1 / 14 / 2 / 21;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #reference-tools::before {
+    content: "Открытие и оборудование ПВЗ";
+    grid-area: 6 / 9 / 7 / 14;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #category-0 a[href*="/apps/jobs/"] {
+    grid-area: 2 / 14 / 3 / 18 !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #category-0 a[href*="/apps/control/"] {
+    grid-area: 2 / 18 / 3 / 21 !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #reference-tools a[href*="/apps/brandbook/"] {
+    grid-area: 7 / 9 / 8 / 12 !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #reference-tools a[href*="/apps/elock/"] {
+    grid-area: 7 / 12 / 8 / 14 !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #reference-tools a.tile:is([href*="/apps/cameras/"], [href*="/apps/surveillance/"]) {
+    min-height: clamp(64px, 8vh, 84px) !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #reference-tools a[href*="/apps/cameras/"] {
+    grid-area: 8 / 9 / 9 / 12 !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #reference-tools a[href*="/apps/surveillance/"] {
+    grid-area: 8 / 12 / 9 / 14 !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #profile-help > .grid > a.tile {
+    display: none !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack {
+    grid-area: 3 / 14 / 9 / 21 !important;
+    grid-template-rows: repeat(4, minmax(58px, 1fr)) 50px !important;
+    gap: var(--beta-gap);
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main a.tile b {
+    overflow-wrap: break-word;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-bottom-tools {
+    grid-area: 9 / 1 / 10 / 21;
+    position: static !important;
+    height: auto;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-auto-rows: minmax(56px, auto);
+    gap: var(--beta-gap);
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:is([data-beta-market-shortcut], [data-beta-upper-tool]) {
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode)::after {
+    content: "";
+    position: fixed;
+    inset: auto 0 0;
+    height: 76px;
+    background: #faf5fbee;
+    border-top: 1px solid #e9dced;
+    backdrop-filter: blur(12px);
+    z-index: 9300;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) #edpvz-bottom-nav {
+    z-index: 9700 !important;
+    bottom: 10px !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) .home-head-actions {
+    width: var(--beta-toolbar-width) !important;
+    bottom: 12px !important;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) #desktop-beta-switch {
+    right: calc(var(--beta-toolbar-width) + 30px) !important;
+    bottom: 20px !important;
+    z-index: 9700;
+  }
+}
+
+#desktop-beta-window {
+  width: min(1240px, calc(100vw - 64px));
+  height: calc(100dvh - 64px);
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 1px solid #e4d3eb;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 22px 72px #34244155;
+}
+
+#desktop-beta-window[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+#desktop-beta-window::backdrop {
+  background: #30223c66;
+  backdrop-filter: blur(3px);
+}
+
+html.edpvz-nav-bottom #desktop-beta-window .appbar,
+#desktop-beta-window .appbar {
+  display: flex !important;
+  position: static !important;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  background: #f8f0fa;
+  border-bottom: 1px solid #ead9eb;
+}
+
+#desktop-beta-window #viewTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #5f386a;
+}
+
+#desktop-beta-window #home span {
+  font-size: 0;
+}
+
+#desktop-beta-window #home span::after {
+  content: "Закрыть";
+  font-size: 13px;
+}
+
+html.edpvz-nav-bottom #desktop-beta-window #viewer,
+#desktop-beta-window #viewer {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  border: 0;
+}
