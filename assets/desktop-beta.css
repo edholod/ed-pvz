@@ -160,17 +160,6 @@
     height: 100% !important;
   }
 
-  body.desktop-beta:not(.in-app):not(.services-mode)::after {
-    content: "";
-    position: fixed;
-    inset: auto 0 0;
-    height: 76px;
-    background: #faf5fbee;
-    border-top: 1px solid #e9dced;
-    backdrop-filter: blur(12px);
-    z-index: 9300;
-  }
-
   body.desktop-beta:not(.in-app):not(.services-mode) #edpvz-bottom-nav {
     z-index: 9700 !important;
     bottom: 10px !important;
