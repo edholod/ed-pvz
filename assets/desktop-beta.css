@@ -289,6 +289,31 @@
     gap: 9px;
   }
 
+  body.desktop-beta #beta-right-stack #beta-messenger {
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  body.desktop-beta #beta-right-stack #beta-messenger::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(105deg, #7420bd, #a61b85 58%, #ca2372);
+    transform: translateX(-101%);
+  }
+
+  body.desktop-beta #beta-right-stack #beta-messenger:is(:hover, :focus-visible)::before {
+    transform: translateX(0);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    body.desktop-beta #beta-right-stack #beta-messenger::before {
+      transition: transform 380ms cubic-bezier(.22, .7, .25, 1);
+    }
+  }
+
   #beta-messenger svg {
     width: 20px;
     height: 20px;
