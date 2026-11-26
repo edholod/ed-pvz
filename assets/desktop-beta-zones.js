@@ -3,20 +3,21 @@
   const messenger = document.querySelector('#beta-messenger');
   messenger.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-8 8H5l1.4-3.7a8 8 0 1 1 13.6-4.3Z"/><path d="M8 11.5h8"/></svg>');
 
-  const groups = [
-    '.home-points-head, #home-points-list, #beta-all-points, #beta-team-row a[href*="/apps/operations/"], #beta-team-row a[href*="/apps/control/"], #beta-team-row a[href*="/apps/management/"]',
-    '#beta-team-row a[href*="/apps/customer-reviews/"], #beta-team-row a[href*="/apps/rating/"]',
-    '#beta-team-row a[href*="/apps/wb-map/"], #beta-team-row a[href*="/apps/ozon-map/"]',
-    '#category-1',
-    '#reference-tools',
-    '#category-0, #beta-right-stack .beta-top-tool',
-    '#beta-code-heading, #beta-right-stack > a.tile:not(.beta-top-tool)',
-    '#beta-bottom-tools [data-beta-upper-tool]'
-  ];
+  const groups = Object.entries({
+    points: '.home-points-head, #home-points-list, #beta-all-points, #beta-team-row a[href*="/apps/operations/"], #beta-team-row a[href*="/apps/control/"], #beta-team-row a[href*="/apps/management/"]',
+    reviews: '#beta-team-row a[href*="/apps/customer-reviews/"], #beta-team-row a[href*="/apps/rating/"]',
+    maps: '#beta-team-row a[href*="/apps/wb-map/"], #beta-team-row a[href*="/apps/ozon-map/"]',
+    learning: '#category-1',
+    equipment: '#reference-tools',
+    shifts: '#category-0, #beta-right-stack .beta-top-tool',
+    codes: '#beta-code-heading, #beta-right-stack > a.tile:not(.beta-top-tool)',
+    appeals: '#beta-bottom-tools [data-beta-upper-tool]'
+  });
 
-  const outlines = groups.map(() => {
+  const outlines = groups.map(([name]) => {
     const outline = document.createElement('div');
     outline.className = 'beta-zone-outline';
+    outline.dataset.zone = name;
     outline.setAttribute('aria-hidden', 'true');
     outline.hidden = true;
     main.prepend(outline);
@@ -40,7 +41,7 @@
     const inset = Math.min(4, parseFloat(getComputedStyle(main).rowGap) / 2 - 0.5);
     const current = new Set();
 
-    groups.forEach((selector, index) => {
+    groups.forEach(([, selector], index) => {
       const elements = active ? [...main.querySelectorAll(selector)] : [];
       for (const element of elements) current.add(element);
       const bounds = elements.flatMap(element => [...element.getClientRects()])

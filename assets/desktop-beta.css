@@ -30,10 +30,21 @@
   .beta-zone-outline {
     position: absolute;
     pointer-events: none;
+    z-index: -1;
+    background: var(--beta-zone-background);
     border: 1px solid #8273a766;
     border-radius: 15px;
     box-sizing: border-box;
   }
+
+  .beta-zone-outline[data-zone="points"] { --beta-zone-background: #e8ddfb; }
+  .beta-zone-outline[data-zone="reviews"] { --beta-zone-background: #f9dfef; }
+  .beta-zone-outline[data-zone="maps"] { --beta-zone-background: #dbe9fc; }
+  .beta-zone-outline[data-zone="learning"] { --beta-zone-background: #e6e9ff; }
+  .beta-zone-outline[data-zone="equipment"] { --beta-zone-background: #e6ebf2; }
+  .beta-zone-outline[data-zone="shifts"] { --beta-zone-background: #ddf1e8; }
+  .beta-zone-outline[data-zone="codes"] { --beta-zone-background: #fff0cf; }
+  .beta-zone-outline[data-zone="appeals"] { --beta-zone-background: #fbe4dd; }
 
   body.desktop-beta:not(.in-app):not(.services-mode) > .home-head {
     display: flex;
@@ -75,6 +86,7 @@
   }
 
   body.desktop-beta:not(.in-app):not(.services-mode) > main {
+    isolation: isolate;
     grid-template-rows: var(--beta-heading) repeat(7, minmax(0, 1fr)) clamp(36px, 6dvh, 58px) !important;
     gap: var(--beta-gap);
     overflow: visible !important;
