@@ -339,11 +339,20 @@
     window.openSection(tile.href, title);
   }
 
+  const messenger = document.getElementById('beta-messenger');
+  const toggleMessenger = () => toggleSection('#beta-messenger', 'Эдсенджер');
+  messenger.addEventListener('click', event => {
+    if (!document.body.classList.contains('desktop-beta') || event.defaultPrevented ||
+        event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    event.preventDefault();
+    toggleMessenger();
+  });
+
   const openTab = url => window.open(url, '_blank', 'noopener,noreferrer');
   const actions = [
     ['s', 'ы', 'Сервисы', () => toggleDialog('#beta-services-modal', () => window.__edpvzShowServices())],
     ['z', 'я', 'Все ПВЗ', () => toggleDialog('#beta-points-dialog', () => press('#beta-all-points'))],
-    ['q', 'й', 'Эдсенджер', () => toggleSection('#beta-messenger', 'Эдсенджер')],
+    ['q', 'й', 'Эдсенджер', toggleMessenger],
     ['k', 'л', 'Календарь смен', () => toggleSection('#category-0 a[href*="/apps/control/"]', 'Календарь смен')],
     ['a', 'ф', 'Скриншот', screenshot],
     ['w', 'ц', 'Открыть WB Point', () => openTab('https://pvz-lk.wb.ru/')],
