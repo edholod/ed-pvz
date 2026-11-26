@@ -4,6 +4,8 @@
     --beta-heading: clamp(26px, 4.5dvh, 44px);
     --beta-point-height: clamp(52px, 11dvh, 104px);
     --beta-toolbar-width: clamp(340px, 26vw, 460px);
+    --beta-footer-start: 174px;
+    --beta-footer-tile: calc((100vw - var(--beta-footer-start) - var(--beta-toolbar-width) - 14px - 5 * var(--beta-gap)) / 5);
     height: 100dvh;
     min-height: 0;
     overflow: hidden !important;
@@ -22,7 +24,7 @@
   }
 
   body.desktop-beta:not(.in-app):not(.services-mode) > .home-head #home-auth-banner:not([hidden]) {
-    width: min(340px, 50%);
+    width: min(340px, 30%);
     margin: 0;
   }
 
@@ -179,8 +181,8 @@
   }
 
   body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack {
-    grid-area: 3 / 14 / 8 / 21 !important;
-    grid-template-rows: minmax(0, 1fr) var(--beta-heading) minmax(0, 1fr) minmax(0, .72fr) clamp(34px, 6dvh, 50px) !important;
+    grid-area: 3 / 14 / 10 / 21 !important;
+    grid-template-rows: minmax(0, 1fr) var(--beta-heading) minmax(0, 1fr) minmax(0, .82fr) clamp(36px, 6dvh, 58px) !important;
     gap: var(--beta-gap);
   }
 
@@ -254,47 +256,38 @@
     display: contents !important;
   }
 
-  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile {
-    --beta-tool-column: 1;
+  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:not([data-beta-upper-tool]) {
+    --beta-footer-index: 0;
+    position: fixed !important;
+    inset: auto auto 10px calc(var(--beta-footer-start) + var(--beta-footer-index) * (var(--beta-footer-tile) + var(--beta-gap))) !important;
+    width: var(--beta-footer-tile) !important;
+    height: 58px !important;
+    border: 1px solid #ffffffbf;
+    text-align: center;
+    align-items: center;
+    z-index: 9600;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:nth-child(2) { --beta-footer-index: 1; }
+  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:nth-child(3) { --beta-footer-index: 2; }
+  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:nth-child(4) { --beta-footer-index: 4; }
+  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile[data-beta-market-shortcut] { --beta-footer-index: 3; }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:is([data-beta-upper-tool="appeal"], [data-beta-upper-tool="fines"]) {
     position: relative !important;
     inset: auto !important;
     width: 100% !important;
     height: 100% !important;
-    grid-column: var(--beta-tool-column) / span 4 !important;
     grid-row: 9 !important;
   }
 
-  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:nth-child(2) { --beta-tool-column: 5; }
-  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:nth-child(3) { --beta-tool-column: 9; }
-  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile:nth-child(4) { --beta-tool-column: 13; }
-  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile[data-beta-market-shortcut] {
-    --beta-tool-column: 17;
-    position: relative !important;
-    inset: auto !important;
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile[data-beta-upper-tool] {
-    grid-row: 8 !important;
-    background: linear-gradient(110deg, #f7f5fb, #e6dcf7) !important;
-  }
-
   body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile[data-beta-upper-tool="appeal"] {
-    position: relative !important;
-    inset: auto !important;
-    width: 100% !important;
-    height: 100% !important;
-    grid-column: 14 / 18 !important;
+    grid-column: 1 / 8 !important;
     background: linear-gradient(110deg, #f5faff, #d9e8fb) !important;
   }
 
   body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile[data-beta-upper-tool="fines"] {
-    position: relative !important;
-    inset: auto !important;
-    width: 100% !important;
-    height: 100% !important;
-    grid-column: 18 / 21 !important;
+    grid-column: 8 / 14 !important;
     background: linear-gradient(110deg, #fff6f7, #f5d9e0) !important;
   }
 
@@ -309,9 +302,16 @@
   }
 
   body.desktop-beta:not(.in-app):not(.services-mode) #desktop-beta-switch {
-    right: calc(var(--beta-toolbar-width) + 30px) !important;
-    bottom: 20px !important;
+    inset: 22px auto auto clamp(295px, 23vw, 448px) !important;
+    padding: 7px 10px;
+    font-size: 11px;
     z-index: 9700;
+  }
+}
+
+@media (min-width: 1100px) and (max-width: 1300px) and (hover: hover) and (pointer: fine) {
+  body.desktop-beta:not(.in-app):not(.services-mode) > .home-head .creator {
+    display: none;
   }
 }
 
