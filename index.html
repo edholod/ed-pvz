@@ -210,6 +210,10 @@ function requestBetaClose() {
     home();
   }
 }
+let betaBackdropDown=false;
+function betaOutside(e){const r=betaWindow.getBoundingClientRect();return e.target===betaWindow&&(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)}
+betaWindow.addEventListener('pointerdown',e=>{betaBackdropDown=betaOutside(e)});
+betaWindow.addEventListener('click',e=>{if(betaBackdropDown&&betaOutside(e)){e.preventDefault();e.stopPropagation();requestBetaClose()}betaBackdropDown=false});
 betaWindow.addEventListener('cancel', event => {
   event.preventDefault();
   requestBetaClose();
