@@ -141,3 +141,126 @@
   mode.addEventListener('change', sync);
   sync();
 })();
+
+(() => {
+  const main = document.querySelector('main');
+  const selector = 'a.tile, a.home-point-card, #beta-messenger, .beta-point-placeholder';
+  const storageKey = 'edpvz.beta.tile-colors';
+  const validColor = color => typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color);
+  let colors = {};
+  try {
+    colors = JSON.parse(localStorage.getItem(storageKey)) || {};
+  } catch {}
+  if (typeof colors !== 'object' || Array.isArray(colors)) colors = {};
+
+  const palettes = [
+    ['Фиолетовый', '#a77be4'], ['Синий', '#649ce8'], ['Бирюзовый', '#51baa9'],
+    ['Зелёный', '#83ba64'], ['Жёлтый', '#f2c656'], ['Оранжевый', '#ee9758'],
+    ['Розовый', '#ec85b8'], ['Красный', '#e57985'], ['Серый', '#9caabf']
+  ];
+
+  function tileKey(tile) {
+    const {origin, pathname, search, hash} = new URL(tile.href);
+    return (origin === location.origin ? '' : origin) + pathname + search + hash;
+  }
+
+  function syncTile(tile) {
+    const color = document.body.classList.contains('desktop-beta') ? colors[tileKey(tile)] : null;
+    if (validColor(color)) {
+      tile.style.setProperty('--beta-tile-color', color);
+      tile.classList.add('beta-tile-custom-color');
+    } else {
+      tile.style.removeProperty('--beta-tile-color');
+      tile.classList.remove('beta-tile-custom-color');
+    }
+  }
+
+  function save(tile, color) {
+    const key = tileKey(tile);
+    if (validColor(color)) colors[key] = color;
+    else delete colors[key];
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(colors));
+    } catch {}
+    for (const match of main.querySelectorAll(selector)) {
+      if (tileKey(match) === key) syncTile(match);
+    }
+  }
+
+  function openPalette(tile) {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'beta-tile-color-dialog';
+    dialog.setAttribute('aria-label', 'Цвет плитки');
+    const heading = document.createElement('h2');
+    heading.textContent = 'Цвет плитки';
+    const name = document.createElement('p');
+    name.textContent = (tile.querySelector('b, strong') || tile).textContent.trim();
+    const swatches = document.createElement('div');
+    swatches.className = 'beta-tile-swatches';
+    const selected = colors[tileKey(tile)];
+
+    for (const [label, color] of palettes) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.title = label;
+      button.setAttribute('aria-label', label);
+      button.setAttribute('aria-pressed', String(selected === color));
+      button.style.backgroundColor = color;
+      button.addEventListener('click', () => {
+        save(tile, color);
+        dialog.close();
+      });
+      swatches.append(button);
+    }
+
+    const form = document.createElement('form');
+    const label = document.createElement('label');
+    label.textContent = 'Свой цвет';
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.value = validColor(selected) ? selected : palettes[0][1];
+    label.append(input);
+    const apply = document.createElement('button');
+    apply.type = 'submit';
+    apply.textContent = 'Применить';
+    form.append(label, apply);
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      save(tile, input.value);
+      dialog.close();
+    });
+    const actions = document.createElement('div');
+    actions.className = 'beta-tile-color-actions';
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.textContent = 'Сбросить цвет';
+    reset.addEventListener('click', () => {
+      save(tile, null);
+      dialog.close();
+    });
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.textContent = 'Закрыть';
+    cancel.addEventListener('click', () => dialog.close());
+    actions.append(reset, cancel);
+    dialog.append(heading, name, swatches, form, actions);
+    document.body.append(dialog);
+    dialog.addEventListener('close', () => {
+      afterBetaWindowExit(dialog, () => dialog.remove());
+      tile.focus({preventScroll: true});
+    }, {once: true});
+    dialog.showModal();
+  }
+
+  const previousMenu = window.EdPVZHoldingMenu;
+  window.EdPVZHoldingMenu = target => {
+    const items = previousMenu?.(target) || [];
+    const tile = target.closest?.(selector);
+    if (!tile || !main.contains(tile) || !document.body.classList.contains('desktop-beta')) return items;
+    return [...items, {label: 'Изменить цвет плитки', icon: 'settings', run: () => openPalette(tile)}];
+  };
+  const sync = () => main.querySelectorAll(selector).forEach(syncTile);
+  new MutationObserver(sync).observe(main, {subtree: true, childList: true});
+  new MutationObserver(sync).observe(document.body, {attributes: true, attributeFilter: ['class']});
+  sync();
+})();

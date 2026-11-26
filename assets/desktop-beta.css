@@ -581,3 +581,51 @@ html.edpvz-nav-bottom #desktop-beta-window #viewer,
     transform: translateY(-4px) scale(1.05);
   }
 }
+
+body.desktop-beta:not(.in-app):not(.services-mode) > main a.beta-tile-custom-color,
+body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack > a.tile.beta-tile-custom-color,
+body.desktop-beta:not(.in-app):not(.services-mode) #beta-bottom-tools > a.tile.beta-tile-custom-color[data-beta-upper-tool] {
+  background: linear-gradient(105deg, color-mix(in srgb, var(--beta-tile-color) 24%, white), color-mix(in srgb, var(--beta-tile-color) 65%, white)) !important;
+}
+
+body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack #beta-messenger.beta-tile-custom-color {
+  background: linear-gradient(105deg, color-mix(in srgb, var(--beta-tile-color) 55%, #19122e), color-mix(in srgb, var(--beta-tile-color) 76%, #19122e)) !important;
+}
+
+.beta-tile-color-dialog {
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px;
+  box-sizing: border-box;
+  color: #402d4b;
+  background: #fffaff;
+  border: 1px solid #dbc8ed;
+  border-radius: 18px;
+  box-shadow: 0 18px 56px #30223c55;
+}
+
+.beta-tile-color-dialog::backdrop { background: #30223c66; }
+.beta-tile-color-dialog h2 { margin: 0; font-size: 20px; }
+.beta-tile-color-dialog p { margin: 4px 0 16px; }
+.beta-tile-swatches { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; }
+
+.beta-tile-color-dialog .beta-tile-swatches button {
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid #36253c30;
+  border-radius: 8px;
+}
+
+.beta-tile-swatches button[aria-pressed="true"] {
+  outline: 2px solid #5a2f85;
+  outline-offset: 2px;
+}
+
+.beta-tile-color-dialog :is(form, .beta-tile-color-actions, label) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.beta-tile-color-dialog :is(form, .beta-tile-color-actions) { margin-top: 14px; }
