@@ -172,8 +172,8 @@ function render() {
       const heading = node('h3', group.label + ' · ' + group.rows.length, 'month-heading');
       const cards = node('div', null, 'cases');
       const ticketGroups = new Map();
-      for(const row of group.rows){const number=String(row.ticket||row.wb_ticket_number||'').trim();const key=number?'ticket:'+number:'row:'+row.id;if(!ticketGroups.has(key))ticketGroups.set(key,[]);ticketGroups.get(key).push(row);}
-      for(const items of ticketGroups.values()){if(items.length===1){cards.append(card(items[0]));continue;}const box=node('details');box.style.cssText='grid-column:1/-1;border:1px solid #d5a72b;border-radius:12px;padding:10px;background:#fff8dc;color:#493600';const number=items[0].ticket||items[0].wb_ticket_number;const heading=node('summary','Общий тикет № '+number+' · '+items.length+' товаров');const inner=node('div',null,'cases');inner.append(...items.map(card));box.append(heading,inner);cards.append(box);}
+      for(const row of group.rows){const number=String(row.group_id||'').trim();const key=number?'ticket:'+number:'row:'+row.id;if(!ticketGroups.has(key))ticketGroups.set(key,[]);ticketGroups.get(key).push(row);}
+      for(const items of ticketGroups.values()){if(items.length===1){cards.append(card(items[0]));continue;}const box=node('details');box.style.cssText='grid-column:1/-1;border:1px solid #d5a72b;border-radius:12px;padding:10px;background:#fff8dc;color:#493600';const heading=node('summary','Общее удержание · '+items.length+' товаров · '+money.format(items.reduce((sum,row)=>sum+Number(row.amount||0),0)));const inner=node('div',null,'cases');inner.append(...items.map(card));box.append(heading,inner);cards.append(box);}
       content.append(heading, cards);
     }
     const scope = { organization_research_id: displayedOrganization, wb_point_id: point.id, name: point.name };
