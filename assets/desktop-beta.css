@@ -99,6 +99,31 @@
     gap: var(--beta-gap) !important;
   }
 
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points .home-points-head {
+    min-height: var(--beta-heading);
+    margin: 0;
+    padding: 0 8px 0 12px;
+    border: 1px solid #ffffffc9;
+    border-radius: 12px;
+    background: #ffffff85;
+    color: #402d4b;
+    box-sizing: border-box;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points .home-points-head h3 {
+    font-size: clamp(12px, 1.15vw, 16px);
+    font-weight: 750;
+  }
+
+  body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points .home-points-head a {
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #ffffffa8;
+    color: #65418b;
+    font-size: clamp(11px, .85vw, 14px);
+    font-weight: 650;
+  }
+
   body.desktop-beta:not(.in-app):not(.services-mode) > main #home-points #home-points-list {
     grid-auto-rows: var(--beta-point-height) !important;
     gap: var(--beta-gap) !important;
