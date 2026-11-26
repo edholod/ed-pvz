@@ -38,7 +38,7 @@
     frame = 0;
     const active = mode.matches && document.body.matches('.desktop-beta:not(.in-app):not(.services-mode)');
     const origin = main.getBoundingClientRect();
-    const inset = Math.min(4, parseFloat(getComputedStyle(main).rowGap) / 2 - 0.5);
+    const inset = Math.min(2, parseFloat(getComputedStyle(main).rowGap) / 2 - 0.5);
     const current = new Set();
 
     groups.forEach(([, selector], index) => {
