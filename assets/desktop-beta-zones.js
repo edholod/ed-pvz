@@ -264,3 +264,114 @@
   new MutationObserver(sync).observe(document.body, {attributes: true, attributeFilter: ['class']});
   sync();
 })();
+
+(() => {
+  const mode = matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)');
+  const panel = document.createElement('section');
+  panel.id = 'beta-hotkeys';
+  panel.setAttribute('aria-labelledby', 'beta-hotkeys-title');
+  panel.innerHTML = '<h2 id="beta-hotkeys-title">Горячие клавиши</h2><ul></ul><p role="status" hidden></p>';
+  const list = panel.querySelector('ul');
+  const status = panel.querySelector('[role="status"]');
+  document.querySelector('main').append(panel);
+  let capturing = false;
+
+  function report(message = '') {
+    status.textContent = message;
+    status.hidden = !message;
+  }
+
+  async function screenshot() {
+    if (capturing) return;
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      report('В этом браузере захват экрана недоступен.');
+      return;
+    }
+    capturing = true;
+    report();
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({video: true, audio: false, preferCurrentTab: true});
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.muted = true;
+      await video.play();
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const image = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!image) throw new Error('Screenshot unavailable');
+      const file = URL.createObjectURL(image);
+      const download = document.createElement('a');
+      download.href = file;
+      download.download = 'edpvz-screenshot.png';
+      download.click();
+      setTimeout(() => URL.revokeObjectURL(file), 30000);
+    } catch (error) {
+      if (error.name !== 'NotAllowedError') report('Не удалось сохранить скриншот.');
+    } finally {
+      stream?.getTracks().forEach(track => track.stop());
+      capturing = false;
+    }
+  }
+
+  const press = selector => document.querySelector(selector)?.click();
+  const calendar = () => {
+    const tile = document.querySelector('#category-0 a[href*="/apps/control/"]');
+    if (tile) window.openSection(tile.href, 'Календарь смен');
+  };
+  const openTab = url => window.open(url, '_blank', 'noopener,noreferrer');
+  const actions = [
+    ['s', 'ы', 'Сервисы', () => window.__edpvzShowServices()],
+    ['z', 'я', 'Все ПВЗ', () => press('#beta-all-points')],
+    ['q', 'й', 'Эдсенджер', () => window.openSection(document.querySelector('#beta-messenger').href, 'Эдсенджер')],
+    ['k', 'л', 'Календарь смен', calendar],
+    ['a', 'ф', 'Скриншот', screenshot],
+    ['w', 'ц', 'Открыть WB Point', () => openTab('https://pvz-lk.wb.ru/')],
+    ['o', 'щ', 'Открыть Турбо ПВЗ', () => openTab('https://turbo-pvz.ozon.ru/')]
+  ];
+
+  const byKey = new Map();
+  for (const [latin, cyrillic, label, run] of actions) {
+    byKey.set(latin, run);
+    byKey.set(cyrillic, run);
+    const row = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('aria-keyshortcuts', latin.toUpperCase() + ' ' + cyrillic.toUpperCase());
+    const keys = document.createElement('span');
+    for (const key of [latin, cyrillic]) {
+      const keycap = document.createElement('kbd');
+      keycap.textContent = key.toUpperCase();
+      keys.append(keycap);
+    }
+    button.append(keys, document.createTextNode(label));
+    button.addEventListener('click', run);
+    row.append(button);
+    list.append(row);
+  }
+
+  const editing = 'input, textarea, select, [role="textbox"]';
+  function onKey(event) {
+    if (!mode.matches || !document.body.classList.contains('desktop-beta')) return;
+    if (event.defaultPrevented || event.repeat || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+    if (event.composedPath().some(node => node.isContentEditable || node.matches?.(editing))) return;
+    const run = byKey.get(event.key.toLowerCase());
+    if (!run) return;
+    event.preventDefault();
+    run();
+  }
+
+  const watched = new WeakSet();
+  function watch(doc) {
+    if (!doc || watched.has(doc)) return;
+    watched.add(doc);
+    doc.addEventListener('keydown', onKey);
+    doc.addEventListener('load', event => {
+      if (event.target.tagName === 'IFRAME') watch(event.target.contentDocument);
+    }, true);
+    for (const frame of doc.querySelectorAll('iframe')) watch(frame.contentDocument);
+  }
+  watch(document);
+})();
