@@ -705,3 +705,9 @@ body.desktop-beta:not(.in-app):not(.services-mode) > main #beta-right-stack #bet
   #beta-hotkeys button { padding-block: 0; font-size: 10px; line-height: 12px; }
   #beta-hotkeys kbd { min-height: 10px; font-size: 9px; }
 }
+
+@media (min-width: 1100px) and (max-height: 720px) and (hover: hover) and (pointer: fine) {
+  body.desktop-beta:not(.in-app):not(.services-mode) > main > #category-0 {
+    height: calc(var(--beta-heading) + var(--beta-gap) + 29px);
+  }
+}
