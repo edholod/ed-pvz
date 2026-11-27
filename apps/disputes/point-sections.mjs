@@ -62,8 +62,8 @@ function renderOperation(row, history) {
   const details = element('details', '', 'point-history');
   const summary = element('summary', '', 'point-history-summary');
   const metrics = [
-    ['date.svg', 'Дата операции', operationDate(row)],
     ['barcode.svg', 'ШК', row.shk],
+    ['date.svg', 'Дата операции', operationDate(row)],
     ['amount.svg', 'Сумма', row.amount == null ? '—' : money(row.amount, currencyCode(row))],
     ['cell.svg', 'Ячейка', row.cell],
     ['box.svg', 'Коробка возврата', row.return_box],
