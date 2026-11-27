@@ -60,3 +60,25 @@
 .personal-ticket-archive{margin:10px 0 16px}
 .personal-ticket-archive summary{cursor:pointer;font-weight:600}
 .personal-ticket-archive .point-ticket-list{margin-top:8px}
+
+.point-archive-row { display: block; padding: 0; }
+.point-history-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 5px 8px;
+  cursor: pointer;
+  list-style: none;
+}
+.point-history-summary::-webkit-details-marker { display: none; }
+.point-history-summary::after { content: '⌄'; margin-inline-start: auto; align-self: center; }
+.point-history[open] > .point-history-summary::after { transform: rotate(180deg); }
+.point-history-metric { display: grid; justify-items: center; min-width: 0; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.point-history-icon { line-height: 1; font-size: 10px; opacity: .72; }
+.point-history-body { padding: 8px 10px; border-top: 1px solid currentColor; }
+.point-history-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+.point-history-timeline { margin: 6px 0 0; padding: 0 0 0 12px; list-style: none; }
+.point-history-timeline li { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 4px 8px; border-inline-start: 2px solid #bd5c6f; }
+.point-history-timeline li[data-operation=paid] { border-inline-start-color: #4d9c78; }
+.point-history-timeline small { opacity: .8; }

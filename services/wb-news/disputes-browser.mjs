@@ -95,10 +95,12 @@ export function extractGoods(root){
   // WB can put the appeal deadline in a sibling footer outside the price block.
   // Stay inside this virtual row and never borrow a neighbouring product's date.
   const boundary=chosen.closest('[data-index],[data-item-index]');
-  let dateLabel='',withholdLabel='';
+  let dateLabel='',withholdLabel='',productUrl=null;
   for(let node=chosen,depth=0;node&&depth<9;node=node.parentElement,depth++){
    const text=node.innerText||'';
    if((text.match(/ШК\s*\d{4,40}/g)||[]).length!==1)break;
+   productUrl ||= [...node.querySelectorAll('a[href]')].map(link=>link.href)
+    .find(url=>/^https:\/\/(?:www\.)?wildberries\.ru\/catalog\/\d+\/detail\.aspx(?:[?#]|$)/i.test(url)) || null;
    if(!ticket&&/В тикет|К тикету|К обращению/i.test(text)){const refs=[...node.querySelectorAll('button,a')].map(el=>(el.innerText||'').trim().match(/^№\s*(\d{3,})$/)).filter(Boolean);if(refs.length===1)ticket=refs[0]}
    const dates=text.split('\n').map(x=>x.trim()).filter(x=>/^(?:(?:Оспорить|Срок (?:обращения|оспаривания))\s+)?до\s+\d{2}\.\d{2}\.\d{4}(?:,?\s+\d{2}:\d{2})?$/i.test(x));
    const unique=[...new Set(dates.map(x=>x.replace(/^.*?до\s+/i,'до ')))];
@@ -112,7 +114,7 @@ export function extractGoods(root){
   const wrapper=chosen.closest('[data-index],[data-item-index]');
   let eventId=null;
   for(const el of [chosen,button])for(const key of ['eventId','recordId','defectId','hangingId'])if(el.dataset?.[key])eventId=el.dataset[key];
-  out.push({barcode:m[1],title,photo:img?.getAttribute('src'),amount,reason,dateLabel,withholdLabel,ticketNumber:ticket?.[1]||null,eventId,
+  out.push({barcode:m[1],title,photo:img?.getAttribute('src'),amount,reason,dateLabel,withholdLabel,ticketNumber:ticket?.[1]||null,eventId,productUrl,
     position:wrapper?.getAttribute('data-index')??wrapper?.getAttribute('data-item-index')??null});
  }
  return out;

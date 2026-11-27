@@ -36,6 +36,66 @@ function formatDate(value) {
   return value?.split('-').reverse().join('.') || '';
 }
 
+function metric(icon, label, value) {
+  const item = element('span', '', 'point-history-metric');
+  item.title = label;
+  item.setAttribute('aria-label', label + ': ' + value);
+  const marker = element('span', icon, 'point-history-icon');
+  marker.setAttribute('aria-hidden', 'true');
+  item.append(element('span', String(value)), marker);
+  return item;
+}
+
+function operationDate(row) {
+  return [formatDate(row.operation_date), row.operation_time?.slice(0, 5)].filter(Boolean).join(' ');
+}
+
+function renderOperation(row, history) {
+  const details = element('details', '', 'point-history');
+  const summary = element('summary', '', 'point-history-summary');
+  const metrics = [
+    ['▥', 'ШК', row.shk],
+    ['₽', 'Сумма', row.amount == null ? '—' : money(row.amount, currencyCode(row))],
+    ['▦', 'Дата операции', operationDate(row)],
+    ['▤', 'Ячейка', row.cell],
+    ['◫', 'Коробка возврата', row.return_box],
+    ['▣', 'Коробка приёмки', row.accept_box],
+  ];
+  for (const [icon, label, value] of metrics) {
+    if (value != null && value !== '') summary.append(metric(icon, label, value));
+  }
+  const body = element('div', '', 'point-history-body');
+  const actions = element('div', '', 'point-history-actions');
+  const copy = element('button', 'Копировать ШК', 'copy-number');
+  copy.type = 'button';
+  copy.dataset.copyNumber = String(row.shk || '');
+  actions.append(copy);
+  if (/^https:\/\/(?:www\.)?wildberries\.ru\/catalog\/\d+\/detail\.aspx(?:[?#]|$)/i.test(row.product_url || '')) {
+    const product = element('a', 'Посмотреть на WB ↗');
+    product.href = row.product_url;
+    product.target = '_blank';
+    product.rel = 'noopener noreferrer';
+    actions.append(product);
+  }
+  if (row.ticket_number) actions.append(element('span', 'Тикет №' + row.ticket_number));
+  body.append(actions, element('strong', 'Удержания и доплаты по ШК'));
+  const timeline = element('ol', '', 'point-history-timeline');
+  for (const event of history.slice().sort((a, b) => operationDateKey(a).localeCompare(operationDateKey(b)))) {
+    const item = element('li');
+    item.dataset.operation = event.operation_type === 'Доплачено' ? 'paid' : 'withheld';
+    item.append(element('strong', event.operation_type), element('span', event.amount == null ? '' : money(event.amount, currencyCode(event))),
+      element('small', operationDate(event) || 'Дата не указана'));
+    timeline.append(item);
+  }
+  body.append(timeline);
+  details.append(summary, body);
+  return details;
+}
+
+function operationDateKey(row) {
+  return (row.operation_date || '') + ' ' + (row.operation_time || '');
+}
+
 function paintArchive(panel, rows) {
   const label = panel.getAttribute('aria-label');
   const isWithheld = panel.dataset.pointPanel === 'withheld';
@@ -50,21 +110,17 @@ function paintArchive(panel, rows) {
   for (const row of operations) { const code = currencyCode(row); totals.set(code, (totals.get(code) || 0) + Number(row.amount)); }
   const heading = element('p', operations.length + ' операций · ' + [...totals].map(([code, sum]) => money(sum, code)).join(' · '), 'point-archive-total');
   const lists = new Map();
+  const history = new Map();
+  for (const row of rows) {
+    const key = String(row.shk);
+    if (!history.has(key)) history.set(key, []);
+    history.get(key).push(row);
+  }
   for (const row of operations) {
     const month = row.operation_date?.slice(0, 7) || '';
     if (!lists.has(month)) lists.set(month, element('ul', '', 'point-archive-list'));
     const item = element('li', '', 'point-archive-row');
-    const date = [formatDate(row.operation_date), row.operation_time?.slice(0, 5)].filter(Boolean).join(' ');
-    const shk=element('strong', 'ШК ' + row.shk);
-    const copy=element('button','⧉','copy-number');copy.type='button';copy.dataset.copyNumber=String(row.shk||'');
-    item.append(shk,copy,element('strong', row.amount == null ? 'Сумма не указана' : money(row.amount, currencyCode(row))), element('small', date));
-    const details = [
-      row.ticket_number && 'Тикет №' + row.ticket_number,
-      row.cell && 'Ячейка ' + row.cell,
-      row.return_box && 'Коробка возврата ' + row.return_box,
-      row.accept_box && 'Коробка приёмки ' + row.accept_box
-    ].filter(Boolean);
-    if (details.length) item.append(element('small', details.join(' · ')));
+    item.append(renderOperation(row, history.get(String(row.shk))));
     lists.get(month).append(item);
   }
   const months = [...lists.keys()].sort((a, b) => b.localeCompare(a)).map(month => {
@@ -112,9 +168,12 @@ export function bindPointSections(root, account, pointKey) {
         const additions = [];
         for (const row of live) {
           const operation = { operation_type: row.wb_state === 'paid' ? 'Доплачено' : 'Удержано',
-            shk: row.barcode, amount: row.amount, currency: 'RUB', ticket_number: row.raw?.ticket_number };
+            shk: row.barcode, amount: row.amount, currency: 'RUB', ticket_number: row.raw?.ticket_number, product_url: row.raw?.product_url };
           const existing = known.get(operation.operation_type + '|' + operationKey(operation));
-          if (existing) existing.ticket_number ||= operation.ticket_number;
+          if (existing) {
+            existing.ticket_number ||= operation.ticket_number;
+            existing.product_url ||= operation.product_url;
+          }
           else additions.push(operation);
         }
         return [...history, ...additions];
