@@ -1,4 +1,6 @@
-<svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect x="7.49805" y="6.99792" width="14.0058" height="14.0058" rx="2" stroke="#4A4A59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M7.498 17.0021H5.49717C4.39214 17.0021 3.49634 16.1063 3.49634 15.0012V4.99708C3.49634 3.89205 4.39214 2.99625 5.49717 2.99625H15.5013C16.6064 2.99625 17.5022 3.89205 17.5022 4.99708V6.99791" stroke="#4A4A59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group">
+<rect id="Rectangle" x="6.99792" y="6.99805" width="14.0058" height="14.0058" rx="2" stroke="#474752" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Path" d="M6.99788 17.0022H4.99705C3.89202 17.0022 2.99622 16.1064 2.99622 15.0013V4.99717C2.99622 3.89214 3.89202 2.99634 4.99705 2.99634H15.0012C16.1062 2.99634 17.002 3.89214 17.002 4.99717V6.998" stroke="#474752" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
 </svg>
