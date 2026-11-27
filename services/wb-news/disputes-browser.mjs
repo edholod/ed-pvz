@@ -208,13 +208,17 @@ export function movementEvents(text){
 function enrichFinancialGoods(page,root,section,deadline){
  if(section.state==='to-hold')return null;
  return async row=>{
-  if(Date.now()>=deadline)return null;
-  // Use a single product row and an explicitly named product control.
-  const barcode=root.getByRole('button',{name:'ШК '+row.barcode,exact:true});
+  if(Date.now()>=deadline())return null;
+  const barcode=root.getByRole('button',{name:new RegExp('^ШК\\s*'+row.barcode+'$')});
   if(await barcode.count()!==1)return null;
-  const wrapper=barcode.locator('xpath=ancestor::*[@data-index or @data-item-index][1]');
-  if(await wrapper.count()!==1||await wrapper.getByRole('button',{name:/^ШК\s*\d+$/}).count()!==1)return null;
-  const open=wrapper.getByRole('button',{name:/^(Товар|Информация о товаре|Подробнее о товаре|История ШК)$/i});
+  // A product may be rendered without a virtual-row wrapper. Resolve its
+  // controls within the nearest card containing one barcode and one image.
+  const barcodeCount="count(.//button[starts-with(normalize-space(.), 'ШК')]) = 1";
+  const card=barcode.locator(`xpath=ancestor::*[${barcodeCount} and .//img][1]`);
+  if(await card.count()!==1)return null;
+  const named=card.getByRole('button',{name:/^(Товар|Информация о товаре|Подробнее о товаре|История ШК)$/i});
+  const image=card.locator('button img, [role="button"] img, img[tabindex="0"]');
+  const open=await named.count()===1?named:image;
   if(await open.count()!==1||!await open.isVisible())return null;
   const dialog=page.getByRole('dialog').filter({visible:true}).filter({has:page.getByText('История ШК',{exact:true})}).last();
   if(await dialog.count())return null;
@@ -222,7 +226,7 @@ function enrichFinancialGoods(page,root,section,deadline){
    await open.click({timeout:800});
    const tab=dialog.getByText('История ШК',{exact:true});
    await tab.click({timeout:1200});
-   await dialog.getByText(/\d{1,2}\s+[а-яё]+\s+\d{4}/i).first().waitFor({timeout:1400});
+   await dialog.getByText(/\d{1,2}\s+[а-яё]+\s+\d{4}/i).first().waitFor({timeout:2200});
    return {movement:movementEvents(await dialog.innerText({timeout:600}))};
   }catch{return null}
   finally{
@@ -236,7 +240,8 @@ function enrichFinancialGoods(page,root,section,deadline){
 }
 
 async function collectPoint(page,point,section){
- const movementDeadline=Date.now()+15000;
+ let movementDeadline;
+ const historyDeadline=()=>movementDeadline??=Date.now()+20000;
  await closeDrawers(page);
  const openPointDrawer=async()=>{
   const pointRow=await revealVirtualText(page.locator('body'),'ID '+point);
@@ -265,7 +270,7 @@ async function collectPoint(page,point,section){
      await waitGoodsDrawer(page);
      const inner=page.getByRole('dialog').filter({visible:true}).last();
      const reasonsComplete=await expandVisibleReasons(inner);
-     batch=await scanVirtual(page,inner,extractGoods,{enrich:enrichFinancialGoods(page,inner,section,movementDeadline)});
+     batch=await scanVirtual(page,inner,extractGoods,{enrich:enrichFinancialGoods(page,inner,section,historyDeadline)});
      batch.complete&&=reasonsComplete;
      break;
     }catch(error){
@@ -291,7 +296,7 @@ async function collectPoint(page,point,section){
    }
   }
   goods={rows:items,complete};
- }else goods=await scanVirtual(page,dialog,extractGoods,{enrich:enrichFinancialGoods(page,dialog,section,movementDeadline)});
+ }else goods=await scanVirtual(page,dialog,extractGoods,{enrich:enrichFinancialGoods(page,dialog,section,historyDeadline)});
  await closeDrawers(page).catch(()=>{goods.complete=false});return goods;
 }
 export function extractTicketRows(root){
