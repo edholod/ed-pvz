@@ -189,7 +189,7 @@ export class Collector {
       if(!config.registry?.length)throw Error('registry_not_configured');
       await this.backupSession().catch(()=>{});
       const result=await syncWBDisputes(this.page,{
-        registry:config.registry,tickets:config.tickets||[],
+        registry:config.registry,tickets:config.tickets||[],includeFinancial:claim.include_financial===true,
         renewPage:async()=>this.restartBrowser(),
         saveScope:batch=>saveScope(batch,lease),
         onProgress:report=>{this.disputeInspection={...report,lastAttempt:report.started_at}}

@@ -449,7 +449,7 @@ export async function selectCollectionPeriod(page,heading){
  }catch(error){await page.keyboard.press('Escape').catch(()=>{});return {verified:false,error:String(error.message).slice(0,120)}}
 }
 
-export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},renewPage=async current=>current,categories=['hanging','brak','podmena','tickets'],budgetMs=100*60000}={}){
+export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgress=()=>{},renewPage=async current=>current,categories=['hanging','brak','podmena','tickets'],includeFinancial=false,budgetMs=100*60000}={}){
  const started=Date.now(),report={started_at:stamp(),state:'running',checked_points:0,rows:0,tickets:0,sections:[]};
  const checkedPoints=new Set(),detailQueue=[];
  const openScope=async(url,heading,org)=>{
@@ -488,7 +488,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
  // Persist retention scopes and ticket lists before opening individual replies.
- const phases=categories.includes('tickets')?['inventory','tickets','secondary','details']:['inventory','secondary'];
+ const phases=[...(includeFinancial?['secondary']:[]),'inventory',...(categories.includes('tickets')?['tickets','details']:[])];
  for(const phase of phases)for(const org of ordered){
   report.phase=phase;
   if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
