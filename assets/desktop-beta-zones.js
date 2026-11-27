@@ -6,7 +6,7 @@
   const groups = Object.entries({
     points: '.home-points-head, #home-points-list, #beta-all-points, #beta-team-row a[href*="/apps/operations/"], #beta-team-row a[href*="/apps/control/"], #beta-team-row a[href*="/apps/management/"]',
     reviews: '#beta-team-row a[href*="/apps/customer-reviews/"], #beta-team-row a[href*="/apps/rating/"]',
-    maps: '#beta-team-row a[href*="/apps/wb-map/"], #beta-team-row a[href*="/apps/ozon-map/"]',
+    maps: '#beta-team-row a[href*="https://map.wb.ru/"], #beta-team-row a[href*="https://pvz-map.ozon.ru/"]',
     learning: '#category-1',
     equipment: '#reference-tools',
     shifts: '#category-0, #beta-right-stack .beta-top-tool',
