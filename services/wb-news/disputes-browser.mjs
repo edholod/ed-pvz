@@ -211,23 +211,32 @@ function enrichFinancialGoods(page,root,section,deadline){
   if(Date.now()>=deadline())return null;
   const barcode=root.getByRole('button',{name:new RegExp('^ШК\\s*'+row.barcode+'$')});
   if(await barcode.count()!==1)return null;
-  // A product may be rendered without a virtual-row wrapper. Resolve its
-  // controls within the nearest card containing one barcode and one image.
+  // WB Point opens product details from the card itself. Its barcode button
+  // copies the number, so click the card's image to activate the parent.
   const barcodeCount="count(.//button[starts-with(normalize-space(.), 'ШК')]) = 1";
-  const card=barcode.locator(`xpath=ancestor::*[${barcodeCount} and .//img][1]`);
+  const card=barcode.locator(`xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' cursor-pointer ') and ${barcodeCount} and .//img][1]`);
   if(await card.count()!==1)return null;
-  const named=card.getByRole('button',{name:/^(Товар|Информация о товаре|Подробнее о товаре|История ШК)$/i});
-  const image=card.locator('button img, [role="button"] img, img[tabindex="0"]');
-  const open=await named.count()===1?named:image;
-  if(await open.count()!==1||!await open.isVisible())return null;
+  const open=card.locator('img').first();
+  if(!await open.isVisible())return null;
   const dialog=page.getByRole('dialog').filter({visible:true}).filter({has:page.getByText('История ШК',{exact:true})}).last();
   if(await dialog.count())return null;
   try{
    await open.click({timeout:800});
-   const tab=dialog.getByText('История ШК',{exact:true});
-   await tab.click({timeout:1200});
-   await dialog.getByText(/\d{1,2}\s+[а-яё]+\s+\d{4}/i).first().waitFor({timeout:2200});
-   return {movement:movementEvents(await dialog.innerText({timeout:600}))};
+   const tab=dialog.getByRole('button',{name:'История ШК',exact:true});
+   await tab.click({timeout:1800});
+   const panel=dialog.getByRole('tabpanel').filter({visible:true});
+   await panel.getByText(/^\d{1,2}\s+[а-яё]+\s+\d{4}\s*г\.?$/i).first().waitFor({timeout:3500});
+   const text=await panel.evaluate(element=>{
+    const walker=document.createTreeWalker(element,NodeFilter.SHOW_TEXT);
+    const lines=[];
+    while(walker.nextNode()){
+     const node=walker.currentNode;
+     const line=node.textContent.trim();
+     if(line&&line!=='•'&&node.parentElement.getClientRects().length)lines.push(line);
+    }
+    return lines.join('\n');
+   });
+   return {movement:movementEvents(text)};
   }catch{return null}
   finally{
    if(await dialog.count()){
