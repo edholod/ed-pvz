@@ -1,5 +1,5 @@
 import { holdingUpdateKeys, recentlyUpdated, updateTime } from './update-time.mjs?v=coverage';
-import { bindPointSections, renderPointSections } from './point-sections.mjs?v=financial-movement-1';
+import { bindPointSections, renderPointSections } from './point-sections.mjs?v=financial-vertical-icons-1';
 import { createTicketHistory } from './ticket-history.mjs';
 import { bindTicketArchive, personalTicketGroups, renderTicketArchive, groupPointTickets, renderPointTickets, renderUrgentTickets, updateReplyCountdowns } from './point-tickets.mjs?v=ticket-coverage-three-hours';
 import { showInvite } from './owner-invite.js?v=3';

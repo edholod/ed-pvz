@@ -40,9 +40,16 @@ function metric(icon, label, value) {
   const item = element('span', '', 'point-history-metric');
   item.title = label;
   item.setAttribute('aria-label', label + ': ' + value);
-  const marker = element('span', icon, 'point-history-icon');
+  const marker = element(icon.endsWith('.svg') ? 'img' : 'span', '', 'point-history-icon');
+  if (marker.tagName === 'IMG') {
+    marker.src = new URL('./operation-icons/' + icon, import.meta.url).href;
+    marker.alt = '';
+    marker.width = marker.height = 16;
+  } else {
+    marker.textContent = icon;
+  }
   marker.setAttribute('aria-hidden', 'true');
-  item.append(element('span', String(value)), marker);
+  item.append(marker, element('span', String(value)));
   return item;
 }
 
@@ -54,10 +61,10 @@ function renderOperation(row, history) {
   const details = element('details', '', 'point-history');
   const summary = element('summary', '', 'point-history-summary');
   const metrics = [
-    ['▥', 'ШК', row.shk],
-    ['₽', 'Сумма', row.amount == null ? '—' : money(row.amount, currencyCode(row))],
-    ['▦', 'Дата операции', operationDate(row)],
-    ['▤', 'Ячейка', row.cell],
+    ['date.svg', 'Дата операции', operationDate(row)],
+    ['barcode.svg', 'ШК', row.shk],
+    ['amount.svg', 'Сумма', row.amount == null ? '—' : money(row.amount, currencyCode(row))],
+    ['cell.svg', 'Ячейка', row.cell],
     ['◫', 'Коробка возврата', row.return_box],
     ['▣', 'Коробка приёмки', row.accept_box],
   ];
