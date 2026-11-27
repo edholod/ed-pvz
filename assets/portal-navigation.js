@@ -17,6 +17,9 @@
     return;
    }
    if(!isApp(u.href))return;
+   if(!frame.contentWindow.__edpvzContextMenu&&!doc.querySelector('script[data-portal-context]')){
+    const script=doc.createElement('script');script.src=new URL('assets/account.js?v=menu-scroll-1',root).href;script.dataset.portalContext='1';doc.head.append(script);
+   }
    document.getElementById('viewTitle').textContent=titleFor(doc);
    document.getElementById('external').href=u.href;
    document.title=titleFor(doc)+' — Эд ПВЗ';
