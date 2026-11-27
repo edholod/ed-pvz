@@ -63,5 +63,5 @@ export function ticketNeedsDetail(ticket,cached,now=Date.now()){
 
 export function eligibleObservation(row){
  // An appeal deadline is not proof of the event's collection period.
- return row.wb_state==='to-hold'&&row.raw?.collection_since==='2026-10-01';
+ return ['to-hold','withheld','paid'].includes(row.wb_state)&&row.raw?.collection_since==='2026-10-01';
 }

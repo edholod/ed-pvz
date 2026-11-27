@@ -91,7 +91,7 @@ export function extractGoods(root){
   const lines=chosen.innerText.split('\n').map(x=>x.trim()).filter(Boolean),img=chosen.querySelector('img');
   const title=img?.alt&&img.alt!=='product image'?img.alt:lines[lines.findIndex(x=>/^ШК/.test(x))+1];
   const amount=lines.findLast(x=>/^-?[\d\s.,\u00a0]+\s*₽$/.test(x));
-  let ticket=chosen.innerText.match(/№\s*(\d{3,})/);
+  let ticket=chosen.innerText.match(/(?:тикет|обращение)\s*№?\s*(\d{3,})/i);
   // WB can put the appeal deadline in a sibling footer outside the price block.
   // Stay inside this virtual row and never borrow a neighbouring product's date.
   const boundary=chosen.closest('[data-index],[data-item-index]');
@@ -99,7 +99,7 @@ export function extractGoods(root){
   for(let node=chosen,depth=0;node&&depth<9;node=node.parentElement,depth++){
    const text=node.innerText||'';
    if((text.match(/ШК\s*\d{4,40}/g)||[]).length!==1)break;
-   if(!ticket&&/В тикет/.test(text)){const refs=[...node.querySelectorAll('button,a')].map(el=>(el.innerText||'').trim().match(/^№\s*(\d{3,})$/)).filter(Boolean);if(refs.length===1)ticket=refs[0]}
+   if(!ticket&&/В тикет|К тикету|К обращению/i.test(text)){const refs=[...node.querySelectorAll('button,a')].map(el=>(el.innerText||'').trim().match(/^№\s*(\d{3,})$/)).filter(Boolean);if(refs.length===1)ticket=refs[0]}
    const dates=text.split('\n').map(x=>x.trim()).filter(x=>/^(?:(?:Оспорить|Срок (?:обращения|оспаривания))\s+)?до\s+\d{2}\.\d{2}\.\d{4}(?:,?\s+\d{2}:\d{2})?$/i.test(x));
    const unique=[...new Set(dates.map(x=>x.replace(/^.*?до\s+/i,'до ')))];
    if(unique.length===1&&!dateLabel)dateLabel=unique[0];
@@ -478,12 +478,17 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
  const baseSections=[{key:'hanging',heading:'Зависшие ШК',path:'/hanging-goods/to-hold',category:'Зависший'},
   {key:'brak',heading:'Брак',path:'/defects/to-hold',category:'Брак'},
   {key:'podmena',heading:'Подмены',path:'/replace-goods/to-hold',category:'Подмена'}];
- const sections=baseSections.map(x=>({...x,state:'to-hold',tab:'К удержанию'}));
+ const sections=baseSections.flatMap(section=>[
+  {...section,state:'to-hold',tab:'К удержанию'},
+  {...section,state:'withheld',tab:'Удержано'},
+  {...section,state:'paid',tab:'Доплачено'}
+ ]);
+ const financialStates=new Set(['withheld','paid']);
  const currentEvidence=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>null);
  const active=currentEvidence&&registry.find(org=>verifyOrganization(currentEvidence,org.name_exact,{pointIds:org.points.map(p=>p.wb_point_id),allPointIds:registry.flatMap(o=>o.points.map(p=>p.wb_point_id))}));
  const ordered=active?[active,...registry.filter(org=>org!==active)]:registry;
  // Persist retention scopes and ticket lists before opening individual replies.
- const phases=categories.includes('tickets')?['inventory','tickets','details']:['inventory'];
+ const phases=categories.includes('tickets')?['inventory','tickets','secondary','details']:['inventory','secondary'];
  for(const phase of phases)for(const org of ordered){
   report.phase=phase;
   if(phase==='details'&&!detailQueue.some(task=>task.organization===org.research_id))continue;
@@ -502,18 +507,19 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     await selectScopeOrganization();
    }
   }catch(e){const state=e.code||'organization_unavailable';report.sections.push({key:org.research_id,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,240),failureLog:String(e.message||'').slice(0,1800),diagnostic:e.diagnostic||await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}))});onProgress(report);if(['blocked','authentication_required'].includes(state)){report.state=state;return report}continue}
-  for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='inventory'?(x.state==='to-hold'):phase==='secondary'?!(x.state==='to-hold'):false))){
+  for(const section of sections.filter(x=>categories.includes(x.key)&&(phase==='inventory'?(x.state==='to-hold'):phase==='secondary'?financialStates.has(x.state):false))){
    if(Date.now()-started>budgetMs){report.sections.push({key:'budget:goods',state:'partial'});break}
    for(let attempt=0;attempt<2;attempt++){
     report.current={organization:org.research_id,section:section.key,state:section.state,step:'opening_section',attempt:attempt+1};onProgress(report);
     try{
      await openScope(ORIGIN+section.path,section.heading,org);
-     const dateProof=await selectCollectionPeriod(page,section.heading);
-     if(!dateProof.verified)report.sections.push({key:org.research_id+':'+section.key+':date-range',state:'date_range_unverified',diagnostic:dateProof});
      if(section.state!=='to-hold'){
       await page.getByRole('button',{name:section.tab,exact:true}).click();
       await sleep(400);await pageReady(page,section.heading);
      }
+     // Verify the date range after switching tabs, since WB can reset filters.
+     const dateProof=await selectCollectionPeriod(page,section.heading);
+     if(!dateProof.verified)report.sections.push({key:org.research_id+':'+section.key+':'+section.state+':date-range',state:'date_range_unverified',diagnostic:dateProof});
      await page.waitForFunction(()=>/Товаров\s*\d|Нет товаров/.test(document.body?.innerText||''),null,{timeout:20000});
      const groupScan=await scanVirtual(page,page.locator('body'),extractPointGroups);
      const groups=groupScan.rows;
@@ -566,7 +572,7 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
     }catch(e){const diagnostic=await page.locator('body').evaluate(readOrganizationEvidence).catch(()=>({}));await closeDrawers(page).catch(()=>{});const state=e.code||'unavailable';
      if(attempt===0&&e.name==='TimeoutError'&&Date.now()-started<budgetMs)continue;
      report.sections.push({key:org.research_id+':'+section.key+':'+section.state,state,errorType:e.name,message:String(e.message||'').split('\n')[0].slice(0,200),diagnostic});onProgress(report);
-     await saveScope({scope:`wb:${org.research_id}:all:${section.key}`,organization:org.research_id,key:section.key,status:state,complete:false,rows:[]}).catch(()=>{});
+     await saveScope({scope:`wb:${org.research_id}:all:${section.key}:${section.state}`,organization:org.research_id,key:section.key,status:state,complete:false,rows:[]}).catch(()=>{});
      if(['blocked','authentication_required'].includes(state)){report.state=state;return report}
     }
    }
