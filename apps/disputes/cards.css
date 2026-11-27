@@ -78,10 +78,11 @@
   grid-template-columns: 16px minmax(0, 1fr);
   align-items: center;
   gap: 7px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 400;
   overflow-wrap: anywhere;
 }
+.point-history-metric.point-history-barcode { font-size: 17px; font-weight: 700; }
 .point-history-icon { display: block; width: 16px; height: 16px; line-height: 16px; text-align: center; }
 .point-history-body { padding: 8px 10px; border-top: 1px solid currentColor; }
 .point-history-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }

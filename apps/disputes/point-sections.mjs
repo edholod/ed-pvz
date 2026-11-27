@@ -38,6 +38,7 @@ function formatDate(value) {
 
 function metric(icon, label, value) {
   const item = element('span', '', 'point-history-metric');
+  item.classList.toggle('point-history-barcode', icon === 'barcode.svg');
   item.title = label;
   item.setAttribute('aria-label', label + ': ' + value);
   const marker = element(icon.endsWith('.svg') ? 'img' : 'span', '', 'point-history-icon');
@@ -65,8 +66,8 @@ function renderOperation(row, history) {
     ['barcode.svg', 'ШК', row.shk],
     ['amount.svg', 'Сумма', row.amount == null ? '—' : money(row.amount, currencyCode(row))],
     ['cell.svg', 'Ячейка', row.cell],
-    ['◫', 'Коробка возврата', row.return_box],
-    ['▣', 'Коробка приёмки', row.accept_box],
+    ['box.svg', 'Коробка возврата', row.return_box],
+    ['box.svg', 'Коробка приёмки', row.accept_box],
   ];
   for (const [icon, label, value] of metrics) {
     if (value != null && value !== '') summary.append(metric(icon, label, value));
