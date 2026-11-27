@@ -78,7 +78,20 @@ function renderOperation(row, history) {
     actions.append(product);
   }
   if (row.ticket_number) actions.append(element('span', 'Тикет №' + row.ticket_number));
-  body.append(actions, element('strong', 'Удержания и доплаты по ШК'));
+  body.append(actions, element('strong', 'История ШК'));
+  const movement = history.find(event => event.movement?.length)?.movement;
+  if (movement) {
+    const list = element('ol', '', 'point-history-timeline');
+    for (const event of movement) {
+      const entry = element('li');
+      entry.append(element('strong', event.label), element('small', [event.date, event.time].filter(Boolean).join(' · ')));
+      list.append(entry);
+    }
+    body.append(list);
+  } else {
+    body.append(element('p', 'Движение товара из WB пока не загружено.', 'empty'));
+  }
+  body.append(element('strong', 'Удержания и доплаты по ШК'));
   const timeline = element('ol', '', 'point-history-timeline');
   for (const event of history.slice().sort((a, b) => operationDateKey(a).localeCompare(operationDateKey(b)))) {
     const item = element('li');
@@ -168,11 +181,12 @@ export function bindPointSections(root, account, pointKey) {
         const additions = [];
         for (const row of live) {
           const operation = { operation_type: row.wb_state === 'paid' ? 'Доплачено' : 'Удержано',
-            shk: row.barcode, amount: row.amount, currency: 'RUB', ticket_number: row.raw?.ticket_number, product_url: row.raw?.product_url };
+            shk: row.barcode, amount: row.amount, currency: 'RUB', ticket_number: row.raw?.ticket_number, product_url: row.raw?.product_url, movement: row.raw?.movement };
           const existing = known.get(operation.operation_type + '|' + operationKey(operation));
           if (existing) {
             existing.ticket_number ||= operation.ticket_number;
             existing.product_url ||= operation.product_url;
+            existing.movement ||= operation.movement;
           }
           else additions.push(operation);
         }

@@ -43,7 +43,7 @@ async function closeTopDrawer(page){
  return true;
 }
 async function closeDrawers(page){for(let i=0;i<4;i++)if(!await closeTopDrawer(page))break}
-export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietMs=2500,settleUnlisted=false,wait=sleep,now=Date.now}={}){
+export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietMs=2500,settleUnlisted=false,wait=sleep,now=Date.now,enrich=null}={}){
  const found=new Map();let bottomPasses=0,lastSize=0,stalledPasses=0,lastMetrics=null,quietSince=null;
  const scroller=root.getByTestId('virtuoso-scroller').filter({visible:true}).last();
  const has=await scroller.count();
@@ -57,12 +57,14 @@ export async function scanVirtual(page,root,extract,{maxWindows=150,bottomQuietM
    if(now()-quietSince>=bottomQuietMs)return {rows,complete:true};
    continue;
   }
-  rows.forEach((row,index)=>{
+  for(const [index,row] of rows.entries()){
    const key=row.position??(row.point&&!row.number?'point:'+row.point:JSON.stringify([row.barcode,row.number,row.groupLabel,row.text,index]));
    const previous=found.get(key);
-   if(previous?.dateLocal&&!row.dateLocal)row={...row,dateLocal:previous.dateLocal};
-   found.set(key,row);
-  });
+   const extra=previous || (enrich ? await enrich(row) : null);
+   found.set(key,{...row,...(extra?.dateLocal&&!row.dateLocal?{dateLocal:extra.dateLocal}:{}),
+    ...(extra?.movement?.length?{movement:extra.movement}:{}),
+    ...(extra?.productUrl&&!row.productUrl?{productUrl:extra.productUrl}:{})});
+  }
   if(!has)return {rows:[...found.values()],complete:true};
   const metrics=await scroller.evaluate(e=>({top:e.scrollTop,height:e.clientHeight,total:e.scrollHeight,busy:[...e.querySelectorAll('[role="progressbar"],[aria-busy="true"]')].some(el=>el.getClientRects().length>0)}));
   const bottom=metrics.top+metrics.height>=metrics.total-3;
@@ -186,7 +188,55 @@ export async function waitGoodsDrawer(page,{groups=false}={}){
   return /ШК\s*\d{4,40}|Нет товаров|Раздел недоступен/.test(text)||(groups&&/Товары из ПВЗ|№\s*\d+/.test(text));
  },{groups},{timeout:25000});
 }
+export function movementEvents(text){
+ const events=[];
+ const date=/^(\d{1,2}\s+[а-яё]+\s+\d{4}\s*г\.?)\s*[•·]?\s*(\d{1,2}:\d{2})\s*(.*)$/iu;
+ const lines=String(text||'').split('\n').map(line=>line.trim()).filter(Boolean);
+ for(let i=0;i<lines.length;i++){
+  const same=lines[i].match(date);
+  const split=!same&&lines[i+1]&&(lines[i]+' '+lines[i+1]).match(date);
+  const match=same||split;
+  if(!match)continue;
+  if(split)i++;
+  const label=match[3].trim()||lines[i+1];
+  if(!label||date.test(label)||/^ID\s|^История ШК$|^Информация$/i.test(label))continue;
+  events.push({date:match[1],time:match[2],label:label.slice(0,200)});
+ }
+ return events.slice(0,300);
+}
+
+function enrichFinancialGoods(page,root,section,deadline){
+ if(section.state==='to-hold')return null;
+ return async row=>{
+  if(Date.now()>=deadline)return null;
+  // Use a single product row and an explicitly named product control.
+  const barcode=root.getByRole('button',{name:'ШК '+row.barcode,exact:true});
+  if(await barcode.count()!==1)return null;
+  const wrapper=barcode.locator('xpath=ancestor::*[@data-index or @data-item-index][1]');
+  if(await wrapper.count()!==1||await wrapper.getByRole('button',{name:/^ШК\s*\d+$/}).count()!==1)return null;
+  const open=wrapper.getByRole('button',{name:/^(Товар|Информация о товаре|Подробнее о товаре|История ШК)$/i});
+  if(await open.count()!==1||!await open.isVisible())return null;
+  const dialog=page.getByRole('dialog').filter({visible:true}).filter({has:page.getByText('История ШК',{exact:true})}).last();
+  if(await dialog.count())return null;
+  try{
+   await open.click({timeout:800});
+   const tab=dialog.getByText('История ШК',{exact:true});
+   await tab.click({timeout:1200});
+   await dialog.getByText(/\d{1,2}\s+[а-яё]+\s+\d{4}/i).first().waitFor({timeout:1400});
+   return {movement:movementEvents(await dialog.innerText({timeout:600}))};
+  }catch{return null}
+  finally{
+   if(await dialog.count()){
+    const close=dialog.getByRole('button',{name:/^Закрыть$/i});
+    if(await close.count()===1)await close.click({timeout:700}).catch(()=>{});
+    if(await dialog.count())await page.keyboard.press('Escape').catch(()=>{});
+   }
+  }
+ };
+}
+
 async function collectPoint(page,point,section){
+ const movementDeadline=Date.now()+15000;
  await closeDrawers(page);
  const openPointDrawer=async()=>{
   const pointRow=await revealVirtualText(page.locator('body'),'ID '+point);
@@ -215,7 +265,7 @@ async function collectPoint(page,point,section){
      await waitGoodsDrawer(page);
      const inner=page.getByRole('dialog').filter({visible:true}).last();
      const reasonsComplete=await expandVisibleReasons(inner);
-     batch=await scanVirtual(page,inner,extractGoods);
+     batch=await scanVirtual(page,inner,extractGoods,{enrich:enrichFinancialGoods(page,inner,section,movementDeadline)});
      batch.complete&&=reasonsComplete;
      break;
     }catch(error){
@@ -241,7 +291,7 @@ async function collectPoint(page,point,section){
    }
   }
   goods={rows:items,complete};
- }else goods=await scanVirtual(page,dialog,extractGoods);
+ }else goods=await scanVirtual(page,dialog,extractGoods,{enrich:enrichFinancialGoods(page,dialog,section,movementDeadline)});
  await closeDrawers(page).catch(()=>{goods.complete=false});return goods;
 }
 export function extractTicketRows(root){
