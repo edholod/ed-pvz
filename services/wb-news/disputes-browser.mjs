@@ -205,25 +205,28 @@ export function movementEvents(text){
  return events.slice(0,300);
 }
 
-function enrichFinancialGoods(page,root,section,deadline){
+function enrichFinancialGoods(page,root,section,deadline,counts){
  if(section.state==='to-hold')return null;
  return async row=>{
-  if(Date.now()>=deadline())return null;
+  if(Date.now()>=deadline()){counts.budget++;return null;}
   const barcode=root.getByRole('button',{name:new RegExp('^ШК\\s*'+row.barcode+'$')});
-  if(await barcode.count()!==1)return null;
+  if(await barcode.count()!==1){counts.barcode++;return null;}
   // WB Point opens product details from the card itself. Its barcode button
   // copies the number, so click the card's image to activate the parent.
   const barcodeCount="count(.//button[starts-with(normalize-space(.), 'ШК')]) = 1";
   const card=barcode.locator(`xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' cursor-pointer ') and ${barcodeCount} and .//img][1]`);
-  if(await card.count()!==1)return null;
+  if(await card.count()!==1){counts.card++;return null;}
   const open=card.locator('img').first();
-  if(!await open.isVisible())return null;
+  if(!await open.isVisible()){counts.image++;return null;}
   const dialog=page.getByRole('dialog').filter({visible:true}).filter({has:page.getByText('История ШК',{exact:true})}).last();
-  if(await dialog.count())return null;
+  if(await dialog.count()){counts.dialog_left_open++;return null;}
+  let stage='open';
   try{
-   await open.click({timeout:800});
+   await open.click({timeout:1800});
+   stage='tab';
    const tab=dialog.getByRole('button',{name:'История ШК',exact:true});
    await tab.click({timeout:1800});
+   stage='panel';
    const panel=dialog.getByRole('tabpanel').filter({visible:true});
    await panel.getByText(/^\d{1,2}\s+[а-яё]+\s+\d{4}\s*г\.?$/i).first().waitFor({timeout:3500});
    const text=await panel.evaluate(element=>{
@@ -236,19 +239,25 @@ function enrichFinancialGoods(page,root,section,deadline){
     }
     return lines.join('\n');
    });
-   return {movement:movementEvents(text)};
-  }catch{return null}
+   const movement=movementEvents(text);
+   counts[movement.length?'saved':'empty']++;
+   return {movement};
+  }catch{counts[stage]++;return null}
   finally{
    if(await dialog.count()){
-    const close=dialog.getByRole('button',{name:/^Закрыть$/i});
-    if(await close.count()===1)await close.click({timeout:700}).catch(()=>{});
+    // The saved WB dialog has an unlabeled close button in its own header.
+    const close=dialog.locator(':scope > div > button').first();
+    if(await close.count())await close.click({timeout:1200}).catch(()=>{});
     if(await dialog.count())await page.keyboard.press('Escape').catch(()=>{});
+    await dialog.waitFor({state:'hidden',timeout:1200}).catch(()=>{});
    }
   }
  };
 }
 
 async function collectPoint(page,point,section){
+ const movementCounts={budget:0, barcode:0, card:0, image:0, dialog_left_open:0,
+  open:0, tab:0, panel:0, empty:0, saved:0};
  let movementDeadline;
  const historyDeadline=()=>movementDeadline??=Date.now()+20000;
  await closeDrawers(page);
@@ -279,7 +288,7 @@ async function collectPoint(page,point,section){
      await waitGoodsDrawer(page);
      const inner=page.getByRole('dialog').filter({visible:true}).last();
      const reasonsComplete=await expandVisibleReasons(inner);
-     batch=await scanVirtual(page,inner,extractGoods,{enrich:enrichFinancialGoods(page,inner,section,historyDeadline)});
+     batch=await scanVirtual(page,inner,extractGoods,{enrich:enrichFinancialGoods(page,inner,section,historyDeadline,movementCounts)});
      batch.complete&&=reasonsComplete;
      break;
     }catch(error){
@@ -305,8 +314,9 @@ async function collectPoint(page,point,section){
    }
   }
   goods={rows:items,complete};
- }else goods=await scanVirtual(page,dialog,extractGoods,{enrich:enrichFinancialGoods(page,dialog,section,historyDeadline)});
- await closeDrawers(page).catch(()=>{goods.complete=false});return goods;
+ }else goods=await scanVirtual(page,dialog,extractGoods,{enrich:enrichFinancialGoods(page,dialog,section,historyDeadline,movementCounts)});
+ await closeDrawers(page).catch(()=>{goods.complete=false});
+ return {...goods,movementCounts};
 }
 export function extractTicketRows(root){
  const result=[];
@@ -631,6 +641,10 @@ export async function syncWBDisputes(page,{registry,tickets=[],saveScope,onProgr
       const saved=await saveScope({...scope,scope:`wb:${org.research_id}:${point.wb_point_id}:${section.key}:${section.state}`,rows,complete,
         status:complete?'ok':'partial',expected_count:group?.count||0,finished_at:stamp()});
       sectionComplete&&=complete&&saved.complete!==false;
+      if(section.state!=='to-hold'&&result.movementCounts){
+       report.movement??={};
+       report.movement[scope.key+':'+section.state+':'+point.wb_point_id]=result.movementCounts;
+      }
       report.rows+=rows.length;checkedPoints.add(org.research_id+':'+point.wb_point_id);report.checked_points=checkedPoints.size;onProgress(report);
      }
      report.sections.push({key:org.research_id+':'+section.key+':'+section.state,state:sectionComplete?'ok':'partial'});
